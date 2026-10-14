@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
-  <!-- PWA 메타 태그 -->
+  <!-- PWA 메타 태그 및 정식 manifest.json 연결 -->
   <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="아르곤 가계부">
   <meta name="mobile-web-app-capable" content="yes">
+  <link rel="manifest" href="/manifest.json" id="manifestLinkTag">
   
   <title>아르곤(Gemini) 스마트 가계부 Pro</title>
   
@@ -22,7 +23,7 @@
       font-family: 'Pretendard', sans-serif; 
       background-color: #f1f5f9; 
       -webkit-tap-highlight-color: transparent;
-      padding-top: max(1rem, env(safe-area-inset-top));
+      padding-top: max(0.75rem, env(safe-area-inset-top));
       padding-bottom: max(2.5rem, env(safe-area-inset-bottom));
     }
     .card { 
@@ -43,52 +44,107 @@
 
   <div class="max-w-7xl mx-auto space-y-5">
     
-    <!-- 1. 헤더 및 컨트롤 바 -->
-    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 card p-5">
-      <div class="flex items-center justify-between w-full md:w-auto">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <!-- 클릭 시 버전별 변경사항(릴리즈 노트) 모달 오픈 -->
-            <button onclick="openReleaseModal()" title="클릭하여 버전별 업데이트 내역 보기" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer">
-              <span>🚀 Pro v3.5</span>
-              <span class="bg-amber-300 text-indigo-950 text-[10px] font-extrabold px-1 rounded-full">NEW</span>
-            </button>
-            <h1 class="text-xl md:text-2xl font-extrabold text-slate-900">아르곤 스마트 가계부</h1>
-            <span id="storagePersistBadge" class="hidden px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[11px] font-bold">🛡️ 영구보존</span>
+    <!-- 1. ✨ 슬림 & 모던 개편 헤더 (안 A 적용: 월 리모컨 + 백업 + 통합 메뉴) -->
+    <header class="card p-4 md:px-6 md:py-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 relative z-30">
+      <!-- 좌측: 브랜드 타이틀 & 버전 배지 (클릭 시 업데이트 노트 오픈) -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <button onclick="openReleaseModal()" title="클릭하여 버전별 업데이트 내역 보기" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
+            <span>🚀 v3.6</span>
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+          </button>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <h1 class="text-lg md:text-xl font-extrabold text-slate-900 tracking-tight">아르곤 스마트 가계부</h1>
+              <span id="storagePersistBadge" class="hidden px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-bold">🛡️보존중</span>
+            </div>
           </div>
-          <p class="text-xs text-slate-500 mt-1">갤럭시 공유/클립보드 1초 자동등록 · 할부 자동분할 · 스마트 이력 복구</p>
         </div>
-        <button onclick="showInstallGuide()" class="md:hidden bg-indigo-50 text-indigo-600 p-2 rounded-lg text-xs font-bold shrink-0">
-          📱 앱 추가
+
+        <!-- 모바일에서 설치 가능할 때만 노출되는 빠른 설치 버튼 -->
+        <button id="installAppBtn" onclick="installPWA()" class="hidden sm:hidden bg-indigo-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xs">
+          📲 앱 설치
         </button>
       </div>
 
-      <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-        <input type="month" id="monthFilter" class="flex-1 md:flex-none border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-        <button id="installAppBtn" onclick="installPWA()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-3 py-2 rounded-lg transition shadow-sm">
-          📲 앱 설치
+      <!-- 우측: 핵심 컨트롤 3종 ([◀ 월 선택 ▶] + [🔄 백업] + [⚙️ 메뉴 ▼]) -->
+      <div class="flex items-center justify-between sm:justify-end gap-2">
+        
+        <!-- ① 월 이동 네비게이터 -->
+        <div class="flex items-center bg-slate-100 rounded-xl p-1 border border-slate-200/80 flex-1 sm:flex-none justify-between">
+          <button type="button" onclick="shiftMonth(-1)" title="이전 달" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold transition active:scale-95">
+            ◀
+          </button>
+          <input type="month" id="monthFilter" class="bg-transparent border-none text-center font-extrabold text-indigo-950 text-sm px-1 focus:outline-none cursor-pointer">
+          <button type="button" onclick="shiftMonth(1)" title="다음 달" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold transition active:scale-95">
+            ▶
+          </button>
+        </div>
+
+        <!-- ② 빠른 기기간 백업/복원 버튼 -->
+        <button type="button" onclick="openSyncModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-bold px-3.5 py-2.5 rounded-xl transition shadow-xs flex items-center gap-1 shrink-0">
+          <span>🔄</span>
+          <span>백업</span>
         </button>
-        <button onclick="openGalaxyAutoModal()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold px-3 py-2 rounded-lg transition">
-          🤖 갤럭시 자동화
-        </button>
-        <button onclick="openBudgetModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold px-3 py-2 rounded-lg transition">
-          🎯 예산 설정
-        </button>
-        <button onclick="openSyncModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold px-3 py-2 rounded-lg transition shadow-xs">
-          🔄 백업/복원
-        </button>
-        <button onclick="openAndScrollHistory()" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-sm font-bold px-3 py-2 rounded-lg transition">
-          📜 변경이력
-        </button>
-        <button onclick="openReleaseModal()" class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-sm font-bold px-3 py-2 rounded-lg transition">
-          🆕 업데이트 노트
-        </button>
-        <button onclick="exportCSV()" class="bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium px-3 py-2 rounded-lg transition">
-          📥 엑셀
-        </button>
-        <button onclick="resetData()" class="border border-rose-200 text-rose-600 hover:bg-rose-50 text-sm font-medium px-2.5 py-2 rounded-lg transition">
-          초기화
-        </button>
+
+        <!-- ③ [⚙️ 메뉴 ▼] 통합 드롭다운 버튼 -->
+        <div class="relative shrink-0" id="headerMenuContainer">
+          <button type="button" onclick="toggleHeaderMenu(event)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs md:text-sm font-bold px-3.5 py-2.5 rounded-xl transition shadow-xs flex items-center gap-1.5">
+            <span>⚙️ 메뉴</span>
+            <span id="menuArrowIcon" class="text-[10px] transition-transform duration-200">▼</span>
+          </button>
+
+          <!-- 드롭다운 팝업창 -->
+          <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 divide-y divide-slate-100">
+            
+            <!-- 섹션 A: 실제 처리 기능 -->
+            <div class="px-2 py-1.5 space-y-0.5">
+              <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가계부 관리 및 실행</p>
+              <button type="button" onclick="closeHeaderMenu(); openBudgetModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>🎯 카테고리별 예산 설정</span>
+                <span class="text-[10px] text-slate-400">설정</span>
+              </button>
+              <button type="button" onclick="closeHeaderMenu(); openSyncModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>🔄 기기간 데이터 백업/복원</span>
+                <span class="text-[10px] text-emerald-600 font-extrabold">동기화</span>
+              </button>
+              <button type="button" onclick="closeHeaderMenu(); exportCSV();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>📥 엑셀(CSV) 파일 다운로드</span>
+                <span class="text-[10px] text-slate-400">.csv</span>
+              </button>
+              <button type="button" onclick="closeHeaderMenu(); openAndScrollHistory();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>📜 스마트 변경 이력 (복구)</span>
+                <span id="menuLogCount" class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-extrabold">0건</span>
+              </button>
+            </div>
+
+            <!-- 섹션 B: 안내 및 가이드 -->
+            <div class="px-2 py-1.5 space-y-0.5">
+              <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가이드 및 버전 정보</p>
+              <button type="button" onclick="closeHeaderMenu(); openGalaxyAutoModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
+                <span>🤖 갤럭시 문자 자동화 가이드</span>
+                <span class="text-[10px] text-blue-600 font-bold">TIP</span>
+              </button>
+              <button type="button" onclick="closeHeaderMenu(); openReleaseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
+                <span>🆕 버전별 업데이트 노트</span>
+                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v3.6</span>
+              </button>
+              <button type="button" onclick="closeHeaderMenu(); installPWA();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
+                <span>📱 스마트폰 홈 화면 앱 추가법</span>
+              </button>
+            </div>
+
+            <!-- 섹션 C: 위험 영역 (초기화 분리 보관) -->
+            <div class="px-2 pt-1.5 pb-0.5">
+              <button type="button" onclick="closeHeaderMenu(); resetData();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between transition">
+                <span>🗑️ 전체 가계부 초기화</span>
+                <span class="text-[10px] text-rose-400">주의</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </header>
 
@@ -109,7 +165,7 @@
       <div class="card p-4 md:p-5 flex flex-col justify-between">
         <div class="flex justify-between items-center">
           <span class="text-xs font-bold text-slate-400">월 총예산 현황</span>
-          <button onclick="openBudgetModal()" class="text-xs text-indigo-600 hover:underline font-bold">수정</button>
+          <button onclick="openBudgetModal()" class="text-xs text-indigo-600 hover:underline font-bold">예산 설정</button>
         </div>
         <div class="mt-2">
           <div class="flex justify-between text-xs font-bold mb-1">
@@ -202,7 +258,7 @@
       <!-- 좌측 컬럼 (5칸): 문자 파서 + 상세 내역 등록/수정 폼 -->
       <div class="lg:col-span-5 space-y-5">
         
-        <!-- 스마트 결제 문자 자동 분석기 (갤럭시 원터치 클립보드 버튼 탑재) -->
+        <!-- 스마트 결제 문자 자동 분석기 -->
         <div class="card p-5 border-2 border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white">
           <div class="flex justify-between items-center mb-2">
             <div class="flex items-center gap-1.5">
@@ -219,7 +275,6 @@
             </div>
           </div>
 
-          <!-- ✨ 신규: 붙여넣기 없이 클립보드에서 바로 읽어 등록하는 원터치 버튼 -->
           <button type="button" onclick="pasteAndRegisterClipboard()" class="w-full mb-2.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
             <span>📋 복사한 결제문자 1초 자동등록 (붙여넣기 생략!)</span>
           </button>
@@ -256,13 +311,11 @@
           </div>
 
           <form id="txForm" class="space-y-3">
-            <!-- 지출/수입 탭 -->
             <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
               <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2 text-sm font-bold rounded-md bg-white text-rose-600 shadow-sm transition">지출</button>
               <button type="button" id="btnIncome" onclick="setType('income')" class="py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 transition">수입</button>
             </div>
             
-            <!-- 날짜 & 카테고리 -->
             <div class="grid grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">날짜</label>
@@ -275,7 +328,6 @@
               </div>
             </div>
 
-            <!-- 결제수단 & 카드사 & 할부 개월수 -->
             <div id="paymentOptionRow" class="grid grid-cols-3 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
               <div>
                 <label class="block text-[11px] font-bold text-slate-500 mb-1">결제수단</label>
@@ -319,7 +371,6 @@
               </div>
             </div>
 
-            <!-- 사용처(가맹점) & 상세 내용 -->
             <div class="grid grid-cols-2 gap-2.5">
               <div>
                 <label class="block text-xs font-bold text-slate-600 mb-1">사용처 (가맹점)</label>
@@ -331,7 +382,6 @@
               </div>
             </div>
 
-            <!-- 금액 -->
             <div>
               <label id="amountLabel" class="block text-xs font-bold text-slate-600 mb-1">결제 금액 (총액, 원)</label>
               <input type="number" id="txAmount" oninput="updateInstallmentNotice()" inputmode="numeric" placeholder="0" min="1" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -364,13 +414,11 @@
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-            <!-- 도넛 차트 (5칸) -->
             <div class="md:col-span-5 relative h-52 flex items-center justify-center">
               <canvas id="expenseChart"></canvas>
               <p id="emptyChartMsg" class="text-xs text-slate-400 absolute hidden">지출 내역이 없습니다.</p>
             </div>
 
-            <!-- 카테고리별 사용 금액 / 예산 금액 리스트 (7칸) -->
             <div id="categoryBudgetList" class="md:col-span-7 space-y-2.5 max-h-64 overflow-y-auto pr-1">
             </div>
           </div>
@@ -385,7 +433,6 @@
               <span class="text-[11px] text-indigo-600 font-semibold hidden sm:inline">💡 내역을 클릭하면 수정할 수 있습니다</span>
             </div>
             
-            <!-- 필터 영역: 카테고리 Selectbox + 결제수단 Selectbox + 검색창 -->
             <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full xl:w-auto">
               <select id="categoryFilter" onchange="render()" class="flex-1 sm:flex-none border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="ALL">전체 카테고리</option>
@@ -514,16 +561,16 @@
       </div>
 
       <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
-        <div class="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-1.5">
-          <p class="font-extrabold text-indigo-950 text-sm">⭐ 방법 1. 갤럭시 문자 [공유] 버튼으로 1초 전송</p>
-          <p>1) 갤럭시 <b>크롬(Chrome)</b>에서 상단 <b>[📲 앱 설치]</b> 버튼(또는 메뉴 ➔ 홈 화면에 추가)으로 가계부를 설치합니다.</p>
-          <p>2) 카드 문자가 오면 메시지를 길게 눌러 <b>[공유]</b> ➔ 앱 목록에서 <b>[아르곤 가계부]</b>를 선택하면 열리자마자 자동 등록됩니다!</p>
+        <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1.5">
+          <p class="font-extrabold text-emerald-950 text-sm">⚡ 방법 1. 갤럭시 [모드 및 루틴] + 클립보드 원터치 버튼 (가장 간편!)</p>
+          <p>1) 갤럭시 <b>설정 ➔ 모드 및 루틴</b>에서 <b>[언제: 메시지 수신(키워드: 승인)]</b> ➔ <b>[무엇을: 아르곤 가계부 열기]</b>를 등록합니다.</p>
+          <p>2) 문자가 오면 상단 알림에서 <b>[복사]</b>만 누르고, 열린 가계부에서 초록색 <b>[📋 복사한 결제문자 1초 자동등록]</b> 버튼만 터치하면 끝!</p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1.5">
-          <p class="font-extrabold text-emerald-950 text-sm">⚡ 방법 2. 갤럭시 [모드 및 루틴] + 클립보드 원터치 버튼</p>
-          <p>1) 갤럭시 <b>설정 ➔ 모드 및 루틴</b>에서 <b>[언제: 메시지 수신(키워드: 승인)]</b> ➔ <b>[무엇을: 아르곤 가계부 앱 열기]</b>를 등록합니다.</p>
-          <p>2) 문자가 오면 상단 알림에서 <b>[복사]</b>만 누르고, 자동으로 열린 가계부에서 초록색 <b>[📋 복사한 결제문자 1초 자동등록]</b> 버튼만 터치하면 끝!</p>
+        <div class="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-1.5">
+          <p class="font-extrabold text-indigo-950 text-sm">📲 방법 2. 갤럭시 문자 [공유] 목록에 가계부 띄우기</p>
+          <p>1) GitHub 저장소에 정식 <code>manifest.json</code>과 <code>sw.js</code> 파일이 함께 올라가 있어야 안드로이드가 공유 대상 앱으로 인식합니다.</p>
+          <p>2) 갤럭시 <b>크롬(Chrome)</b>에서 가계부를 <b>[앱 설치]</b>한 뒤, 문자 메시지를 길게 눌러 <b>[공유] ➔ [아르곤 가계부]</b>를 선택하면 즉시 등록됩니다.</p>
         </div>
 
         <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
@@ -562,7 +609,7 @@
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.5</b></span>
+        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.6</b></span>
         <button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
           확인했어요!
         </button>
@@ -677,19 +724,29 @@
 
   <script>
     // ==========================================
-    // 0. 버전 관리 및 버전별 업데이트 노트 (Release Notes)
+    // 0. 버전 관리, 상단 드롭다운 메뉴 제어 & 업데이트 노트
     // ==========================================
-    const APP_VERSION = '3.5';
+    const APP_VERSION = '3.6';
 
     const releaseNotesData = [
       {
-        version: 'Pro v3.5',
+        version: 'Pro v3.6',
         date: '2026.10.14 (최신)',
-        badge: '갤럭시 자동화',
+        badge: 'UI 다이어트 & 정식 PWA',
         isLatest: true,
         items: [
-          '🤖 <b>갤럭시 [공유] 타겟 연동 (Web Share Target):</b> 문자 메시지에서 [공유] ➔ [아르곤 가계부] 선택 시 복사·붙여넣기 없이 1초 자동 등록',
-          '📋 <b>원터치 클립보드 자동 등록 버튼:</b> 문자를 복사한 뒤 초록색 버튼 하나만 누르면 입력창 거치지 않고 즉시 분석 및 가계부 반영',
+          '🎨 <b>상단 헤더 슬림화 (안 A 적용):</b> 9개 버튼을 <b>[◀ 월 이동 리모컨 ▶]</b>, <b>[🔄 백업]</b>, <b>[⚙️ 메뉴 ▼]</b> 딱 3개로 압축하여 모바일 시인성 극대화',
+          '📂 <b>역할별 드롭다운 메뉴:</b> 실제 처리 기능(예산/백업/엑셀/이력)과 가이드(자동화/업데이트 노트), 위험 기능(초기화)을 섹션별로 안전하게 분리',
+          '🔗 <b>정식 PWA 공유 타겟 연동:</b> 외부 <code>/manifest.json</code> 및 <code>/sw.js</code> 자동 연결 지원'
+        ]
+      },
+      {
+        version: 'Pro v3.5',
+        date: '2026.10.14',
+        badge: '갤럭시 자동화',
+        isLatest: false,
+        items: [
+          '📋 <b>원터치 클립보드 자동 등록 버튼:</b> 문자를 복사한 뒤 초록색 버튼 하나만 누르면 붙여넣기 없이 즉시 분석 및 가계부 반영',
           '🔗 <b>외부 자동화 URL 수신기 (?sms=...&auto=1):</b> 갤럭시 모드 및 루틴, SMS 전달 앱 연동 시 무인 자동 등록 지원'
         ]
       },
@@ -699,31 +756,57 @@
         badge: '스마트 이력',
         isLatest: false,
         items: [
-          '🚀 <b>버전별 업데이트 노트(What\'s New) 탑재:</b> 버전 업데이트 시 주요 변경사항 자동 브리핑',
-          '🧠 <b>변경 이력 스마트 병합(Debounce) & ↩️ 원클릭 복구(Undo):</b> 연속 수정 1줄 자동 합산 및 삭제/수정 내역 즉시 복구'
+          '🚀 <b>버전별 업데이트 노트 탑재 & 🧠 변경 이력 연속 수정 병합(Debounce) & ↩️ 원클릭 복구(Undo)</b>'
         ]
       },
       {
-        version: 'Pro v3.2 ~ v3.3',
-        date: '2026.10.14',
-        badge: '동기화 & 보안',
-        isLatest: false,
-        items: [
-          '🔄 <b>기기간 백업/복원 센터:</b> JSON 파일 및 카톡 클립보드 코드로 기기 간 데이터 이동 및 병합',
-          '🛡️ <b>영구 보존 보호막(Persist API):</b> 브라우저가 임의로 가계부 데이터를 청소하지 못하도록 보호'
-        ]
-      },
-      {
-        version: 'Pro v3.0 ~ v3.1',
+        version: 'Pro v3.0 ~ v3.3',
         date: '2026.10.14',
         badge: '핵심 엔진',
         isLatest: false,
         items: [
-          '💬 <b>결제 문자 AI 파서 & 💳 할부 자동 분할:</b> 할부 개월 수만큼 미래 월 자동 분할 등록 및 할부 잔액 브리핑',
-          '☀️ <b>오늘 지출 페이스 진단 & ✏️ 클릭 시 내역 수정 모드</b>'
+          '💬 <b>결제 문자 AI 파서 & 💳 할부 자동 분할 & 🔄 기기간 백업/복원 & ☀️ 일일 소비 페이스 진단</b>'
         ]
       }
     ];
+
+    // 상단 [⚙️ 메뉴 ▼] 드롭다운 열기/닫기
+    function toggleHeaderMenu(e) {
+      if (e) e.stopPropagation();
+      const menu = document.getElementById('headerDropdownMenu');
+      const arrow = document.getElementById('menuArrowIcon');
+      const isHidden = menu.classList.contains('hidden');
+      if (isHidden) {
+        menu.classList.remove('hidden');
+        arrow.style.transform = 'rotate(180deg)';
+      } else {
+        closeHeaderMenu();
+      }
+    }
+
+    function closeHeaderMenu() {
+      const menu = document.getElementById('headerDropdownMenu');
+      const arrow = document.getElementById('menuArrowIcon');
+      if (menu) menu.classList.add('hidden');
+      if (arrow) arrow.style.transform = 'rotate(0deg)';
+    }
+
+    // 바깥 영역 클릭 시 드롭다운 메뉴 자동 닫기
+    document.addEventListener('click', (e) => {
+      const container = document.getElementById('headerMenuContainer');
+      if (container && !container.contains(e.target)) {
+        closeHeaderMenu();
+      }
+    });
+
+    // ◀ / ▶ 버튼으로 이전 달 / 다음 달 즉시 이동
+    function shiftMonth(delta) {
+      const input = document.getElementById('monthFilter');
+      const currentYM = input.value || currentYearMonth;
+      input.value = addMonthsToYM(currentYM, delta);
+      exitEditMode();
+      render();
+    }
 
     function renderReleaseNotes() {
       const container = document.getElementById('releaseNotesContainer');
@@ -777,13 +860,13 @@
       if (seenVersion !== APP_VERSION) {
         setTimeout(() => {
           openReleaseModal();
-          showToast(`🎉 Pro v${APP_VERSION} 갤럭시 자동화 업데이트 완료!`);
+          showToast(`🎉 Pro v${APP_VERSION} 상단 메뉴 개편 업데이트 완료!`);
         }, 400);
       }
     }
 
     // ==========================================
-    // 1. PWA 설정 (갤럭시 Web Share Target 포함)
+    // 1. PWA 설정 (정식 /manifest.json 우선 연결 + 폴백 지원)
     // ==========================================
     const appIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" rx="115" fill="#4f46e5"/><path d="M144 160h224c26.5 0 48 21.5 48 48v144c0 26.5-21.5 48-48 48H144c-26.5 0-48-21.5-48-48V208c0-26.5 21.5-48 48-48zm208 96a24 24 0 1 0 0 48 24 24 0 0 0 0-48z" fill="#ffffff"/><path d="M144 128h192v32H144z" fill="#a5b4fc"/></svg>`;
     const iconDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(appIconSVG);
@@ -793,33 +876,26 @@
     appleIcon.href = iconDataUrl;
     document.head.appendChild(appleIcon);
 
-    const startUrlClean = window.location.origin + window.location.pathname;
-    const manifestData = {
-      name: "아르곤 스마트 가계부 Pro",
-      short_name: "아르곤 가계부",
-      description: "갤럭시 결제문자 공유 자동등록 및 할부 관리 가계부",
-      start_url: startUrlClean,
-      display: "standalone",
-      background_color: "#f1f5f9",
-      theme_color: "#4f46e5",
-      orientation: "portrait",
-      icons: [{ src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }],
-      // ✨ 갤럭시 [공유] 메뉴에서 가계부로 문자 텍스트를 바로 쏠 수 있게 해주는 설정
-      share_target: {
-        action: startUrlClean,
-        method: "GET",
-        enctype: "application/x-www-form-urlencoded",
-        params: {
-          title: "title",
-          text: "text",
-          url: "url"
-        }
-      }
-    };
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = URL.createObjectURL(new Blob([JSON.stringify(manifestData)], { type: 'application/manifest+json' }));
-    document.head.appendChild(manifestLink);
+    // 서버에 /manifest.json 파일이 없을 경우에만 임시 Blob 매니페스트로 자동 폴백
+    fetch('/manifest.json', { method: 'HEAD' }).then(res => {
+      if (!res.ok) throw new Error('No external manifest');
+    }).catch(() => {
+      const startUrlClean = window.location.origin + window.location.pathname;
+      const fallbackManifest = {
+        name: "아르곤 스마트 가계부 Pro",
+        short_name: "아르곤 가계부",
+        start_url: startUrlClean,
+        display: "standalone",
+        background_color: "#f1f5f9",
+        theme_color: "#4f46e5",
+        icons: [{ src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }]
+      };
+      document.getElementById('manifestLinkTag').href = URL.createObjectURL(new Blob([JSON.stringify(fallbackManifest)], { type: 'application/manifest+json' }));
+    });
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
 
     async function requestPersistentStorage() {
       if (navigator.storage && navigator.storage.persist) {
@@ -847,7 +923,7 @@
     }
 
     function showInstallGuide() {
-      alert("📱 스마트폰 홈 화면에 앱으로 추가하는 방법\n\n• 갤럭시(Chrome/삼성인터넷): 메뉴[⋮] ➔ [홈 화면에 추가] 또는 [앱 설치]\n• 아이폰(Safari): 하단 [공유(⬆️)] ➔ [홈 화면에 추가]");
+      alert("📱 스마트폰 홈 화면에 앱으로 추가하는 방법\n\n• 갤럭시(Chrome/삼성인터넷): 브라우저 우측 상단 메뉴[⋮] ➔ [앱 설치] 또는 [홈 화면에 추가]\n• 아이폰(Safari): 하단 가운데 [공유(⬆️)] ➔ [홈 화면에 추가]");
     }
 
     function showToast(msg) {
@@ -936,7 +1012,7 @@
     // 📜 스마트 변경 이력
     // ==========================================
     let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [
-      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.5 업데이트', detail: '갤럭시 문자 공유 자동등록 및 클립보드 원터치 엔진이 활성화되었습니다.' }
+      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.6 업데이트', detail: '상단 헤더 슬림화(월 이동 리모컨 & 통합 메뉴)가 적용되었습니다.' }
     ];
 
     function toggleHistoryPanel(forceOpen) {
@@ -1060,6 +1136,9 @@
       const searchKw = (document.getElementById('logSearchInput') ? document.getElementById('logSearchInput').value : '').toLowerCase();
 
       document.getElementById('logCountBadge').textContent = `총 ${changeLogs.length}건`;
+      const menuBadge = document.getElementById('menuLogCount');
+      if (menuBadge) menuBadge.textContent = `${changeLogs.length}건`;
+
       const summaryEl = document.getElementById('latestLogSummary');
       if (changeLogs.length > 0) {
         const latest = changeLogs[0];
@@ -1362,7 +1441,6 @@
       }).join('');
     }
 
-    // 📋 [갤럭시 원터치 클립보드 자동 등록] 버튼 실행 함수
     async function pasteAndRegisterClipboard() {
       try {
         const clipText = await navigator.clipboard.readText();
@@ -1381,7 +1459,6 @@
       }
     }
 
-    // 🔗 [갤럭시 공유(Web Share Target) 및 URL 파라미터(?sms=...)] 자동 수신 처리
     function checkIncomingSharedSMS() {
       const params = new URLSearchParams(window.location.search);
       const incomingText = params.get('sms') || params.get('text') || params.get('title');
@@ -1390,11 +1467,8 @@
       if (incomingText && incomingText.trim()) {
         document.getElementById('smsInput').value = incomingText.trim();
         previewSMS();
-
-        // URL 주소창 깔끔하게 정리 (새로고침 시 중복 등록 방지)
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // 공유 메뉴로 들어왔거나 auto=1 파라미터가 있으면 즉시 자동 등록!
         if (parsedSMSResults.length > 0 && (autoMode !== '0')) {
           setTimeout(() => {
             registerAllSMS();
