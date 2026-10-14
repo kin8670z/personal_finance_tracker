@@ -50,13 +50,13 @@
           <div class="flex items-center gap-2 flex-wrap">
             <!-- 클릭 시 버전별 변경사항(릴리즈 노트) 모달 오픈 -->
             <button onclick="openReleaseModal()" title="클릭하여 버전별 업데이트 내역 보기" class="px-2.5 py-0.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer">
-              <span>🚀 Pro v3.4</span>
+              <span>🚀 Pro v3.5</span>
               <span class="bg-amber-300 text-indigo-950 text-[10px] font-extrabold px-1 rounded-full">NEW</span>
             </button>
             <h1 class="text-xl md:text-2xl font-extrabold text-slate-900">아르곤 스마트 가계부</h1>
             <span id="storagePersistBadge" class="hidden px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[11px] font-bold">🛡️ 영구보존</span>
           </div>
-          <p class="text-xs text-slate-500 mt-1">문자 자동분석 · 할부 자동분할 · 기기간 백업/복원 · 스마트 이력 & 원클릭 복구</p>
+          <p class="text-xs text-slate-500 mt-1">갤럭시 공유/클립보드 1초 자동등록 · 할부 자동분할 · 스마트 이력 복구</p>
         </div>
         <button onclick="showInstallGuide()" class="md:hidden bg-indigo-50 text-indigo-600 p-2 rounded-lg text-xs font-bold shrink-0">
           📱 앱 추가
@@ -67,6 +67,9 @@
         <input type="month" id="monthFilter" class="flex-1 md:flex-none border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-indigo-950 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
         <button id="installAppBtn" onclick="installPWA()" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold px-3 py-2 rounded-lg transition shadow-sm">
           📲 앱 설치
+        </button>
+        <button onclick="openGalaxyAutoModal()" class="bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-sm font-bold px-3 py-2 rounded-lg transition">
+          🤖 갤럭시 자동화
         </button>
         <button onclick="openBudgetModal()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-bold px-3 py-2 rounded-lg transition">
           🎯 예산 설정
@@ -199,18 +202,29 @@
       <!-- 좌측 컬럼 (5칸): 문자 파서 + 상세 내역 등록/수정 폼 -->
       <div class="lg:col-span-5 space-y-5">
         
-        <!-- 스마트 결제 문자 자동 분석기 -->
+        <!-- 스마트 결제 문자 자동 분석기 (갤럭시 원터치 클립보드 버튼 탑재) -->
         <div class="card p-5 border-2 border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white">
           <div class="flex justify-between items-center mb-2">
             <div class="flex items-center gap-1.5">
               <span class="text-lg">💬</span>
               <h2 class="text-base font-extrabold text-indigo-950">결제 문자 자동 분석기</h2>
             </div>
-            <button type="button" onclick="fillSampleSMS()" class="text-xs bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-2.5 py-1 rounded-full transition">
-              ✨ 할부/결제 샘플 넣기
-            </button>
+            <div class="flex gap-1">
+              <button type="button" onclick="openGalaxyAutoModal()" class="text-[11px] bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-2 py-1 rounded-full transition">
+                🤖 자동화 가이드
+              </button>
+              <button type="button" onclick="fillSampleSMS()" class="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-2 py-1 rounded-full transition">
+                ✨ 샘플 넣기
+              </button>
+            </div>
           </div>
-          <p class="text-xs text-slate-500 mb-2.5">문자를 붙여넣으면 카드사, 할부 개월 수, 사용처, 금액을 자동 추출합니다.</p>
+
+          <!-- ✨ 신규: 붙여넣기 없이 클립보드에서 바로 읽어 등록하는 원터치 버튼 -->
+          <button type="button" onclick="pasteAndRegisterClipboard()" class="w-full mb-2.5 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-extrabold text-xs rounded-xl transition shadow-sm flex items-center justify-center gap-1.5">
+            <span>📋 복사한 결제문자 1초 자동등록 (붙여넣기 생략!)</span>
+          </button>
+
+          <p class="text-xs text-slate-500 mb-2">또는 아래 칸에 문자를 직접 붙여넣거나, 갤럭시 문자 [공유]로 보내세요.</p>
           
           <textarea id="smsInput" rows="3" oninput="previewSMS()" placeholder="[Web발신] 현대카드 승인 10/14 14:20 360,000원 3개월 무신사스토어" class="w-full border border-indigo-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none"></textarea>
 
@@ -437,9 +451,8 @@
 
     </div>
 
-    <!-- 5. ✨ 스마트 변경 이력 (1줄 요약 접기/펼치기 + 연속수정 병합 + 날짜 그룹핑 + 원클릭 Undo 복구) -->
+    <!-- 5. 스마트 변경 이력 -->
     <section id="historySection" class="card border border-slate-200/80 overflow-hidden">
-      <!-- 상단 1줄 요약 바 (클릭 시 접기/펼치기) -->
       <div onclick="toggleHistoryPanel()" class="p-4 md:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 cursor-pointer hover:bg-slate-50/80 transition">
         <div class="flex items-center gap-2.5 min-w-0">
           <span class="text-lg shrink-0">📜</span>
@@ -455,7 +468,6 @@
         </div>
       </div>
 
-      <!-- 펼쳐지는 상세 이력 본문 (기본 접힘) -->
       <div id="historyBody" class="hidden border-t border-slate-100 p-4 md:p-6 bg-slate-50/40 space-y-4">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <p class="text-xs text-slate-500">
@@ -477,7 +489,6 @@
           </div>
         </div>
 
-        <!-- 날짜별 그룹핑 이력 리스트 -->
         <div id="changeLogList" class="max-h-80 overflow-y-auto space-y-3 pr-1">
         </div>
         <div id="emptyLogMsg" class="text-center py-8 text-slate-400 text-xs hidden">
@@ -488,7 +499,52 @@
 
   </div>
 
-  <!-- 🚀 버전별 업데이트 노트 (What's New / Release Notes) 모달 -->
+  <!-- 🤖 갤럭시 결제 문자 자동화 가이드 모달 -->
+  <div id="galaxyAutoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🤖</span>
+          <div>
+            <h3 class="text-lg font-extrabold text-slate-900">갤럭시 결제문자 자동 등록 3가지 방법</h3>
+            <p class="text-xs text-slate-500">복사·붙여넣기 없이 문자를 가계부에 즉시 넣는 방법입니다.</p>
+          </div>
+        </div>
+        <button onclick="closeGalaxyAutoModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+        <div class="p-3.5 rounded-xl bg-indigo-50/60 border border-indigo-200 space-y-1.5">
+          <p class="font-extrabold text-indigo-950 text-sm">⭐ 방법 1. 갤럭시 문자 [공유] 버튼으로 1초 전송</p>
+          <p>1) 갤럭시 <b>크롬(Chrome)</b>에서 상단 <b>[📲 앱 설치]</b> 버튼(또는 메뉴 ➔ 홈 화면에 추가)으로 가계부를 설치합니다.</p>
+          <p>2) 카드 문자가 오면 메시지를 길게 눌러 <b>[공유]</b> ➔ 앱 목록에서 <b>[아르곤 가계부]</b>를 선택하면 열리자마자 자동 등록됩니다!</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1.5">
+          <p class="font-extrabold text-emerald-950 text-sm">⚡ 방법 2. 갤럭시 [모드 및 루틴] + 클립보드 원터치 버튼</p>
+          <p>1) 갤럭시 <b>설정 ➔ 모드 및 루틴</b>에서 <b>[언제: 메시지 수신(키워드: 승인)]</b> ➔ <b>[무엇을: 아르곤 가계부 앱 열기]</b>를 등록합니다.</p>
+          <p>2) 문자가 오면 상단 알림에서 <b>[복사]</b>만 누르고, 자동으로 열린 가계부에서 초록색 <b>[📋 복사한 결제문자 1초 자동등록]</b> 버튼만 터치하면 끝!</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+          <p class="font-extrabold text-slate-900 text-sm">🔗 방법 3. 문자 자동 전달 앱 연동 (100% 무인 자동화 URL)</p>
+          <p>SMS Forwarder, MacroDroid 같은 자동화 앱에서 아래 URL 형식으로 문자를 전달하도록 설정하면 화면이 열리자마자 무인으로 등록됩니다.</p>
+          <div class="bg-slate-900 text-emerald-300 font-mono text-[11px] p-2.5 rounded-lg break-all select-all" id="webhookUrlExample">
+            https://내주소.netlify.app/?sms={문자내용}&auto=1
+          </div>
+          <button type="button" onclick="testUrlAutoRegister()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-lg transition">
+            🧪 지금 URL 자동수신 시뮬레이션 테스트해보기
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-slate-100">
+        <button onclick="closeGalaxyAutoModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🚀 버전별 업데이트 노트 모달 -->
   <div id="releaseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3">
@@ -503,11 +559,10 @@
       </div>
 
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1">
-        <!-- JS로 버전별 히스토리 렌더링 -->
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.4</b></span>
+        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.5</b></span>
         <button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
           확인했어요!
         </button>
@@ -624,69 +679,48 @@
     // ==========================================
     // 0. 버전 관리 및 버전별 업데이트 노트 (Release Notes)
     // ==========================================
-    const APP_VERSION = '3.4';
+    const APP_VERSION = '3.5';
 
     const releaseNotesData = [
       {
-        version: 'Pro v3.4',
+        version: 'Pro v3.5',
         date: '2026.10.14 (최신)',
-        badge: '최신 업데이트',
+        badge: '갤럭시 자동화',
         isLatest: true,
         items: [
-          '🚀 <b>버전별 업데이트 노트(What\'s New) 탑재:</b> 버전이 올라갈 때마다 주요 변경사항을 요약해 보여주고, 새 버전 접속 시 자동 브리핑 지원',
-          '🧠 <b>변경 이력 스마트 병합(Debounce):</b> 같은 내역을 10분 내 연속 수정 시 이력이 도배되지 않고 1줄로 깔끔하게 자동 합산',
-          '↩️ <b>원클릭 복구(Undo) 엔진:</b> 실수로 삭제하거나 잘못 수정한 내역을 이력 창에서 버튼 하나로 즉시 원상복구',
-          '📂 <b>이력 아코디언 & 날짜별 그룹핑:</b> 평소엔 1줄 요약 바로 접어두고, 펼치면 날짜별 폴더와 키워드 검색으로 효율적 조회'
+          '🤖 <b>갤럭시 [공유] 타겟 연동 (Web Share Target):</b> 문자 메시지에서 [공유] ➔ [아르곤 가계부] 선택 시 복사·붙여넣기 없이 1초 자동 등록',
+          '📋 <b>원터치 클립보드 자동 등록 버튼:</b> 문자를 복사한 뒤 초록색 버튼 하나만 누르면 입력창 거치지 않고 즉시 분석 및 가계부 반영',
+          '🔗 <b>외부 자동화 URL 수신기 (?sms=...&auto=1):</b> 갤럭시 모드 및 루틴, SMS 전달 앱 연동 시 무인 자동 등록 지원'
         ]
       },
       {
-        version: 'Pro v3.3',
+        version: 'Pro v3.4',
         date: '2026.10.14',
-        badge: '안정성 강화',
+        badge: '스마트 이력',
         isLatest: false,
         items: [
-          '📜 <b>실시간 변경 이력(Audit Log) 도입:</b> 등록, 수정(전/후 비교), 삭제, 예산 변경 기록 자동 추적',
-          '🛡️ <b>영구 보존 보호막(Persist API):</b> 스마트폰 브라우저가 용량 부족 시 가계부 데이터를 임의로 청소하지 못하도록 보호'
+          '🚀 <b>버전별 업데이트 노트(What\'s New) 탑재:</b> 버전 업데이트 시 주요 변경사항 자동 브리핑',
+          '🧠 <b>변경 이력 스마트 병합(Debounce) & ↩️ 원클릭 복구(Undo):</b> 연속 수정 1줄 자동 합산 및 삭제/수정 내역 즉시 복구'
         ]
       },
       {
-        version: 'Pro v3.2',
+        version: 'Pro v3.2 ~ v3.3',
         date: '2026.10.14',
-        badge: '동기화',
+        badge: '동기화 & 보안',
         isLatest: false,
         items: [
-          '🔄 <b>기기간 백업 및 복원 센터:</b> JSON 파일 다운로드 및 카카오톡 클립보드 코드 복붙으로 1초 기기 이동 지원',
-          '➕ <b>스마트 병합 복원:</b> 데이터를 불러올 때 기존 내역 덮어쓰기 또는 중복 없이 합치기 선택 가능'
+          '🔄 <b>기기간 백업/복원 센터:</b> JSON 파일 및 카톡 클립보드 코드로 기기 간 데이터 이동 및 병합',
+          '🛡️ <b>영구 보존 보호막(Persist API):</b> 브라우저가 임의로 가계부 데이터를 청소하지 못하도록 보호'
         ]
       },
       {
-        version: 'Pro v3.1',
+        version: 'Pro v3.0 ~ v3.1',
         date: '2026.10.14',
-        badge: '편의성 개선',
+        badge: '핵심 엔진',
         isLatest: false,
         items: [
-          '✏️ <b>클릭 시 내역 수정 모드:</b> 상세 거래 내역 행을 클릭하면 기존 데이터가 폼에 채워지며 즉시 수정 가능',
-          '📊 <b>예산 비교 직관화:</b> 카테고리별 현황을 [사용 금액 / 예산 금액] 표기로 개선 및 카테고리 전용 필터(Selectbox) 추가'
-        ]
-      },
-      {
-        version: 'Pro v3.0',
-        date: '2026.10.14',
-        badge: '대규모 업데이트',
-        isLatest: false,
-        items: [
-          '💬 <b>결제 문자 AI 파서:</b> 여러 건의 카드/은행 문자를 붙여넣으면 카드사, 할부 개월, 가맹점, 카테고리 자동 분류',
-          '💳 <b>할부 자동 분할 & 전용 브리핑:</b> 할부 개월 수만큼 미래 월에 자동 분할 등록 및 이번 달/다음 달/총 잔여 할부금 요약',
-          '☀️ <b>오늘 지출 & 소비 페이스 진단:</b> 일평균 소비량과 남은 예산 기준 하루 권장 지출액 자동 분석'
-        ]
-      },
-      {
-        version: 'v1.0 ~ v2.0',
-        date: '초기 버전',
-        badge: '기반 구축',
-        isLatest: false,
-        items: [
-          '📱 <b>올인원 PWA 앱 모드:</b> 스마트폰 홈 화면에 추가 시 전체 화면 앱으로 작동 및 엑셀(CSV) 내보내기 지원'
+          '💬 <b>결제 문자 AI 파서 & 💳 할부 자동 분할:</b> 할부 개월 수만큼 미래 월 자동 분할 등록 및 할부 잔액 브리핑',
+          '☀️ <b>오늘 지출 페이스 진단 & ✏️ 클릭 시 내역 수정 모드</b>'
         ]
       }
     ];
@@ -724,19 +758,32 @@
       localStorage.setItem('argon_seen_version', APP_VERSION);
     }
 
-    // 새 버전 업데이트 후 최초 접속 시 자동으로 업데이트 노트 팝업 표시
+    function openGalaxyAutoModal() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      document.getElementById('webhookUrlExample').textContent = `${baseUrl}?sms={문자내용}&auto=1`;
+      const modal = document.getElementById('galaxyAutoModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeGalaxyAutoModal() {
+      const modal = document.getElementById('galaxyAutoModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
     function checkVersionUpdatePopup() {
       const seenVersion = localStorage.getItem('argon_seen_version');
       if (seenVersion !== APP_VERSION) {
         setTimeout(() => {
           openReleaseModal();
-          showToast(`🎉 Pro v${APP_VERSION} 버전으로 업데이트되었습니다!`);
+          showToast(`🎉 Pro v${APP_VERSION} 갤럭시 자동화 업데이트 완료!`);
         }, 400);
       }
     }
 
     // ==========================================
-    // 1. PWA 설정 & 브라우저 영구 저장소 보호막
+    // 1. PWA 설정 (갤럭시 Web Share Target 포함)
     // ==========================================
     const appIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" rx="115" fill="#4f46e5"/><path d="M144 160h224c26.5 0 48 21.5 48 48v144c0 26.5-21.5 48-48 48H144c-26.5 0-48-21.5-48-48V208c0-26.5 21.5-48 48-48zm208 96a24 24 0 1 0 0 48 24 24 0 0 0 0-48z" fill="#ffffff"/><path d="M144 128h192v32H144z" fill="#a5b4fc"/></svg>`;
     const iconDataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(appIconSVG);
@@ -746,16 +793,28 @@
     appleIcon.href = iconDataUrl;
     document.head.appendChild(appleIcon);
 
+    const startUrlClean = window.location.origin + window.location.pathname;
     const manifestData = {
       name: "아르곤 스마트 가계부 Pro",
       short_name: "아르곤 가계부",
-      description: "문자 분석, 할부 자동 분할, 카테고리 예산 및 스마트 이력 복구 가계부",
-      start_url: ".",
+      description: "갤럭시 결제문자 공유 자동등록 및 할부 관리 가계부",
+      start_url: startUrlClean,
       display: "standalone",
       background_color: "#f1f5f9",
       theme_color: "#4f46e5",
       orientation: "portrait",
-      icons: [{ src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }]
+      icons: [{ src: iconDataUrl, sizes: "192x192 512x512", type: "image/svg+xml", purpose: "any maskable" }],
+      // ✨ 갤럭시 [공유] 메뉴에서 가계부로 문자 텍스트를 바로 쏠 수 있게 해주는 설정
+      share_target: {
+        action: startUrlClean,
+        method: "GET",
+        enctype: "application/x-www-form-urlencoded",
+        params: {
+          title: "title",
+          text: "text",
+          url: "url"
+        }
+      }
     };
     const manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
@@ -788,14 +847,14 @@
     }
 
     function showInstallGuide() {
-      alert("📱 스마트폰 홈 화면에 앱으로 추가하는 방법\n\n• 아이폰(Safari): 하단 [공유(⬆️)] ➔ [홈 화면에 추가]\n• 갤럭시(Chrome/삼성인터넷): 메뉴[⋮] ➔ [홈 화면에 추가] 또는 [앱 설치]");
+      alert("📱 스마트폰 홈 화면에 앱으로 추가하는 방법\n\n• 갤럭시(Chrome/삼성인터넷): 메뉴[⋮] ➔ [홈 화면에 추가] 또는 [앱 설치]\n• 아이폰(Safari): 하단 [공유(⬆️)] ➔ [홈 화면에 추가]");
     }
 
     function showToast(msg) {
       const toast = document.getElementById('toast');
       toast.textContent = msg;
       toast.classList.remove('opacity-0');
-      setTimeout(() => toast.classList.add('opacity-0'), 2800);
+      setTimeout(() => toast.classList.add('opacity-0'), 3000);
     }
 
     // ==========================================
@@ -874,10 +933,10 @@
     let transactions = JSON.parse(localStorage.getItem('argon_tx_v3')) || getInitialSampleData();
 
     // ==========================================
-    // 📜 스마트 변경 이력 (연속수정 병합 + 날짜 그룹핑 + 원클릭 Undo 복구)
+    // 📜 스마트 변경 이력
     // ==========================================
     let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [
-      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.4 업데이트', detail: '스마트 변경 이력(연속수정 병합 & 원클릭 복구) 및 버전별 업데이트 노트가 활성화되었습니다.' }
+      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.5 업데이트', detail: '갤럭시 문자 공유 자동등록 및 클립보드 원터치 엔진이 활성화되었습니다.' }
     ];
 
     function toggleHistoryPanel(forceOpen) {
@@ -899,16 +958,10 @@
       document.getElementById('historySection').scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
-    /**
-     * 스마트 로그 추가 함수
-     * - 같은 거래(targetTxId)를 10분 내에 연속으로 수정하면 새 줄을 만들지 않고 최상단 로그 1줄에 병합
-     * - 30일 이상 지난 단순 '등록' 로그는 자동 정리하여 용량 최적화
-     */
     function addChangeLog(category, action, detail, meta = {}) {
       const now = Date.now();
       const latest = changeLogs[0];
 
-      // 1) 연속 수정 스마트 병합 (10분 이내 동일 내역 단건 수정 시)
       if (
         category === '수정' &&
         meta.targetTxId &&
@@ -928,13 +981,12 @@
         return;
       }
 
-      // 2) 신규 로그 생성
       const newLog = {
         id: now + Math.random(),
         timestamp: now,
         dateStr: today,
         time: getNowTimeOnly(),
-        category: category, // '등록' | '수정' | '삭제' | '예산/복원'
+        category: category,
         action: action,
         detail: detail,
         targetTxId: meta.targetTxId || null,
@@ -945,7 +997,6 @@
 
       changeLogs.unshift(newLog);
 
-      // 3) 자동 용량 다이어트: 30일 지난 단순 '등록' 이력 제거 & 전체 최대 80건 유지
       const thirtyDaysAgo = now - (30 * 24 * 60 * 60 * 1000);
       changeLogs = changeLogs.filter((l, idx) => {
         if (idx < 80) {
@@ -959,7 +1010,6 @@
       renderLogs();
     }
 
-    // ↩️ 원클릭 되돌리기(Undo) 실행 함수
     function undoFromLog(logId) {
       const log = changeLogs.find(l => l.id === logId);
       if (!log || !log.undoData || log.undone) return;
@@ -1009,7 +1059,6 @@
       const filterVal = document.getElementById('logFilter') ? document.getElementById('logFilter').value : 'IMPORTANT';
       const searchKw = (document.getElementById('logSearchInput') ? document.getElementById('logSearchInput').value : '').toLowerCase();
 
-      // 상단 1줄 요약 바 업데이트
       document.getElementById('logCountBadge').textContent = `총 ${changeLogs.length}건`;
       const summaryEl = document.getElementById('latestLogSummary');
       if (changeLogs.length > 0) {
@@ -1043,7 +1092,6 @@
         '예산/복원': 'bg-purple-100 text-purple-700 border-purple-200'
       };
 
-      // 날짜별 그룹핑
       const groups = {};
       filtered.forEach(log => {
         const dKey = log.dateStr || today;
@@ -1145,7 +1193,7 @@
     }
 
     // ==========================================
-    // 4. 스마트 결제 문자 파서
+    // 4. 스마트 결제 문자 파서 & 갤럭시 자동 수신기
     // ==========================================
     function guessCategory(merchant, type) {
       if (type === 'income') {
@@ -1314,6 +1362,57 @@
       }).join('');
     }
 
+    // 📋 [갤럭시 원터치 클립보드 자동 등록] 버튼 실행 함수
+    async function pasteAndRegisterClipboard() {
+      try {
+        const clipText = await navigator.clipboard.readText();
+        if (!clipText || !clipText.trim()) {
+          return alert('클립보드에 복사된 텍스트가 없습니다. 결제 문자를 먼저 복사해 주세요!');
+        }
+        document.getElementById('smsInput').value = clipText;
+        previewSMS();
+        if (parsedSMSResults.length > 0) {
+          registerAllSMS();
+        } else {
+          alert('클립보드 텍스트에서 결제 금액을 찾지 못했습니다. 아래 입력창에서 내용을 확인해 주세요.');
+        }
+      } catch (err) {
+        alert('브라우저 클립보드 읽기 권한을 허용해 주시거나, 아래 입력창에 직접 길게 눌러 붙여넣기 해주세요.');
+      }
+    }
+
+    // 🔗 [갤럭시 공유(Web Share Target) 및 URL 파라미터(?sms=...)] 자동 수신 처리
+    function checkIncomingSharedSMS() {
+      const params = new URLSearchParams(window.location.search);
+      const incomingText = params.get('sms') || params.get('text') || params.get('title');
+      const autoMode = params.get('auto');
+
+      if (incomingText && incomingText.trim()) {
+        document.getElementById('smsInput').value = incomingText.trim();
+        previewSMS();
+
+        // URL 주소창 깔끔하게 정리 (새로고침 시 중복 등록 방지)
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // 공유 메뉴로 들어왔거나 auto=1 파라미터가 있으면 즉시 자동 등록!
+        if (parsedSMSResults.length > 0 && (autoMode !== '0')) {
+          setTimeout(() => {
+            registerAllSMS();
+          }, 250);
+        }
+      }
+    }
+
+    function testUrlAutoRegister() {
+      closeGalaxyAutoModal();
+      const m = today.slice(5, 7);
+      const d = today.slice(8, 10);
+      const testSms = `[Web발신] 현대카드 승인 ${m}/${d} 15:20 18,900원 일시불 쿠팡이츠`;
+      const newUrl = `${window.location.pathname}?sms=${encodeURIComponent(testSms)}&auto=1`;
+      window.history.replaceState({}, document.title, newUrl);
+      checkIncomingSharedSMS();
+    }
+
     function fillSampleSMS() {
       const m = today.slice(5, 7);
       const d = today.slice(8, 10);
@@ -1354,7 +1453,7 @@
         summaryNames.push(`${item.merchant}(${item.amount.toLocaleString()}원)`);
       });
 
-      addChangeLog('등록', '문자 일괄등록', `결제 문자 ${parsedSMSResults.length}건 분석 (총 ${totalCreated}건 생성): ${summaryNames.join(', ')}`);
+      addChangeLog('등록', '문자 자동등록', `결제 문자 ${parsedSMSResults.length}건 분석 (총 ${totalCreated}건 생성): ${summaryNames.join(', ')}`);
 
       document.getElementById('monthFilter').value = parsedSMSResults[0].date.slice(0, 7);
       document.getElementById('smsInput').value = '';
@@ -1362,7 +1461,7 @@
       parsedSMSResults = [];
 
       saveAndRender();
-      showToast(`⚡ 문자 분석 및 할부 분할 등록 완료! (총 ${totalCreated}건 생성)`);
+      showToast(`⚡ 결제문자 자동 등록 완료! (${summaryNames.join(', ')})`);
     }
 
     // ==========================================
@@ -1499,7 +1598,6 @@
         amount: Number(document.getElementById('txAmount').value)
       };
 
-      // [A] 수정 모드일 경우
       if (editingTxId !== null) {
         const target = transactions.find(t => t.id === editingTxId);
         if (target) {
@@ -1565,7 +1663,6 @@
         return;
       }
 
-      // [B] 신규 등록 모드일 경우
       const createdList = createTransactionsWithInstallment(item);
       transactions.push(...createdList);
 
@@ -1702,7 +1799,6 @@
       modal.classList.remove('flex');
     }
 
-    // 파일 다운로드용 (전체 이력 포함) vs 카톡 클립보드용 (로그 제외 경량화)
     function buildBackupPayload(includeLogs = true) {
       const payload = {
         app: 'ArgonLedgerPro',
@@ -1739,7 +1835,6 @@
     }
 
     async function copyBackupCode() {
-      // 카톡 복붙 시 용량 다이어트를 위해 변경 이력은 제외하고 본 데이터만 압축 복사
       const payload = buildBackupPayload(false);
       const jsonStr = JSON.stringify(payload);
       try {
@@ -1848,7 +1943,6 @@
       bar.style.width = `${ratio}%`;
       bar.className = `h-2.5 rounded-full transition-all duration-300 ${rawRatio > 95 ? 'bg-rose-600' : rawRatio > 75 ? 'bg-amber-500' : 'bg-indigo-600'}`;
 
-      // 오늘 지출 금액 및 소비 페이스 진단
       const todayExpenses = transactions.filter(t => t.date === today && t.type === 'expense');
       const todaySpent = todayExpenses.reduce((acc, cur) => acc + cur.amount, 0);
       document.getElementById('todaySpentText').textContent = todaySpent.toLocaleString() + '원';
@@ -1887,7 +1981,6 @@
         paceComment.textContent = `오늘 지출이 이번 달 일평균(${dailyAvg.toLocaleString()}원)보다 +${(todaySpent - dailyAvg).toLocaleString()}원 많습니다! 내일은 조금 아껴볼까요?`;
       }
 
-      // 할부 건 별도 요약 표기
       const allInstallments = transactions.filter(t => t.type === 'expense' && t.installmentMonths > 1);
       const thisMonthInst = allInstallments.filter(t => t.date.startsWith(selectedMonth));
       const nextMonthInst = allInstallments.filter(t => t.date.startsWith(nextMonthOfSelected));
@@ -1916,7 +2009,6 @@
         `).join('');
       }
 
-      // 카테고리별 예산 및 지출 현황 (사용금액 / 예산금액)
       const catSpentMap = {};
       monthTx.filter(t => t.type === 'expense').forEach(t => {
         catSpentMap[t.category] = (catSpentMap[t.category] || 0) + t.amount;
@@ -1948,7 +2040,6 @@
         `;
       }).join('');
 
-      // 상세 거래 내역 필터링 & 출력
       const filteredTx = monthTx.filter(t => {
         const matchKeyword = (t.merchant || '').toLowerCase().includes(keyword) ||
                              (t.memo || '').toLowerCase().includes(keyword) ||
@@ -2083,6 +2174,7 @@
     toggleCardOptions();
     render();
     checkVersionUpdatePopup();
+    checkIncomingSharedSMS();
   </script>
 </body>
 </html>
