@@ -67,7 +67,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" title="업데이트 내역 보기" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v3.7</span>
+            <span>🚀 v3.8</span>
             <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">아르곤 스마트 가계부</h1>
@@ -79,7 +79,7 @@
         </button>
       </div>
 
-      <!-- 우측 컨트롤 3종 (플립6에서도 한 줄에 꽉 차도록 비율 조정) -->
+      <!-- 우측 컨트롤 3종 -->
       <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto">
         
         <!-- ① 월 이동 네비게이터 -->
@@ -135,7 +135,7 @@
               </button>
               <button type="button" onclick="closeHeaderMenu(); openReleaseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
                 <span>🆕 버전별 업데이트 노트</span>
-                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v3.7</span>
+                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v3.8</span>
               </button>
               <button type="button" onclick="closeHeaderMenu(); installPWA();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
                 <span>📱 스마트폰 홈 화면 앱 추가법</span>
@@ -154,7 +154,7 @@
       </div>
     </header>
 
-    <!-- 2. 상단 전체 요약 카드 4개 (플립6에서는 깔끔한 2x2 타일로 꽉 차게 배치) -->
+    <!-- 2. 상단 전체 요약 카드 4개 -->
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
       <div class="card p-3.5 md:p-5 border-l-4 border-emerald-500">
         <p class="text-[11px] font-bold text-slate-400">선택 월 총수입</p>
@@ -332,7 +332,6 @@
               </div>
             </div>
 
-            <!-- 플립6 좁은 폭에서도 글자가 안 잘리게 모바일 2단 / 태블릿 3단 반응형 배치 -->
             <div id="paymentOptionRow" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
               <div class="col-span-2 sm:col-span-1">
                 <label class="block text-[11px] font-bold text-slate-500 mb-1">결제수단</label>
@@ -429,10 +428,10 @@
           </div>
         </div>
 
-        <!-- 거래 내역 상세 리스트 (플립6 좁은 폭에서도 가로 스크롤 없이 한눈에 들어오도록 최적화) -->
+        <!-- 거래 내역 상세 리스트 (1순위: 거래 날짜 최신순 + 2순위: 같은 날짜 내 최신 등록순 기본 적용) -->
         <div class="card p-4 md:p-5 flex flex-col">
-          <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-2.5 mb-3">
-            <div class="flex items-center justify-between w-full xl:w-auto">
+          <div class="flex flex-col gap-2.5 mb-3">
+            <div class="flex items-center justify-between w-full">
               <div class="flex items-center gap-2">
                 <h2 class="text-sm md:text-base font-extrabold">📋 상세 거래 내역</h2>
                 <span id="txTotalCountBadge" class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">0건</span>
@@ -440,8 +439,15 @@
               <span class="text-[11px] text-indigo-600 font-semibold">💡 터치 시 수정</span>
             </div>
             
-            <!-- 필터 영역: 플립6에서는 2칸 + 1칸(검색창)으로 꽉 차게 배치 -->
-            <div class="grid grid-cols-2 sm:flex sm:flex-nowrap gap-2 w-full xl:w-auto">
+            <!-- 필터 및 정렬 영역: [날짜 최신 + 최신 등록순] 기본 세팅 -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
+              <select id="sortFilter" onchange="render()" class="border border-indigo-200 rounded-lg px-2 py-1.5 text-xs font-extrabold text-indigo-700 bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
+                <option value="DATE_DESC" selected>📅 날짜 최신 + 등록순</option>
+                <option value="CREATED_DESC">⚡ 순수 등록순 (날짜무관)</option>
+                <option value="AMOUNT_DESC">💰 금액 높은순</option>
+                <option value="AMOUNT_ASC">🪙 금액 낮은순</option>
+              </select>
+
               <select id="categoryFilter" onchange="render()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
                 <option value="ALL">전체 카테고리</option>
                 <optgroup label="지출 카테고리">
@@ -477,7 +483,7 @@
                 <option value="토스뱅크">토스뱅크</option>
               </select>
 
-              <input type="text" id="searchInput" oninput="render()" placeholder="사용처, 내용 검색..." class="col-span-2 sm:col-span-1 border border-slate-200 rounded-lg px-3 py-1.5 text-xs w-full sm:w-40 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <input type="text" id="searchInput" oninput="render()" placeholder="사용처, 내용 검색..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
             </div>
           </div>
 
@@ -615,7 +621,7 @@
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.7</b></span>
+        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.8</b></span>
         <button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
           확인했어요!
         </button>
@@ -727,18 +733,26 @@
     // ==========================================
     // 0. 버전 관리 & 업데이트 노트
     // ==========================================
-    const APP_VERSION = '3.7';
+    const APP_VERSION = '3.8';
 
     const releaseNotesData = [
       {
-        version: 'Pro v3.7',
-        date: '2026.10.14 (최신)',
-        badge: '플립6 & 폴드8 완벽 대응',
+        version: 'Pro v3.8',
+        date: '2026.10.15 (최신)',
+        badge: '날짜+최신등록 정렬',
         isLatest: true,
         items: [
-          '📱 <b>갤럭시 Z 플립6 22:9 비율 화면 꽉 채우기 패치:</b> 가로 넘침(Overflow)으로 인해 화면이 축소되어 여백이 남던 현상을 완벽 해결 (`overflow-x: hidden` & `100dvh` 적용)',
-          '📐 <b>모바일 전용 컴팩트 테이블 & 반응형 그리드:</b> 플립6처럼 가로가 좁은 화면에서는 거래 내역 열을 스마트하게 통합해 가로 스크롤 없이 한눈에 꽉 차게 표시',
-          '🎨 <b>상단바 배경색 일치 (`#f1f5f9`):</b> 스마트폰 상단 상태 표시줄과 앱 배경색을 하나로 통일하여 일체감 극대화'
+          '📅 <b>[1순위: 거래 날짜 최신순 + 2순위: 같은 날짜 내 최신 등록순] 기본 적용:</b> 날짜 흐름을 유지하면서도, 같은 날 여러 건을 입력하면 방금 등록한 내역이 해당 날짜의 가장 맨 위에 올라오도록 정렬',
+          '🔃 <b>4가지 정렬 선택창(Selectbox) 지원:</b> [📅 날짜 최신 + 등록순], [⚡ 순수 등록순], [💰 금액 높은순], [🪙 금액 낮은순] 전환 가능'
+        ]
+      },
+      {
+        version: 'Pro v3.7',
+        date: '2026.10.14',
+        badge: '플립6 & 폴드8 완벽 대응',
+        isLatest: false,
+        items: [
+          '📱 <b>갤럭시 Z 플립6 22:9 비율 화면 꽉 채우기 패치:</b> 가로 넘침 차단 및 모바일 전용 컴팩트 테이블 적용'
         ]
       },
       {
@@ -751,12 +765,12 @@
         ]
       },
       {
-        version: 'Pro v3.4 ~ v3.5',
+        version: 'Pro v3.0 ~ v3.5',
         date: '2026.10.14',
-        badge: '갤럭시 자동화 & 복구',
+        badge: '핵심 엔진',
         isLatest: false,
         items: [
-          '📋 <b>원터치 클립보드 자동 등록 & 🧠 연속 수정 병합 & ↩️ 원클릭 복구(Undo)</b>'
+          '💬 <b>결제 문자 AI 파서 & 💳 할부 자동 분할 & 🔄 기기간 백업/복원 & ↩️ 원클릭 복구(Undo)</b>'
         ]
       }
     ];
@@ -848,7 +862,7 @@
       if (seenVersion !== APP_VERSION) {
         setTimeout(() => {
           openReleaseModal();
-          showToast(`🎉 Pro v${APP_VERSION} 플립6 화면 최적화 완료!`);
+          showToast(`🎉 Pro v${APP_VERSION} 정렬 기준 업데이트 완료!`);
         }, 400);
       }
     }
@@ -921,7 +935,7 @@
     }
 
     // ==========================================
-    // 2. 초기 데이터, 날짜 유틸리티 & 상태 변수
+    // 2. 초기 데이터, 날짜 유틸리티 & 등록순 시퀀스
     // ==========================================
     const categories = {
       expense: ['🍔 식비', '☕ 카페/간식', '🛍️ 쇼핑/생활', '🚌 교통/차량', '🏠 주거/통신', '🏥 의료/건강', '🎬 문화/여가', '🎸 기타지출'],
@@ -945,6 +959,12 @@
     let parsedSMSResults = [];
     let chartInstance = null;
     let isHistoryOpen = false;
+    let registerSeq = 0;
+
+    function nextCreatedOrder() {
+      registerSeq += 1;
+      return Date.now() * 1000 + (registerSeq % 1000);
+    }
 
     function getLocalToday() {
       const d = new Date();
@@ -983,13 +1003,13 @@
 
     function getInitialSampleData() {
       return [
-        { id: 101, date: `${currentYearMonth}-01`, type: 'income', category: '💰 월급', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '(주)아르곤테크', memo: '이번 달 정기 급여', amount: 3500000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 3500000, groupId: null },
-        { id: 102, date: `${currentYearMonth}-03`, type: 'expense', category: '🏠 주거/통신', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '관리사무소', memo: '월세 및 관리비', amount: 550000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 550000, groupId: null },
-        { id: 103, date: `${currentYearMonth}-05`, type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 1/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 1, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
-        { id: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
-        { id: 105, date: addMonthsToDate(`${currentYearMonth}-05`, 2), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 3/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 3, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
-        { id: 106, date: today, type: 'expense', category: '🍔 식비', method: '신용카드', cardCompany: '신한카드', merchant: '성수동 국밥', memo: '점심 식사', amount: 11000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 11000, groupId: null },
-        { id: 107, date: today, type: 'expense', category: '☕ 카페/간식', method: '신용카드', cardCompany: '신한카드', merchant: '스타벅스', memo: '아이스 아메리카노', amount: 4500, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 4500, groupId: null }
+        { id: 101, createdAt: 101, date: `${currentYearMonth}-01`, type: 'income', category: '💰 월급', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '(주)아르곤테크', memo: '이번 달 정기 급여', amount: 3500000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 3500000, groupId: null },
+        { id: 102, createdAt: 102, date: `${currentYearMonth}-03`, type: 'expense', category: '🏠 주거/통신', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '관리사무소', memo: '월세 및 관리비', amount: 550000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 550000, groupId: null },
+        { id: 103, createdAt: 103, date: `${currentYearMonth}-05`, type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 1/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 1, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+        { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+        { id: 105, createdAt: 105, date: addMonthsToDate(`${currentYearMonth}-05`, 2), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 3/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 3, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+        { id: 106, createdAt: 106, date: today, type: 'expense', category: '🍔 식비', method: '신용카드', cardCompany: '신한카드', merchant: '성수동 국밥', memo: '점심 식사', amount: 11000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 11000, groupId: null },
+        { id: 107, createdAt: 107, date: today, type: 'expense', category: '☕ 카페/간식', method: '신용카드', cardCompany: '신한카드', merchant: '스타벅스', memo: '아이스 아메리카노', amount: 4500, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 4500, groupId: null }
       ];
     }
 
@@ -999,7 +1019,7 @@
     // 📜 스마트 변경 이력
     // ==========================================
     let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [
-      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.7 업데이트', detail: '갤럭시 Z 플립6 및 폴드8 화면 비율 맞춤 최적화가 적용되었습니다.' }
+      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.8 업데이트', detail: '상세 거래 내역 [1순위: 날짜 최신순 + 2순위: 최신 등록순] 정렬이 적용되었습니다.' }
     ];
 
     function toggleHistoryPanel(forceOpen) {
@@ -1205,7 +1225,7 @@
     document.getElementById('todayDateBadge').textContent = `(${today.slice(5).replace('-', '/')})`;
 
     // ==========================================
-    // 3. 할부 자동 분할 생성 엔진
+    // 3. 할부 자동 분할 생성 엔진 (createdAt 타임스탬프 부여)
     // ==========================================
     function createTransactionsWithInstallment(item) {
       const months = Number(item.installmentMonths) || 1;
@@ -1213,8 +1233,10 @@
       const createdList = [];
 
       if (item.type === 'income' || months <= 1) {
+        const orderStamp = nextCreatedOrder();
         createdList.push({
-          id: Date.now() + Math.random(),
+          id: orderStamp,
+          createdAt: orderStamp,
           date: item.date,
           type: item.type,
           category: item.category,
@@ -1234,12 +1256,14 @@
         const remainder = totalAmount - (monthlyBase * months);
 
         for (let i = 0; i < months; i++) {
+          const orderStamp = nextCreatedOrder();
           const targetDate = addMonthsToDate(item.date, i);
           const monthAmount = (i === 0) ? (monthlyBase + remainder) : monthlyBase;
           const cleanMemo = (item.memo || '').replace(/\s*\(할부\s*\d+\/\d+회차\)/g, '').trim();
           const baseMemo = cleanMemo ? `${cleanMemo} ` : '';
           createdList.push({
-            id: Date.now() + i + Math.random(),
+            id: orderStamp,
+            createdAt: orderStamp,
             date: targetDate,
             type: 'expense',
             category: item.category,
@@ -1968,7 +1992,7 @@
     }
 
     // ==========================================
-    // 8. 메인 렌더링 (플립6 컴팩트 뷰 지원)
+    // 8. 메인 렌더링 (기본: 1순위 날짜 최신순 + 2순위 최신 등록순)
     // ==========================================
     function saveAndRender() {
       localStorage.setItem('argon_tx_v3', JSON.stringify(transactions));
@@ -1979,13 +2003,34 @@
       const selectedMonth = document.getElementById('monthFilter').value;
       const nextMonthOfSelected = addMonthsToYM(selectedMonth, 1);
       const keyword = document.getElementById('searchInput').value.toLowerCase();
+      const sortMode = document.getElementById('sortFilter') ? document.getElementById('sortFilter').value : 'DATE_DESC';
       const categoryFilterVal = document.getElementById('categoryFilter').value;
       const cardFilterVal = document.getElementById('cardFilter').value;
       const totalBudget = getTotalMonthlyBudget();
 
+      // 선택 월 내역 필터링 및 정렬 (기본: DATE_DESC = 날짜 최신순 ➔ 같은 날짜 내 최신 등록순)
       const monthTx = transactions
         .filter(t => t.date.startsWith(selectedMonth))
-        .sort((a, b) => new Date(b.date) - new Date(a.date));
+        .sort((a, b) => {
+          const aCreated = Number(a.createdAt || a.id || 0);
+          const bCreated = Number(b.createdAt || b.id || 0);
+
+          if (sortMode === 'DATE_DESC') {
+            const dateCmp = b.date.localeCompare(a.date);
+            if (dateCmp !== 0) return dateCmp; // 1순위: 날짜가 다르면 최신 날짜가 위로
+            return bCreated - aCreated;        // 2순위: 날짜가 같으면 최신 등록한 내역이 위로!
+          } else if (sortMode === 'CREATED_DESC') {
+            if (bCreated !== aCreated) return bCreated - aCreated;
+            return b.date.localeCompare(a.date);
+          } else if (sortMode === 'AMOUNT_DESC') {
+            if (b.amount !== a.amount) return b.amount - a.amount;
+            return bCreated - aCreated;
+          } else if (sortMode === 'AMOUNT_ASC') {
+            if (a.amount !== b.amount) return a.amount - b.amount;
+            return bCreated - aCreated;
+          }
+          return bCreated - aCreated;
+        });
 
       const income = monthTx.filter(t => t.type === 'income').reduce((acc, cur) => acc + cur.amount, 0);
       const expense = monthTx.filter(t => t.type === 'expense').reduce((acc, cur) => acc + cur.amount, 0);
@@ -2146,7 +2191,6 @@
                   ${isEditing ? `<span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold">수정중</span>` : ''}
                 </div>
                 ${t.memo ? `<div class="text-[11px] text-slate-500 truncate">${t.memo}</div>` : ''}
-                <!-- 플립6 등 모바일 화면에서만 하단에 표시되는 카테고리/카드 요약 -->
                 <div class="sm:hidden flex flex-wrap items-center gap-1 mt-0.5 text-[10px] text-slate-400">
                   <span>${t.category}</span> · <span>${t.cardCompany || t.method}</span> ${instTag}
                 </div>
