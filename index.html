@@ -67,7 +67,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" title="업데이트 내역 보기" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v3.8</span>
+            <span>🚀 v3.9</span>
             <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">아르곤 스마트 가계부</h1>
@@ -733,9 +733,19 @@
     // ==========================================
     // 0. 버전 관리 & 업데이트 노트
     // ==========================================
-    const APP_VERSION = '3.8';
+    const APP_VERSION = '3.9';
 
     const releaseNotesData = [
+       {
+        version: 'Pro v3.9',
+        date: '2026.10.16 (최신)',
+        badge: '누적금액 차단 & 정렬완성',
+        isLatest: true,
+        items: [
+          '🛡️ <b>결제 문자 [누적 금액 / 잔액] 오등록 완벽 차단:</b> 여러 줄로 된 카드 문자에서 하단 누적 금액이 별도 결제 건으로 중복 등록되던 현상 해결',
+          '📅 <b>[1순위: 거래 날짜 최신순 + 2순위: 같은 날짜 내 최신 등록순] 기본 정렬 적용</b>'
+        ]
+      },
       {
         version: 'Pro v3.8',
         date: '2026.10.15 (최신)',
