@@ -265,7 +265,7 @@
     </section>
   </div>
 
-  <!-- 모달 4종 -->
+  <!-- 모달 영역 (고정 지출 / 갤럭시 가이드 / 릴리즈 / 예산 / 백업) -->
   <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -352,10 +352,10 @@
   <script>
     const APP_VERSION = '4.2';
     const releaseNotesData = [
-      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '웹 바로가기 최적화', isLatest: true, items: [
-        '⚡ <b>웹 브라우저 최적화 버전:</b> Vercel 배포 및 모바일 브라우저 실행 오류 원천 차단',
+      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '고정지출 모달 수정', isLatest: true, items: [
+        '📌 <b>고정 지출 관리 팝업 열기/닫기 로직 보완</b>',
         '📅 <b>일자별 그룹핑 헤더 & 💰 건별 누적 잔액(입금-출금) 표시</b>',
-        '🌙 <b>다크 모드 & 📌 고정 지출 원클릭 등록 통합 완료</b>'
+        '🌙 <b>다크 모드 완벽 지원</b>'
       ]}
     ];
 
@@ -363,6 +363,23 @@
     function closeHeaderMenu() { const m = document.getElementById('headerDropdownMenu'), a = document.getElementById('menuArrowIcon'); if (m) m.classList.add('hidden'); if (a) a.style.transform = 'rotate(0deg)'; }
     document.addEventListener('click', (e) => { const c = document.getElementById('headerMenuContainer'); if (c && !c.contains(e.target)) closeHeaderMenu(); });
     function shiftMonth(d) { const inp = document.getElementById('monthFilter'); inp.value = addMonthsToYM(inp.value || currentYearMonth, d); exitEditMode(); render(); }
+
+    function openFixedExpenseModal() {
+      closeHeaderMenu();
+      const m = document.getElementById('fixedExpenseModal');
+      if (m) {
+        renderFixedExpenseList();
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      }
+    }
+    function closeFixedExpenseModal() {
+      const m = document.getElementById('fixedExpenseModal');
+      if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      }
+    }
 
     function renderReleaseNotes() {
       document.getElementById('releaseNotesContainer').innerHTML = releaseNotesData.map(r => `
@@ -408,7 +425,12 @@
       { id: 107, createdAt: 107, date: today, type: 'expense', category: '🎬 문화/여가', method: '신용카드', cardCompany: 'KB국민카드', merchant: '레고랜드', memo: '입장권 (대2,소1)', amount: 22000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 22000, groupId: null }
     ];
 
-    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 최적화', detail: '웹 최적화 버전이 적용되었습니다.' }];
+    let fixedExpenses = JSON.parse(localStorage.getItem('argon_fixed_expenses_v3')) || [
+      { id: 1, name: '월세', category: '🏠 주거/통신', day: 5, amount: 500000 },
+      { id: 2, name: '통신비', category: '🏠 주거/통신', day: 15, amount: 65000 }
+    ];
+
+    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 수정', detail: '고정지출 모달 오류가 수정되었습니다.' }];
 
     function toggleHistoryPanel(force) { const b = document.getElementById('historyBody'), t = document.getElementById('historyToggleBtnText'); isHistoryOpen = typeof force === 'boolean' ? force : !isHistoryOpen; b.classList.toggle('hidden', !isHistoryOpen); t.textContent = isHistoryOpen ? '접어두기 ▲' : '펼쳐보기 ▼'; if (isHistoryOpen) renderLogs(); }
     function openAndScrollHistory() { closeHeaderMenu(); toggleHistoryPanel(true); document.getElementById('historySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -573,8 +595,6 @@
       saveAndRender(); showToast('🗑️ 삭제되었습니다.');
     }
 
-    function openFixedExpenseModal() { closeHeaderMenu(); setTimeout(() => { renderFixedExpenseList(); const m = document.getElementById('fixedExpenseModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
-    function closeFixedExpenseModal() { const m = document.getElementById('fixedExpenseModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
     function renderFixedExpenseList() {
       const el = document.getElementById('fixedExpenseList'); if (!fixedExpenses.length) { el.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">등록된 고정 지출이 없습니다.</p>`; return; }
       el.innerHTML = fixedExpenses.map(i => `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/70 text-xs"><div><b>${i.name}</b> (${i.category}) · 매월 ${i.day}일 · <b class="text-indigo-600">${i.amount.toLocaleString()}원</b></div><button onclick="deleteFixedExpenseItem(${i.id})" class="text-slate-400 hover:text-rose-600 font-bold px-2">✕</button></div>`).join('');
@@ -665,7 +685,7 @@
       const tbody = document.getElementById('txList'), emptyMsg = document.getElementById('emptyListMsg');
 
       if (!filteredTx.length) {
-        tbody.innerHTML = ''; emptyMsg.classList.add('hidden'); // 에러 방지용
+        tbody.innerHTML = ''; emptyMsg.classList.remove('hidden');
       } else {
         emptyMsg.classList.add('hidden');
         const chrono = [...monthTx].sort((a, b) => a.date.localeCompare(b.date) || (Number(a.createdAt || a.id || 0) - Number(b.createdAt || b.id || 0)));
