@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="/manifest.json" id="manifestLinkTag">
   
-  <title>아르곤(Gemini) 스마트 가계부 Pro</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v4.0</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -62,12 +62,12 @@
 
   <div class="w-full max-w-7xl mx-auto space-y-3.5 md:space-y-5">
     
-    <!-- 1. 헤더 (플립6 좁은 폭 대응 최적화) -->
+    <!-- 1. 헤더 (고정 지출 및 v4.0 통합 메뉴 탑재) -->
     <header class="card p-3.5 sm:p-4 md:px-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 relative z-30 !overflow-visible">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
-          <button onclick="openReleaseModal()" title="업데이트 내역 보기" class="px-2 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v3.9</span>
+          <button onclick="openReleaseModal()" title="업데이트 내역 보기" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
+            <span>🚀 v4.0</span>
             <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">아르곤 스마트 가계부</h1>
@@ -109,6 +109,10 @@
           <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 divide-y divide-slate-100">
             <div class="px-2 py-1.5 space-y-0.5">
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가계부 관리 및 실행</p>
+              <button type="button" onclick="closeHeaderMenu(); openFixedExpenseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>📌 고정 지출 관리 (월세/통신)</span>
+                <span class="text-[10px] text-indigo-600 font-extrabold">자동등록</span>
+              </button>
               <button type="button" onclick="closeHeaderMenu(); openBudgetModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
                 <span>🎯 카테고리별 예산 설정</span>
                 <span class="text-[10px] text-slate-400">설정</span>
@@ -135,7 +139,7 @@
               </button>
               <button type="button" onclick="closeHeaderMenu(); openReleaseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
                 <span>🆕 버전별 업데이트 노트</span>
-                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v3.8</span>
+                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.0</span>
               </button>
               <button type="button" onclick="closeHeaderMenu(); installPWA();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
                 <span>📱 스마트폰 홈 화면 앱 추가법</span>
@@ -361,7 +365,7 @@
               </div>
               <div id="installmentBox">
                 <label class="block text-[11px] font-bold text-indigo-600 mb-1">할부 개월</label>
-                <select id="txInstallment" onchange="updateInstallmentNotice()" class="w-full border border-indigo-200 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <select id="txInstallment" onchange="updateInstallmentNotice()" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="1">일시불</option>
                   <option value="2">2개월</option>
                   <option value="3">3개월</option>
@@ -428,7 +432,7 @@
           </div>
         </div>
 
-        <!-- 거래 내역 상세 리스트 (1순위: 거래 날짜 최신순 + 2순위: 같은 날짜 내 최신 등록순 기본 적용) -->
+        <!-- 거래 내역 상세 리스트 -->
         <div class="card p-4 md:p-5 flex flex-col">
           <div class="flex flex-col gap-2.5 mb-3">
             <div class="flex items-center justify-between w-full">
@@ -439,7 +443,6 @@
               <span class="text-[11px] text-indigo-600 font-semibold">💡 터치 시 수정</span>
             </div>
             
-            <!-- 필터 및 정렬 영역: [날짜 최신 + 최신 등록순] 기본 세팅 -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
               <select id="sortFilter" onchange="render()" class="border border-indigo-200 rounded-lg px-2 py-1.5 text-xs font-extrabold text-indigo-700 bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
                 <option value="DATE_DESC" selected>📅 날짜 최신 + 등록순</option>
@@ -559,6 +562,54 @@
 
   </div>
 
+  <!-- 📌 고정 지출 관리 및 원클릭 등록 모달 -->
+  <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+        <div>
+          <h3 class="text-base sm:text-lg font-extrabold text-slate-900">📌 고정 지출 관리 및 일괄 등록</h3>
+          <p class="text-xs text-slate-500">매달 나가는 지출을 저장해 두고 선택한 월에 한 번에 등록하세요.</p>
+        </div>
+        <button onclick="closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+      </div>
+
+      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2.5">
+        <p class="text-xs font-bold text-slate-700">➕ 새 고정 지출 항목 추가</p>
+        <div class="grid grid-cols-2 gap-2">
+          <input type="text" id="feName" placeholder="사용처 (예: 월세, 통신비)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="feCategory" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <option value="🏠 주거/통신">🏠 주거/통신</option>
+            <option value="🎸 기타지출">🎸 기타지출</option>
+            <option value="🍔 식비">🍔 식비</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-3 gap-2">
+          <input type="number" id="feDay" placeholder="매월 며칠 (예: 25)" min="1" max="31" class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="number" id="feAmount" placeholder="금액 (원)" class="col-span-2 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <button type="button" onclick="addFixedExpenseItem()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition">
+          고정 지출 목록에 추가
+        </button>
+      </div>
+
+      <div class="space-y-2 flex-1 overflow-y-auto pr-1">
+        <p class="text-xs font-bold text-slate-700">📋 저장된 고정 지출 목록</p>
+        <div id="fixedExpenseList" class="space-y-1.5">
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <span class="text-xs text-slate-500">💡 현재 선택된 월(상단 바)에 일괄 등록됩니다.</span>
+        <div class="flex gap-2 w-full sm:w-auto">
+          <button onclick="closeFixedExpenseModal()" class="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50">닫기</button>
+          <button onclick="registerAllFixedExpenses()" class="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
+            ⚡ 이번 달 고정지출 일괄 등록
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 🤖 갤럭시 결제 문자 자동화 가이드 모달 -->
   <div id="galaxyAutoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
@@ -621,7 +672,7 @@
       </div>
 
       <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v3.8</b></span>
+        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v4.0</b></span>
         <button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
           확인했어요!
         </button>
@@ -731,51 +782,25 @@
 
   <script>
     // ==========================================
-    // 0. 버전 관리 & 업데이트 노트
+    // 0. 버전 관리 & 업데이트 노트 (Pro v4.0 메이저)
     // ==========================================
-    const APP_VERSION = '3.9';
+    const APP_VERSION = '4.0';
 
     const releaseNotesData = [
-       {
-        version: 'Pro v3.9',
-        date: '2026.10.16 (최신)',
-        badge: '누적금액 차단 & 정렬완성',
+      {
+        version: 'Pro v4.0',
+        date: '2026.10.16 (최신 메이저)',
+        badge: '고정지출 & 정식 v4.0',
         isLatest: true,
         items: [
-          '🛡️ <b>결제 문자 [누적 금액 / 잔액] 오등록 완벽 차단:</b> 여러 줄로 된 카드 문자에서 하단 누적 금액이 별도 결제 건으로 중복 등록되던 현상 해결'          
+          '📌 <b>고정 지출 원클릭 일괄 등록 기능 정식 탑재:</b> 월세, 통신비, 구독료 등 정기 지출을 미리 등록하고 선택한 월에 버튼 하나로 일괄 반영',
+          '📅 <b>상세 내역 [날짜 최신순 + 같은 날 내 최신 등록순] 정렬 기본 적용 및 정렬 필터 추가</b>',
+          '📱 <b>갤럭시 Z 플립6 / 폴드8 맞춤 화면 꽉 채우기 패치 및 UI 다이어트 완료</b>'
         ]
       },
       {
-        version: 'Pro v3.8',
-        date: '2026.10.15',
-        badge: '날짜+최신등록 정렬',
-        isLatest: false,
-        items: [
-          '📅 <b>[1순위: 거래 날짜 최신순 + 2순위: 같은 날짜 내 최신 등록순] 기본 적용:</b> 날짜 흐름을 유지하면서도, 같은 날 여러 건을 입력하면 방금 등록한 내역이 해당 날짜의 가장 맨 위에 올라오도록 정렬',
-          '🔃 <b>4가지 정렬 선택창(Selectbox) 지원:</b> [📅 날짜 최신 + 등록순], [⚡ 순수 등록순], [💰 금액 높은순], [🪙 금액 낮은순] 전환 가능'
-        ]
-      },
-      {
-        version: 'Pro v3.7',
-        date: '2026.10.14',
-        badge: '플립6 & 폴드8 완벽 대응',
-        isLatest: false,
-        items: [
-          '📱 <b>갤럭시 Z 플립6 22:9 비율 화면 꽉 채우기 패치:</b> 가로 넘침 차단 및 모바일 전용 컴팩트 테이블 적용'
-        ]
-      },
-      {
-        version: 'Pro v3.6',
-        date: '2026.10.14',
-        badge: 'UI 다이어트',
-        isLatest: false,
-        items: [
-          '🎨 <b>상단 헤더 슬림화:</b> [◀ 월 이동 리모컨 ▶], [🔄 백업], [⚙️ 메뉴 ▼] 3종으로 압축'
-        ]
-      },
-      {
-        version: 'Pro v3.0 ~ v3.5',
-        date: '2026.10.14',
+        version: 'Pro v3.0 ~ v3.8',
+        date: '2026.10.14 ~ 15',
         badge: '핵심 엔진',
         isLatest: false,
         items: [
@@ -871,7 +896,7 @@
       if (seenVersion !== APP_VERSION) {
         setTimeout(() => {
           openReleaseModal();
-          showToast(`🎉 Pro v${APP_VERSION} 정렬 기준 업데이트 완료!`);
+          showToast(`🎉 Pro v${APP_VERSION} 메이저 업데이트 완료!`);
         }, 400);
       }
     }
@@ -1015,7 +1040,7 @@
         { id: 101, createdAt: 101, date: `${currentYearMonth}-01`, type: 'income', category: '💰 월급', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '(주)아르곤테크', memo: '이번 달 정기 급여', amount: 3500000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 3500000, groupId: null },
         { id: 102, createdAt: 102, date: `${currentYearMonth}-03`, type: 'expense', category: '🏠 주거/통신', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '관리사무소', memo: '월세 및 관리비', amount: 550000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 550000, groupId: null },
         { id: 103, createdAt: 103, date: `${currentYearMonth}-05`, type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 1/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 1, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
-        { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+        { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플ส토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
         { id: 105, createdAt: 105, date: addMonthsToDate(`${currentYearMonth}-05`, 2), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 3/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 3, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
         { id: 106, createdAt: 106, date: today, type: 'expense', category: '🍔 식비', method: '신용카드', cardCompany: '신한카드', merchant: '성수동 국밥', memo: '점심 식사', amount: 11000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 11000, groupId: null },
         { id: 107, createdAt: 107, date: today, type: 'expense', category: '☕ 카페/간식', method: '신용카드', cardCompany: '신한카드', merchant: '스타벅스', memo: '아이스 아메리카노', amount: 4500, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 4500, groupId: null }
@@ -1028,7 +1053,7 @@
     // 📜 스마트 변경 이력
     // ==========================================
     let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [
-      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v3.8 업데이트', detail: '상세 거래 내역 [1순위: 날짜 최신순 + 2순위: 최신 등록순] 정렬이 적용되었습니다.' }
+      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.0 업데이트', detail: 'Pro v4.0 메이저 업데이트가 적용되었습니다.' }
     ];
 
     function toggleHistoryPanel(forceOpen) {
@@ -1234,7 +1259,7 @@
     document.getElementById('todayDateBadge').textContent = `(${today.slice(5).replace('-', '/')})`;
 
     // ==========================================
-    // 3. 할부 자동 분할 생성 엔진 (createdAt 타임스탬프 부여)
+    // 3. 할부 자동 분할 생성 엔진
     // ==========================================
     function createTransactionsWithInstallment(item) {
       const months = Number(item.installmentMonths) || 1;
@@ -1292,7 +1317,7 @@
     }
 
     // ==========================================
-    // 4. 스마트 결제 문자 파서 & 갤럭시 자동 수신기
+    // 4. 스마트 결제 문자 파서 (누적금액 완벽 차단)
     // ==========================================
     function guessCategory(merchant, type) {
       if (type === 'income') {
@@ -1315,19 +1340,14 @@
       return '🍔 식비';
     }
 
-    // ==========================================
-    // [Pro v3.9 패치] 누적/잔액 완벽 제거 & 줄바꿈 문자 오인식 차단
-    // ==========================================
     function parseSingleSMS(rawText) {
-      let text = rawText.replace(/[Web발신]|[웹발신]|[국외발신]/gi, ' ').trim();
+      let text = rawText.replace(/\[Web발신\]|\[웹발신\]|\[국외발신\]/gi, ' ').trim();
       if (!text) return null;
 
-      // 1) 누적, 잔액, 한도 등 결제 금액이 아닌 숫자와 문구를 1차로 완벽히 도려냄
       let cleanForAmount = text
-        .replace(/\[?\s*(?:누적\vert{}잔액\vert{}가능액\vert{}한도\vert{}총누적\vert{}월누적\vert{}사용누적)(?:금액\vert{}액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ')
-        .replace(/[\d,]+\s*원?\s*\(\s*(?:누적\vert{}잔액)\s*\)/gi, ' ');
+        .replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ')
+        .replace(/[\d,]+\s*원?\s*\(\s*(?:누적|잔액)\s*\)/gi, ' ');
 
-      // 만약 누적 금액을 지웠더니 남은 금액이 아예 없다면 (예: '누적 500,000원' 단독 줄) 무시!
       let amount = 0;
       const wonMatches = [...cleanForAmount.matchAll(/([\d,]+)\s*원/g)];
       if (wonMatches.length > 0) {
@@ -1410,25 +1430,20 @@
       return { date: dateStr, type, category, method, cardCompany, installmentMonths, merchant, memo, amount };
     }
 
-    // 여러 줄로 나뉜 카드 문자에서 '누적 금액' 줄이 별도 건으로 쪼개지지 않도록 개선
     function parseBulkSMS(rawText) {
       if (!rawText || !rawText.trim()) return [];
-
-      // 0) 전체 텍스트에서 '누적/잔액' 줄이나 구문을 먼저 싹 제거
       const preCleaned = rawText
-        .replace(/\[?\s*(?:누적\vert{}잔액\vert{}가능액\vert{}한도\vert{}총누적\vert{}월누적\vert{}사용누적)(?:금액\vert{}액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
+        .replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
 
-      // 1) 만약 '[Web발신]'이 여러 개 있다면 '[Web발신]' 단위로 1건씩 묶어서 분석
-      if (/[Web발신]|[웹발신]/i.test(preCleaned)) {
+      if (/\[Web발신\]|\[웹발신\]/i.test(preCleaned)) {
         const smsBlocks = preCleaned
-          .split(/(?=[Web발신]|[웹발신])/i)
+          .split(/(?=\[Web발신\]|\[웹발신\])/i)
           .map(s => s.replace(/\n+/g, ' ').trim())
           .filter(Boolean);
 
         return smsBlocks.map(block => parseSingleSMS(block)).filter(Boolean);
       }
 
-      // 2) '[Web발신]' 없이 붙여넣었을 때: 줄바꿈이 있어도 카드사/승인/금액이 완성될 때까지 한 묶음으로 처리
       const lines = preCleaned.split(/\n+/).map(s => s.trim()).filter(Boolean);
       const results = [];
       let buffer = '';
@@ -2027,7 +2042,7 @@
     }
 
     // ==========================================
-    // 8. 메인 렌더링 (기본: 1순위 날짜 최신순 + 2순위 최신 등록순)
+    // 8. 메인 렌더링
     // ==========================================
     function saveAndRender() {
       localStorage.setItem('argon_tx_v3', JSON.stringify(transactions));
@@ -2043,7 +2058,6 @@
       const cardFilterVal = document.getElementById('cardFilter').value;
       const totalBudget = getTotalMonthlyBudget();
 
-      // 선택 월 내역 필터링 및 정렬 (기본: DATE_DESC = 날짜 최신순 ➔ 같은 날짜 내 최신 등록순)
       const monthTx = transactions
         .filter(t => t.date.startsWith(selectedMonth))
         .sort((a, b) => {
@@ -2052,8 +2066,8 @@
 
           if (sortMode === 'DATE_DESC') {
             const dateCmp = b.date.localeCompare(a.date);
-            if (dateCmp !== 0) return dateCmp; // 1순위: 날짜가 다르면 최신 날짜가 위로
-            return bCreated - aCreated;        // 2순위: 날짜가 같으면 최신 등록한 내역이 위로!
+            if (dateCmp !== 0) return dateCmp;
+            return bCreated - aCreated;
           } else if (sortMode === 'CREATED_DESC') {
             if (bCreated !== aCreated) return bCreated - aCreated;
             return b.date.localeCompare(a.date);
