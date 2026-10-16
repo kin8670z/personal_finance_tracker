@@ -182,6 +182,14 @@ ul.plain li.done { opacity: .55; }
 .hist time { font-family: var(--font-num); font-size: .75rem; color: var(--muted); margin-right: 6px; }
 .empty-state { padding: 28px 16px; text-align: center; color: var(--muted); font-size: .9rem; }
 
+.quickbar { display: grid; gap: 8px; }
+.quickbtn { font: inherit; font-weight: 600; font-size: .95rem; width: 100%; padding: 12px 14px; border: 0; border-radius: 6px; background: var(--in); color: #fff; cursor: pointer; }
+:root[data-theme="dark"] .quickbtn { color: #0d1720; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .quickbtn { color: #0d1720; } }
+.quickbtn:disabled { opacity: .6; cursor: default; }
+.quickmsg { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: .85rem; padding: 8px 12px; border-radius: 5px; background: var(--accent-soft); }
+.quickmsg.err { color: var(--out); }
+textarea.armed { border-color: var(--in); box-shadow: 0 0 0 2px color-mix(in srgb, var(--in) 35%, transparent); }
 details.settings, details.paste { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 16px; }
 details.settings summary, details.paste summary { cursor: pointer; font-size: .88rem; font-weight: 500; }
 details.paste[open] { display: grid; gap: 10px; }
@@ -305,6 +313,10 @@ mark { background: color-mix(in srgb, var(--warn) 30%, transparent); color: inhe
     <datalist id="cardList"></datalist>
   </form>
 
+  <div class="quickbar" id="quickBar">
+    <button type="button" class="quickbtn" id="quickBtn">📋 복사한 결제문자 바로 기록</button>
+    <div class="quickmsg" id="quickMsg" hidden><span id="quickText"></span><button type="button" class="linkbtn" id="quickUndo" hidden>되돌리기</button></div>
+  </div>
   <details class="paste" id="pastePanel">
     <summary>결제 문자 붙여넣기</summary>
     <p class="hint">카드 결제 문자를 그대로 복사해 붙여넣으세요. 여러 건을 한 번에 붙여도 돼요.</p>
@@ -540,6 +552,7 @@ async function applyChange(put, removeIds, action, detail, undoable = true) {
     const log = { id: logId(), ts: Date.now(), action, detail };
     if (undoable) log.undo = { restore, remove };
     try { await store.addLog(log); } catch (e) { /* history is best-effort */ }
+    return log.id;
   }
 }
 async function undoLog(id) {
@@ -1249,15 +1262,26 @@ $("pvRows").addEventListener("change", e => {
   if (t.dataset.i !== undefined) { parsed[+t.dataset.i].on = t.checked; renderPreview(); }
   if (t.dataset.c !== undefined) { parsed[+t.dataset.c].cat = t.value; }
 });
-$("parseBtn").onclick = () => {
+function analyzeSms(text) {
   const rt = realToday(), year = +rt.slice(0,4);
-  parsed = parseSms($("smsText").value, year).map(p => {
+  return parseSms(text, year).map(p => {
     // a December text pasted in January belongs to last year
     if (p.date && p.date > addMonths(rt, 1)) p.date = `${year - 1}${p.date.slice(4)}`;
     const badDate = !validDate(p.date);
     const dup = allEntries.some(e => e.type === "out" && e.date === p.date && (e.total || e.amount) === p.amount);
     return { ...p, badDate, dup, on: !badDate && !dup && !p.cancel };
   });
+}
+function smsDocs(pick) {
+  const docs = [];
+  for (const p of pick) {
+    const base = { type: "out", date: p.date, cat: p.cat, place: p.merchant, memo: "", pay: p.pay, card: normCard(p.card), createdAt: Date.now(), source: "sms" };
+    docs.push(...buildDocs(base, p.amount, p.months || 1, (p.months||1) > 1 ? newId() : null));
+  }
+  return docs;
+}
+$("parseBtn").onclick = () => {
+  parsed = analyzeSms($("smsText").value);
   $("pasteMsg").textContent = parsed.length ? "" : "결제 내역을 찾지 못했어요. 금액(원)이 들어간 문자인지 확인해주세요.";
   $("preview").hidden = !parsed.length;
   renderPreview();
@@ -1266,17 +1290,76 @@ $("pvSave").onclick = async () => {
   const pick = parsed.filter(p => p.on);
   $("pvSave").disabled = true;
   let ok = 0;
-  const docs = [];
-  for (const p of pick) {
-    const base = { type: "out", date: p.date, cat: p.cat, place: p.merchant, memo: "", pay: p.pay, card: normCard(p.card), createdAt: Date.now(), source: "sms" };
-    docs.push(...buildDocs(base, p.amount, p.months || 1, (p.months||1) > 1 ? newId() : null));
-  }
+  const docs = smsDocs(pick);
   try { await applyChange(docs, [], "문자 기록", `${pick.length}건 · ${pick.slice(0,3).map(p => p.merchant).join(", ")}${pick.length > 3 ? " 외" : ""}`); ok = pick.length; }
   catch (err) { $("pasteMsg").textContent = "저장하지 못했어요. 다시 시도해주세요."; }
   parsed = parsed.filter(p => !p.on || pick.indexOf(p) >= ok);
   $("pvInfo").textContent = `${ok}건 기록했어요`;
   if (ok === pick.length) { $("smsText").value = ""; parsed = []; $("preview").hidden = true; $("pasteMsg").textContent = ""; $("pvInfo").textContent = ""; $("status").textContent = `문자에서 ${ok}건 기록함`; }
   else renderPreview();
+};
+
+/* ---------- one-tap: record copied payment texts right away ---------- */
+let quickArmed = false, quickLogId = null;
+function quickSay(text, err, undoId) {
+  $("quickText").textContent = text;
+  $("quickMsg").classList.toggle("err", !!err);
+  quickLogId = undoId || null;
+  $("quickUndo").hidden = !undoId;
+  $("quickMsg").hidden = false;
+}
+async function quickRegister(text) {
+  const items = analyzeSms(text || "");
+  if (!items.length) { quickSay("복사한 내용에서 결제 내역을 찾지 못했어요. 금액(원)이 들어간 결제 문자인지 확인해주세요.", true); return false; }
+  const pick = items.filter(p => p.on);
+  const dup = items.filter(p => p.dup).length, cancel = items.filter(p => p.cancel && !p.dup).length;
+  const skipped = [dup && `이미 있는 ${dup}건`, cancel && `취소 문자 ${cancel}건`].filter(Boolean).join(", ");
+  if (!pick.length) { quickSay(`새로 기록할 게 없어요 (${skipped || "날짜를 못 읽음"})`, true); return false; }
+  try {
+    const lid = await applyChange(smsDocs(pick), [], "문자 바로 기록", `${pick.length}건 · ${pick.slice(0,3).map(p => p.merchant).join(", ")}${pick.length > 3 ? " 외" : ""}`);
+    const total = pick.reduce((s, p) => s + p.amount, 0);
+    quickSay(`${pick.length}건 · ${won(total)}원 기록했어요${pick.length === 1 ? ` (${pick[0].merchant})` : ""}${skipped ? ` · ${skipped} 건너뜀` : ""}`, false, lid);
+    const firstYm = pick[0].date.slice(0, 7);
+    if (firstYm !== ym) goMonth(firstYm);
+    return true;
+  } catch (e) { quickSay("저장하지 못했어요. 다시 시도해주세요.", true); return false; }
+}
+function armPaste() {
+  // claude.ai pages can't read the clipboard: open the box so a single paste records it
+  quickArmed = true;
+  $("pastePanel").open = true;
+  $("smsText").classList.add("armed");
+  $("smsText").placeholder = "여기에 붙여넣으면 바로 기록돼요 (길게 눌러 붙여넣기)";
+  $("smsText").focus();
+  quickSay("아래 칸에 붙여넣기만 하면 바로 기록돼요.", false);
+}
+$("quickBtn").onclick = async () => {
+  const inClaude = !!(window.claude && typeof window.claude.use === "function");
+  if (inClaude || !navigator.clipboard || !navigator.clipboard.readText) { armPaste(); return; }
+  $("quickBtn").disabled = true;
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text.trim()) quickSay("클립보드가 비어 있어요. 결제 문자를 먼저 복사해주세요.", true);
+    else await quickRegister(text);
+  } catch (e) { armPaste(); }
+  $("quickBtn").disabled = false;
+};
+$("smsText").addEventListener("paste", ev => {
+  if (!quickArmed) return;
+  const text = (ev.clipboardData || window.clipboardData)?.getData("text") || "";
+  if (!text.trim()) return;
+  ev.preventDefault();
+  quickArmed = false;
+  $("smsText").classList.remove("armed");
+  $("smsText").placeholder = "[Web발신]\n신한카드(1234)승인 홍*동 12,500원(일시불)10/01 12:30 스타벅스 누적512,300원";
+  quickRegister(text);
+});
+$("quickUndo").onclick = async () => {
+  if (!quickLogId) return;
+  $("quickUndo").disabled = true;
+  try { await undoLog(quickLogId); quickSay("방금 기록을 되돌렸어요.", false); }
+  catch (e) { quickSay("되돌리지 못했어요. 변경 이력에서 다시 시도해주세요.", true); }
+  $("quickUndo").disabled = false;
 };
 
 /* ---------- boot ---------- */
@@ -1327,7 +1410,7 @@ $("migrateRun").onclick = async () => {
   mode = "cloud";
   const user = await window.claude.use("user").catch(() => null);
   const w = user ? await user.can("data.write") : null;
-  if (w === false) { canWrite = false; $("form").hidden = true; $("pastePanel").hidden = true; $("saveBudget").hidden = true; }
+  if (w === false) { canWrite = false; $("form").hidden = true; $("pastePanel").hidden = true; $("quickBar").hidden = true; $("saveBudget").hidden = true; }
   setModeUI();
   $("status").textContent = "자동 저장됨";
   db.collection("entries").onSnapshot(snap => {
