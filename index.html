@@ -12,7 +12,7 @@
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="manifest" href="/manifest.json" id="manifestLinkTag">
   
-  <title>아르곤(Gemini) 스마트 가계부 Pro v4.0</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v4.1</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -56,21 +56,33 @@
     ::-webkit-scrollbar { width: 5px; height: 5px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* [다크 모드 전용 스타일 정의] */
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select, .dark textarea { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark input::placeholder, .dark textarea::placeholder { color: #64748b !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900, .dark .text-indigo-950 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600 { color: #94a3b8 !important; }
+    .dark table thead tr { border-color: #334155 !important; }
+    .dark tbody tr:hover { background-color: rgba(51, 65, 85, 0.5) !important; }
   </style>
 </head>
 <body class="text-slate-800 select-none">
 
   <div class="w-full max-w-7xl mx-auto space-y-3.5 md:space-y-5">
     
-    <!-- 1. 헤더 (고정 지출 및 v4.0 통합 메뉴 탑재) -->
+    <!-- 1. 헤더 (고정 지출 및 다크모드 통합 메뉴 탑재) -->
     <header class="card p-3.5 sm:p-4 md:px-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 relative z-30 !overflow-visible">
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" title="업데이트 내역 보기" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v4.0</span>
+            <span>🚀 v4.1</span>
             <span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
-          <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">아르곤 스마트 가계부</h1>
+          <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
           <span id="storagePersistBadge" class="hidden px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-bold shrink-0">🛡️보존</span>
         </div>
 
@@ -83,12 +95,12 @@
       <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto">
         
         <!-- ① 월 이동 네비게이터 -->
-        <div class="flex items-center bg-slate-100 rounded-xl p-0.5 sm:p-1 border border-slate-200/80 flex-1 sm:flex-none justify-between min-w-0">
-          <button type="button" onclick="shiftMonth(-1)" title="이전 달" class="w-7 h-8 sm:w-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold transition active:scale-95 shrink-0">
+        <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5 sm:p-1 border border-slate-200/80 dark:border-slate-700 flex-1 sm:flex-none justify-between min-w-0">
+          <button type="button" onclick="shiftMonth(-1)" title="이전 달" class="w-7 h-8 sm:w-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold transition active:scale-95 shrink-0">
             ◀
           </button>
-          <input type="month" id="monthFilter" class="bg-transparent border-none text-center font-extrabold text-indigo-950 text-xs sm:text-sm px-0.5 focus:outline-none cursor-pointer min-w-0 w-28 sm:w-32">
-          <button type="button" onclick="shiftMonth(1)" title="다음 달" class="w-7 h-8 sm:w-8 flex items-center justify-center rounded-lg hover:bg-white text-slate-600 font-bold transition active:scale-95 shrink-0">
+          <input type="month" id="monthFilter" class="bg-transparent border-none text-center font-extrabold text-indigo-950 dark:text-indigo-300 text-xs sm:text-sm px-0.5 focus:outline-none cursor-pointer min-w-0 w-28 sm:w-32">
+          <button type="button" onclick="shiftMonth(1)" title="다음 달" class="w-7 h-8 sm:w-8 flex items-center justify-center rounded-lg hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-bold transition active:scale-95 shrink-0">
             ▶
           </button>
         </div>
@@ -106,48 +118,49 @@
             <span id="menuArrowIcon" class="text-[10px] transition-transform duration-200">▼</span>
           </button>
 
-          <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-slate-200/90 py-2 z-50 divide-y divide-slate-100">
+          <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-700 py-2 z-50 divide-y divide-slate-100 dark:divide-slate-700">
             <div class="px-2 py-1.5 space-y-0.5">
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가계부 관리 및 실행</p>
-              <button type="button" onclick="closeHeaderMenu(); openFixedExpenseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
-                <span>📌 고정 지출 관리 (월세/통신)</span>
-                <span class="text-[10px] text-indigo-600 font-extrabold">자동등록</span>
+              <button type="button" onclick="openFixedExpenseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
+                <span>📌 고정 지출 관리</span>
+                <span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">자동등록</span>
               </button>
-              <button type="button" onclick="closeHeaderMenu(); openBudgetModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+              <button type="button" onclick="openBudgetModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
                 <span>🎯 카테고리별 예산 설정</span>
                 <span class="text-[10px] text-slate-400">설정</span>
               </button>
-              <button type="button" onclick="closeHeaderMenu(); openSyncModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+              <button type="button" onclick="openSyncModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
                 <span>🔄 기기간 데이터 백업/복원</span>
-                <span class="text-[10px] text-emerald-600 font-extrabold">동기화</span>
+                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold">동기화</span>
               </button>
-              <button type="button" onclick="closeHeaderMenu(); exportCSV();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+              <button type="button" onclick="exportCSV()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
                 <span>📥 엑셀(CSV) 파일 다운로드</span>
                 <span class="text-[10px] text-slate-400">.csv</span>
               </button>
-              <button type="button" onclick="closeHeaderMenu(); openAndScrollHistory();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 flex items-center justify-between transition">
+              <button type="button" onclick="openAndScrollHistory()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
                 <span>📜 스마트 변경 이력 (복구)</span>
-                <span id="menuLogCount" class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full font-extrabold">0건</span>
+                <span id="menuLogCount" class="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300 px-1.5 py-0.5 rounded-full font-extrabold">0건</span>
               </button>
             </div>
 
             <div class="px-2 py-1.5 space-y-0.5">
-              <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가이드 및 버전 정보</p>
-              <button type="button" onclick="closeHeaderMenu(); openGalaxyAutoModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
+              <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
+              <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 hover:text-indigo-700 flex items-center justify-between transition">
+                <span id="darkModeMenuText">🌙 다크 모드 켜기</span>
+                <span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold text-slate-600 dark:text-slate-300">Theme</span>
+              </button>
+              <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between transition">
                 <span>🤖 갤럭시 문자 자동화 가이드</span>
-                <span class="text-[10px] text-blue-600 font-bold">TIP</span>
+                <span class="text-[10px] text-blue-600 dark:text-blue-400 font-bold">TIP</span>
               </button>
-              <button type="button" onclick="closeHeaderMenu(); openReleaseModal();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between transition">
                 <span>🆕 버전별 업데이트 노트</span>
-                <span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.0</span>
-              </button>
-              <button type="button" onclick="closeHeaderMenu(); installPWA();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 flex items-center justify-between transition">
-                <span>📱 스마트폰 홈 화면 앱 추가법</span>
+                <span class="text-[10px] bg-purple-100 text-purple-700 dark:bg-purple-900/60 dark:text-purple-300 px-1.5 py-0.5 rounded-full font-bold">v4.1</span>
               </button>
             </div>
 
             <div class="px-2 pt-1.5 pb-0.5">
-              <button type="button" onclick="closeHeaderMenu(); resetData();" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between transition">
+              <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 flex items-center justify-between transition">
                 <span>🗑️ 전체 가계부 초기화</span>
                 <span class="text-[10px] text-rose-400">주의</span>
               </button>
@@ -162,27 +175,27 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 md:gap-4">
       <div class="card p-3.5 md:p-5 border-l-4 border-emerald-500">
         <p class="text-[11px] font-bold text-slate-400">선택 월 총수입</p>
-        <p id="totalIncome" class="text-base sm:text-lg md:text-2xl font-extrabold text-emerald-600 mt-0.5 truncate">0원</p>
+        <p id="totalIncome" class="text-base sm:text-lg md:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 truncate">0원</p>
       </div>
       <div class="card p-3.5 md:p-5 border-l-4 border-rose-500">
         <p class="text-[11px] font-bold text-slate-400">선택 월 총지출</p>
-        <p id="totalExpense" class="text-base sm:text-lg md:text-2xl font-extrabold text-rose-600 mt-0.5 truncate">0원</p>
+        <p id="totalExpense" class="text-base sm:text-lg md:text-2xl font-extrabold text-rose-600 dark:text-rose-400 mt-0.5 truncate">0원</p>
       </div>
       <div class="card p-3.5 md:p-5 border-l-4 border-indigo-500">
         <p class="text-[11px] font-bold text-slate-400">순수익 (잔액)</p>
-        <p id="netBalance" class="text-base sm:text-lg md:text-2xl font-extrabold text-slate-900 mt-0.5 truncate">0원</p>
+        <p id="netBalance" class="text-base sm:text-lg md:text-2xl font-extrabold text-slate-900 dark:text-slate-100 mt-0.5 truncate">0원</p>
       </div>
       <div class="card p-3.5 md:p-5 flex flex-col justify-between">
         <div class="flex justify-between items-center">
           <span class="text-[11px] font-bold text-slate-400">월 총예산</span>
-          <button onclick="openBudgetModal()" class="text-[11px] text-indigo-600 hover:underline font-bold">설정</button>
+          <button onclick="openBudgetModal()" class="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold">설정</button>
         </div>
         <div class="mt-1.5">
           <div class="flex justify-between text-[11px] font-bold mb-1 truncate">
             <span id="budgetStatusText">0%</span>
             <span id="budgetTotalText" class="text-slate-400 truncate">0원</span>
           </div>
-          <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+          <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
             <div id="budgetBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
           </div>
         </div>
@@ -193,70 +206,70 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3.5 md:gap-4">
       
       <!-- 오늘 지출 금액 및 소비 페이스 요약 -->
-      <div class="card p-4 md:p-5 border border-amber-100 bg-gradient-to-br from-amber-50/40 via-white to-white flex flex-col justify-between">
+      <div class="card p-4 md:p-5 border border-amber-100 dark:border-slate-700 bg-gradient-to-br from-amber-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center gap-2 mb-3">
             <div class="flex items-center gap-1.5 min-w-0">
               <span class="text-base">☀️</span>
-              <h2 class="text-sm md:text-base font-extrabold text-slate-900 truncate">오늘 지출 & 소비 페이스</h2>
+              <h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">오늘 지출 & 소비 페이스</h2>
               <span id="todayDateBadge" class="text-[11px] text-slate-400 font-medium shrink-0"></span>
             </div>
-            <span id="paceBadge" class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700 shrink-0">진단 중</span>
+            <span id="paceBadge" class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 shrink-0">진단 중</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
             <div class="min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">오늘 쓴 금액</p>
-              <p id="todaySpentText" class="text-sm sm:text-base md:text-lg font-extrabold text-rose-600 mt-0.5 truncate">0원</p>
+              <p id="todaySpentText" class="text-sm sm:text-base md:text-lg font-extrabold text-rose-600 dark:text-rose-400 mt-0.5 truncate">0원</p>
               <p id="todayCountText" class="text-[10px] text-slate-400">0건 결제</p>
             </div>
-            <div class="border-l border-slate-200 pl-2 sm:pl-3 min-w-0">
+            <div class="border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3 min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">이번 달 일평균</p>
-              <p id="dailyAvgText" class="text-sm sm:text-base md:text-lg font-bold text-slate-800 mt-0.5 truncate">0원</p>
+              <p id="dailyAvgText" class="text-sm sm:text-base md:text-lg font-bold text-slate-800 dark:text-slate-200 mt-0.5 truncate">0원</p>
               <p class="text-[10px] text-slate-400">하루 평균</p>
             </div>
-            <div class="border-l border-slate-200 pl-2 sm:pl-3 min-w-0">
+            <div class="border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3 min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">하루 권장액</p>
-              <p id="dailyRecText" class="text-sm sm:text-base md:text-lg font-bold text-indigo-600 mt-0.5 truncate">0원</p>
+              <p id="dailyRecText" class="text-sm sm:text-base md:text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5 truncate">0원</p>
               <p class="text-[10px] text-slate-400">남은예산 기준</p>
             </div>
           </div>
         </div>
-        <p id="paceComment" class="text-xs text-slate-600 font-medium mt-2.5 bg-amber-50/70 px-3 py-2 rounded-lg">
+        <p id="paceComment" class="text-xs text-slate-600 dark:text-slate-300 font-medium mt-2.5 bg-amber-50/70 dark:bg-slate-900/80 px-3 py-2 rounded-lg">
           오늘 소비 내역을 바탕으로 일평균 지출 페이스를 분석합니다.
         </p>
       </div>
 
       <!-- 할부금 전용 요약 브리핑 -->
-      <div class="card p-4 md:p-5 border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-white flex flex-col justify-between">
+      <div class="card p-4 md:p-5 border border-indigo-100 dark:border-slate-700 bg-gradient-to-br from-indigo-50/40 via-white to-white dark:from-slate-800 dark:via-slate-800 dark:to-slate-800 flex flex-col justify-between">
         <div>
           <div class="flex justify-between items-center gap-2 mb-3">
             <div class="flex items-center gap-1.5 min-w-0">
               <span class="text-base">💳</span>
-              <h2 class="text-sm md:text-base font-extrabold text-slate-900 truncate">할부 납부 현황 브리핑</h2>
+              <h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">할부 납부 현황 브리핑</h2>
             </div>
-            <span id="installmentActiveBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 shrink-0">진행 중 0건</span>
+            <span id="installmentActiveBadge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300 shrink-0">진행 중 0건</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+          <div class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
             <div class="min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">이번 달 할부금</p>
-              <p id="instThisMonthText" class="text-sm sm:text-base md:text-lg font-extrabold text-rose-600 mt-0.5 truncate">0원</p>
+              <p id="instThisMonthText" class="text-sm sm:text-base md:text-lg font-extrabold text-rose-600 dark:text-rose-400 mt-0.5 truncate">0원</p>
               <p id="instThisMonthCount" class="text-[10px] text-slate-400">선택 월 기준</p>
             </div>
-            <div class="border-l border-slate-200 pl-2 sm:pl-3 min-w-0">
+            <div class="border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3 min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">다음 달 예정</p>
-              <p id="instNextMonthText" class="text-sm sm:text-base md:text-lg font-bold text-amber-600 mt-0.5 truncate">0원</p>
+              <p id="instNextMonthText" class="text-sm sm:text-base md:text-lg font-bold text-amber-600 dark:text-amber-400 mt-0.5 truncate">0원</p>
               <p id="instNextMonthCount" class="text-[10px] text-slate-400">익월 예정</p>
             </div>
-            <div class="border-l border-slate-200 pl-2 sm:pl-3 min-w-0">
+            <div class="border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3 min-w-0">
               <p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">남은 할부 잔액</p>
-              <p id="instTotalRemainText" class="text-sm sm:text-base md:text-lg font-extrabold text-indigo-900 mt-0.5 truncate">0원</p>
+              <p id="instTotalRemainText" class="text-sm sm:text-base md:text-lg font-extrabold text-indigo-900 dark:text-indigo-300 mt-0.5 truncate">0원</p>
               <p class="text-[10px] text-slate-400">전체 잔여금</p>
             </div>
           </div>
         </div>
-        <div id="instMiniList" class="text-xs text-slate-600 mt-2.5 max-h-14 overflow-y-auto space-y-1">
+        <div id="instMiniList" class="text-xs text-slate-600 dark:text-slate-300 mt-2.5 max-h-14 overflow-y-auto space-y-1">
         </div>
       </div>
 
@@ -269,17 +282,17 @@
       <div class="lg:col-span-5 space-y-3.5 md:space-y-5">
         
         <!-- 스마트 결제 문자 자동 분석기 -->
-        <div class="card p-4 md:p-5 border-2 border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white">
+        <div class="card p-4 md:p-5 border-2 border-indigo-100 dark:border-slate-700 bg-gradient-to-b from-indigo-50/40 to-white dark:from-slate-800 dark:to-slate-800">
           <div class="flex justify-between items-center mb-2">
             <div class="flex items-center gap-1.5">
               <span class="text-base">💬</span>
-              <h2 class="text-sm md:text-base font-extrabold text-indigo-950">결제 문자 자동 분석기</h2>
+              <h2 class="text-sm md:text-base font-extrabold text-indigo-950 dark:text-indigo-300">결제 문자 자동 분석기</h2>
             </div>
             <div class="flex gap-1">
-              <button type="button" onclick="openGalaxyAutoModal()" class="text-[11px] bg-blue-100 hover:bg-blue-200 text-blue-800 font-bold px-2 py-1 rounded-full transition">
+              <button type="button" onclick="openGalaxyAutoModal()" class="text-[11px] bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 font-bold px-2 py-1 rounded-full transition">
                 🤖 자동화
               </button>
-              <button type="button" onclick="fillSampleSMS()" class="text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-bold px-2 py-1 rounded-full transition">
+              <button type="button" onclick="fillSampleSMS()" class="text-[11px] bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 font-bold px-2 py-1 rounded-full transition">
                 ✨ 샘플
               </button>
             </div>
@@ -289,17 +302,17 @@
             <span>📋 복사한 결제문자 1초 자동등록 (붙여넣기 생략!)</span>
           </button>
 
-          <textarea id="smsInput" rows="3" oninput="previewSMS()" placeholder="[Web발신] 현대카드 승인 10/14 14:20 360,000원 3개월 무신사스토어" class="w-full border border-indigo-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white resize-none"></textarea>
+          <textarea id="smsInput" rows="3" oninput="previewSMS()" placeholder="[Web발신] 현대카드 승인 10/14 14:20 360,000원 3개월 무신사스토어" class="w-full border border-indigo-200 dark:border-slate-700 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900 resize-none"></textarea>
 
           <!-- 실시간 분석 미리보기 -->
           <div id="smsPreviewArea" class="hidden mt-3 space-y-2">
-            <div class="text-xs font-bold text-indigo-700 flex justify-between items-center">
+            <div class="text-xs font-bold text-indigo-700 dark:text-indigo-400 flex justify-between items-center">
               <span id="smsCountText">🔍 분석 결과 (0건)</span>
               <span class="text-[11px] font-normal text-slate-400">할부 자동 분할됨</span>
             </div>
             <div id="smsPreviewList" class="max-h-44 overflow-y-auto space-y-1.5 pr-1"></div>
             <div class="grid grid-cols-2 gap-2 pt-1">
-              <button type="button" onclick="fillFormFromSMS()" class="py-2 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 font-bold text-xs rounded-lg transition">
+              <button type="button" onclick="fillFormFromSMS()" class="py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-lg transition">
                 ✍️ 아래 폼에 채우기
               </button>
               <button type="button" onclick="registerAllSMS()" class="py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
@@ -312,34 +325,34 @@
         <!-- 상세 내역 등록 및 수정 폼 -->
         <div id="formCard" class="card p-4 md:p-5 transition-all duration-300 border-2 border-transparent">
           <div class="flex justify-between items-center mb-3">
-            <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900">✍️ 상세 내역 등록</h2>
-            <button type="button" id="cancelEditBtn" onclick="exitEditMode()" class="hidden text-xs bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2.5 py-1 rounded-lg transition">
+            <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100">✍️ 상세 내역 등록</h2>
+            <button type="button" id="cancelEditBtn" onclick="exitEditMode()" class="hidden text-xs bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 text-rose-600 dark:text-rose-400 font-bold px-2.5 py-1 rounded-lg transition">
               ✕ 수정 취소
             </button>
           </div>
 
           <form id="txForm" class="space-y-3">
-            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-lg">
-              <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2 text-sm font-bold rounded-md bg-white text-rose-600 shadow-sm transition">지출</button>
-              <button type="button" id="btnIncome" onclick="setType('income')" class="py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 transition">수입</button>
+            <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 dark:bg-slate-900 rounded-lg">
+              <button type="button" id="btnExpense" onclick="setType('expense')" class="py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm transition">지출</button>
+              <button type="button" id="btnIncome" onclick="setType('income')" class="py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 transition">수입</button>
             </div>
             
             <div class="grid grid-cols-2 gap-2">
               <div class="min-w-0">
-                <label class="block text-xs font-bold text-slate-600 mb-1">날짜</label>
-                <input type="date" id="txDate" required class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">날짜</label>
+                <input type="date" id="txDate" required class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
               </div>
               <div class="min-w-0">
-                <label class="block text-xs font-bold text-slate-600 mb-1">카테고리</label>
-                <select id="txCategory" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">카테고리</label>
+                <select id="txCategory" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
                 </select>
               </div>
             </div>
 
-            <div id="paymentOptionRow" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200/80">
+            <div id="paymentOptionRow" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80 dark:border-slate-700">
               <div class="col-span-2 sm:col-span-1">
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">결제수단</label>
-                <select id="txMethod" onchange="toggleCardOptions()" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">결제수단</label>
+                <select id="txMethod" onchange="toggleCardOptions()" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="신용카드">💳 신용카드</option>
                   <option value="체크카드">💳 체크카드</option>
                   <option value="간편페이">📱 간편페이</option>
@@ -348,8 +361,8 @@
                 </select>
               </div>
               <div id="cardCompanyBox">
-                <label class="block text-[11px] font-bold text-slate-500 mb-1">카드사/결제사</label>
-                <select id="txCardCompany" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">카드사/결제사</label>
+                <select id="txCardCompany" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="신한카드">신한카드</option>
                   <option value="현대카드">현대카드</option>
                   <option value="삼성카드">삼성카드</option>
@@ -364,8 +377,8 @@
                 </select>
               </div>
               <div id="installmentBox">
-                <label class="block text-[11px] font-bold text-indigo-600 mb-1">할부 개월</label>
-                <select id="txInstallment" onchange="updateInstallmentNotice()" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-[11px] font-bold text-indigo-600 dark:text-indigo-400 mb-1">할부 개월</label>
+                <select id="txInstallment" onchange="updateInstallmentNotice()" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-300 bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <option value="1">일시불</option>
                   <option value="2">2개월</option>
                   <option value="3">3개월</option>
@@ -381,24 +394,24 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">사용처 (가맹점)</label>
-                <input type="text" id="txMerchant" placeholder="예: 스타벅스, 쿠팡" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">사용처 (가맹점)</label>
+                <input type="text" id="txMerchant" placeholder="예: 스타벅스, 쿠팡" required class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
               </div>
               <div>
-                <label class="block text-xs font-bold text-slate-600 mb-1">상세 내용 (메모)</label>
-                <input type="text" id="txMemo" placeholder="예: 팀원 커피, 생필품" class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <label class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">상세 내용 (메모)</label>
+                <input type="text" id="txMemo" placeholder="예: 팀원 커피, 생필품" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
               </div>
             </div>
 
             <div>
-              <label id="amountLabel" class="block text-xs font-bold text-slate-600 mb-1">결제 금액 (총액, 원)</label>
-              <input type="number" id="txAmount" oninput="updateInstallmentNotice()" inputmode="numeric" placeholder="0" min="1" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500">
-              <p id="installmentPreviewNotice" class="hidden text-xs font-bold text-indigo-600 mt-1.5 bg-indigo-50 px-2.5 py-1.5 rounded-lg">
+              <label id="amountLabel" class="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">결제 금액 (총액, 원)</label>
+              <input type="number" id="txAmount" oninput="updateInstallmentNotice()" inputmode="numeric" placeholder="0" min="1" required class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
+              <p id="installmentPreviewNotice" class="hidden text-xs font-bold text-indigo-600 dark:text-indigo-400 mt-1.5 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1.5 rounded-lg">
                 💡 할부 선택 시 매월 분할 금액이 다음 달에 자동 등록됩니다.
               </p>
             </div>
 
-            <button type="submit" id="submitBtn" class="w-full bg-slate-900 active:bg-slate-800 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition shadow-md">
+            <button type="submit" id="submitBtn" class="w-full bg-slate-900 dark:bg-indigo-600 active:bg-slate-800 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
               가계부에 등록하기
             </button>
           </form>
@@ -413,10 +426,10 @@
         <div class="card p-4 md:p-5">
           <div class="flex justify-between items-center gap-2 mb-3">
             <div>
-              <h2 class="text-sm md:text-base font-extrabold text-slate-900">📊 카테고리별 예산 및 지출 현황</h2>
+              <h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100">📊 카테고리별 예산 및 지출 현황</h2>
               <p class="text-[11px] text-slate-500">사용 금액과 설정된 예산 금액을 비교하세요.</p>
             </div>
-            <button onclick="openBudgetModal()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold px-2.5 py-1.5 rounded-lg transition shrink-0">
+            <button onclick="openBudgetModal()" class="text-xs bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 text-indigo-700 dark:text-indigo-300 font-bold px-2.5 py-1.5 rounded-lg transition shrink-0">
               ⚙️ 예산 수정
             </button>
           </div>
@@ -437,21 +450,21 @@
           <div class="flex flex-col gap-2.5 mb-3">
             <div class="flex items-center justify-between w-full">
               <div class="flex items-center gap-2">
-                <h2 class="text-sm md:text-base font-extrabold">📋 상세 거래 내역</h2>
-                <span id="txTotalCountBadge" class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-bold">0건</span>
+                <h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100">📋 상세 거래 내역</h2>
+                <span id="txTotalCountBadge" class="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full text-xs font-bold">0건</span>
               </div>
-              <span class="text-[11px] text-indigo-600 font-semibold">💡 터치 시 수정</span>
+              <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold">💡 터치 시 수정</span>
             </div>
             
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
-              <select id="sortFilter" onchange="render()" class="border border-indigo-200 rounded-lg px-2 py-1.5 text-xs font-extrabold text-indigo-700 bg-indigo-50/50 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
+              <select id="sortFilter" onchange="render()" class="border border-indigo-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-extrabold text-indigo-700 dark:text-indigo-300 bg-indigo-50/50 dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
                 <option value="DATE_DESC" selected>📅 날짜 최신 + 등록순</option>
                 <option value="CREATED_DESC">⚡ 순수 등록순 (날짜무관)</option>
                 <option value="AMOUNT_DESC">💰 금액 높은순</option>
                 <option value="AMOUNT_ASC">🪙 금액 낮은순</option>
               </select>
 
-              <select id="categoryFilter" onchange="render()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
+              <select id="categoryFilter" onchange="render()" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
                 <option value="ALL">전체 카테고리</option>
                 <optgroup label="지출 카테고리">
                   <option value="🍔 식비">🍔 식비</option>
@@ -471,7 +484,7 @@
                 </optgroup>
               </select>
 
-              <select id="cardFilter" onchange="render()" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
+              <select id="cardFilter" onchange="render()" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
                 <option value="ALL">전체 결제수단</option>
                 <option value="INSTALLMENT">💳 할부 내역만</option>
                 <option value="신한카드">신한카드</option>
@@ -486,14 +499,14 @@
                 <option value="토스뱅크">토스뱅크</option>
               </select>
 
-              <input type="text" id="searchInput" oninput="render()" placeholder="사용처, 내용 검색..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 min-w-0">
+              <input type="text" id="searchInput" oninput="render()" placeholder="사용처, 내용 검색..." class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900 min-w-0">
             </div>
           </div>
 
           <div class="w-full overflow-x-auto">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="border-b border-slate-200 text-[11px] font-bold text-slate-400 uppercase">
+                <tr class="border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-400 uppercase">
                   <th class="py-2 px-1.5 sm:px-2">날짜</th>
                   <th class="py-2 px-1.5 sm:px-2 hidden sm:table-cell">카테고리</th>
                   <th class="py-2 px-1.5 sm:px-2 hidden md:table-cell">결제수단</th>
@@ -502,7 +515,7 @@
                   <th class="py-2 px-1 text-center w-8">삭제</th>
                 </tr>
               </thead>
-              <tbody id="txList" class="divide-y divide-slate-100 text-xs md:text-sm">
+              <tbody id="txList" class="divide-y divide-slate-100 dark:divide-slate-700 text-xs md:text-sm">
               </tbody>
             </table>
             <div id="emptyListMsg" class="text-center py-12 text-slate-400 text-sm hidden">
@@ -516,28 +529,28 @@
     </div>
 
     <!-- 5. 스마트 변경 이력 -->
-    <section id="historySection" class="card border border-slate-200/80 overflow-hidden">
-      <div onclick="toggleHistoryPanel()" class="p-3.5 md:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 cursor-pointer hover:bg-slate-50/80 transition">
+    <section id="historySection" class="card border border-slate-200/80 dark:border-slate-700 overflow-hidden">
+      <div onclick="toggleHistoryPanel()" class="p-3.5 md:px-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition">
         <div class="flex items-center gap-2 min-w-0 w-full sm:w-auto">
           <span class="text-base shrink-0">📜</span>
-          <h2 class="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 shrink-0">스마트 변경 이력</h2>
-          <span id="logCountBadge" class="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[11px] font-bold shrink-0">0건</span>
+          <h2 class="text-xs sm:text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100 shrink-0">스마트 변경 이력</h2>
+          <span id="logCountBadge" class="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-full text-[11px] font-bold shrink-0">0건</span>
           <p id="latestLogSummary" class="text-xs text-slate-500 truncate ml-1">최근 기록이 여기에 요약됩니다.</p>
         </div>
         <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
-          <span class="text-[11px] text-indigo-600 font-bold bg-indigo-50 px-2.5 py-1 rounded-lg" id="historyToggleBtnText">
+          <span class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold bg-indigo-50 dark:bg-indigo-950 px-2.5 py-1 rounded-lg" id="historyToggleBtnText">
             펼쳐보기 ▼
           </span>
         </div>
       </div>
 
-      <div id="historyBody" class="hidden border-t border-slate-100 p-4 md:p-6 bg-slate-50/40 space-y-4">
+      <div id="historyBody" class="hidden border-t border-slate-100 dark:border-slate-700 p-4 md:p-6 bg-slate-50/40 dark:bg-slate-900/50 space-y-4">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
           <p class="text-xs text-slate-500">
             💡 실수로 수정/삭제한 내역은 우측 <b>[↩️ 복구]</b> 버튼으로 즉시 되돌릴 수 있습니다.
           </p>
           <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <select id="logFilter" onchange="renderLogs()" class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <select id="logFilter" onchange="renderLogs()" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500">
               <option value="IMPORTANT">⭐ 중요 이력만 (수정/삭제/예산)</option>
               <option value="ALL">전체 이력 (단순 등록 포함)</option>
               <option value="수정">🔵 수정 이력만</option>
@@ -545,8 +558,8 @@
               <option value="등록">🟢 등록 이력만</option>
               <option value="예산/복원">🟣 예산/복원 이력만</option>
             </select>
-            <input type="text" id="logSearchInput" oninput="renderLogs()" placeholder="이력 내 검색..." class="border border-slate-200 rounded-lg px-3 py-1.5 text-xs flex-1 sm:w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-            <button onclick="clearChangeLogs()" class="text-xs border border-slate-200 bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-bold px-3 py-1.5 rounded-lg transition">
+            <input type="text" id="logSearchInput" oninput="renderLogs()" placeholder="이력 내 검색..." class="border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs flex-1 sm:w-36 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900">
+            <button onclick="clearChangeLogs()" class="text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-rose-50 dark:hover:bg-rose-950 hover:text-rose-600 text-slate-600 dark:text-slate-300 font-bold px-3 py-1.5 rounded-lg transition">
               정리
             </button>
           </div>
@@ -564,44 +577,44 @@
 
   <!-- 📌 고정 지출 관리 및 원클릭 등록 모달 -->
   <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
         <div>
-          <h3 class="text-base sm:text-lg font-extrabold text-slate-900">📌 고정 지출 관리 및 일괄 등록</h3>
+          <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">📌 고정 지출 관리 및 일괄 등록</h3>
           <p class="text-xs text-slate-500">매달 나가는 지출을 저장해 두고 선택한 월에 한 번에 등록하세요.</p>
         </div>
-        <button onclick="closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        <button onclick="closeFixedExpenseModal()" class="text-slate-400 hover:text-slate-200 text-lg font-bold px-2">✕</button>
       </div>
 
-      <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 space-y-2.5">
-        <p class="text-xs font-bold text-slate-700">➕ 새 고정 지출 항목 추가</p>
+      <div class="bg-slate-50 dark:bg-slate-900 p-3.5 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2.5">
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">➕ 새 고정 지출 항목 추가</p>
         <div class="grid grid-cols-2 gap-2">
-          <input type="text" id="feName" placeholder="사용처 (예: 월세, 통신비)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <select id="feCategory" class="border border-slate-200 rounded-lg px-2 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="text" id="feName" placeholder="사용처 (예: 월세, 통신비)" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <select id="feCategory" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <option value="🏠 주거/통신">🏠 주거/통신</option>
             <option value="🎸 기타지출">🎸 기타지출</option>
             <option value="🍔 식비">🍔 식비</option>
           </select>
         </div>
         <div class="grid grid-cols-3 gap-2">
-          <input type="number" id="feDay" placeholder="매월 며칠 (예: 25)" min="1" max="31" class="border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
-          <input type="number" id="feAmount" placeholder="금액 (원)" class="col-span-2 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="number" id="feDay" placeholder="매월 며칠 (예: 25)" min="1" max="31" class="border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <input type="number" id="feAmount" placeholder="금액 (원)" class="col-span-2 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
-        <button type="button" onclick="addFixedExpenseItem()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition">
+        <button type="button" onclick="addFixedExpenseItem()" class="w-full py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition">
           고정 지출 목록에 추가
         </button>
       </div>
 
       <div class="space-y-2 flex-1 overflow-y-auto pr-1">
-        <p class="text-xs font-bold text-slate-700">📋 저장된 고정 지출 목록</p>
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">📋 저장된 고정 지출 목록</p>
         <div id="fixedExpenseList" class="space-y-1.5">
         </div>
       </div>
 
-      <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2">
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-2">
         <span class="text-xs text-slate-500">💡 현재 선택된 월(상단 바)에 일괄 등록됩니다.</span>
         <div class="flex gap-2 w-full sm:w-auto">
-          <button onclick="closeFixedExpenseModal()" class="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50">닫기</button>
+          <button onclick="closeFixedExpenseModal()" class="flex-1 sm:flex-none px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700">닫기</button>
           <button onclick="registerAllFixedExpenses()" class="flex-1 sm:flex-none px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
             ⚡ 이번 달 고정지출 일괄 등록
           </button>
@@ -612,33 +625,33 @@
 
   <!-- 🤖 갤럭시 결제 문자 자동화 가이드 모달 -->
   <div id="galaxyAutoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xl">🤖</span>
           <div>
-            <h3 class="text-base sm:text-lg font-extrabold text-slate-900">갤럭시 결제문자 자동 등록 & 전체화면 팁</h3>
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">갤럭시 결제문자 자동 등록 & 전체화면 팁</h3>
             <p class="text-xs text-slate-500">플립6·폴드8 맞춤 화면 설정과 문자 자동 등록법입니다.</p>
           </div>
         </div>
-        <button onclick="closeGalaxyAutoModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        <button onclick="closeGalaxyAutoModal()" class="text-slate-400 hover:text-slate-200 text-lg font-bold px-2">✕</button>
       </div>
 
-      <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
-        <div class="p-3.5 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1.5">
-          <p class="font-extrabold text-amber-950 text-sm">📱 갤럭시 Z 플립6 / 폴드8 전체화면 꽉 채우기 팁</p>
+      <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+        <div class="p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 space-y-1.5">
+          <p class="font-extrabold text-amber-950 dark:text-amber-300 text-sm">📱 갤럭시 Z 플립6 / 폴드8 전체화면 꽉 채우기 팁</p>
           <p>1) 브라우저 상단 주소창이 보인다면 메뉴[⋮] ➔ <b>[홈 화면에 추가(앱 설치)]</b> 후 홈 화면 아이콘으로 실행하세요.</p>
           <p>2) 상단 카메라 홀(검은 여백)까지 꽉 채우려면 갤럭시 <b>[설정] ➔ [디스플레이] ➔ [카메라 영역 숨기기]</b>에서 크롬/삼성인터넷을 <b>[카메라 영역 표시]</b>로 켜주세요.</p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 space-y-1.5">
-          <p class="font-extrabold text-emerald-950 text-sm">⚡ 방법 1. 갤럭시 [모드 및 루틴] + 클립보드 원터치 버튼</p>
+        <div class="p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 space-y-1.5">
+          <p class="font-extrabold text-emerald-950 dark:text-emerald-300 text-sm">⚡ 방법 1. 갤럭시 [모드 및 루틴] + 클립보드 원터치 버튼</p>
           <p>1) 갤럭시 <b>설정 ➔ 모드 및 루틴</b>에서 <b>[언제: 메시지 수신(키워드: 승인)]</b> ➔ <b>[무엇을: 아르곤 가계부 열기]</b>를 등록합니다.</p>
           <p>2) 문자가 오면 상단 알림에서 <b>[복사]</b>만 누르고, 열린 가계부에서 초록색 <b>[📋 복사한 결제문자 1초 자동등록]</b> 버튼만 터치하면 끝!</p>
         </div>
 
-        <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
-          <p class="font-extrabold text-slate-900 text-sm">🔗 방법 2. 문자 자동 전달 앱 연동 (URL 자동 수신)</p>
+        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 space-y-2">
+          <p class="font-extrabold text-slate-900 dark:text-slate-100 text-sm">🔗 방법 2. 문자 자동 전달 앱 연동 (URL 자동 수신)</p>
           <div class="bg-slate-900 text-emerald-300 font-mono text-[11px] p-2.5 rounded-lg break-all select-all" id="webhookUrlExample">
             https://내주소.netlify.app/?sms={문자내용}&auto=1
           </div>
@@ -648,7 +661,7 @@
         </div>
       </div>
 
-      <div class="flex justify-end pt-2 border-t border-slate-100">
+      <div class="flex justify-end pt-2 border-t border-slate-100 dark:border-slate-700">
         <button onclick="closeGalaxyAutoModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700">확인</button>
       </div>
     </div>
@@ -656,23 +669,23 @@
 
   <!-- 🚀 버전별 업데이트 노트 모달 -->
   <div id="releaseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
         <div class="flex items-center gap-2">
           <span class="text-xl">🚀</span>
           <div>
-            <h3 class="text-base sm:text-lg font-extrabold text-slate-900">버전별 주요 업데이트 노트</h3>
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">버전별 주요 업데이트 노트</h3>
             <p class="text-xs text-slate-500">아르곤 스마트 가계부의 진화 과정을 확인하세요.</p>
           </div>
         </div>
-        <button onclick="closeReleaseModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        <button onclick="closeReleaseModal()" class="text-slate-400 hover:text-slate-200 text-lg font-bold px-2">✕</button>
       </div>
 
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1">
       </div>
 
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
-        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600">Pro v4.0</b></span>
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+        <span class="text-xs text-slate-400 font-medium">현재 실행 버전: <b class="text-indigo-600 dark:text-indigo-400">Pro v4.1</b></span>
         <button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">
           확인했어요!
         </button>
@@ -682,25 +695,25 @@
 
   <!-- 🎯 카테고리별 예산 설정 모달 -->
   <div id="budgetModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
         <div>
-          <h3 class="text-base sm:text-lg font-extrabold text-slate-900">🎯 카테고리별 월 예산 설정</h3>
+          <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">🎯 카테고리별 월 예산 설정</h3>
           <p class="text-xs text-slate-500">목표 예산을 입력하면 총예산이 자동 합산됩니다.</p>
         </div>
-        <button onclick="closeBudgetModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        <button onclick="closeBudgetModal()" class="text-slate-400 hover:text-slate-200 text-lg font-bold px-2">✕</button>
       </div>
       
       <div id="budgetModalInputs" class="space-y-3 overflow-y-auto pr-1 flex-1">
       </div>
 
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center">
+      <div class="pt-3 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
         <div>
           <span class="text-xs text-slate-400 font-bold block">합산 월 총예산</span>
-          <span id="modalTotalBudgetPreview" class="text-base font-extrabold text-indigo-600">0원</span>
+          <span id="modalTotalBudgetPreview" class="text-base font-extrabold text-indigo-600 dark:text-indigo-400">0원</span>
         </div>
         <div class="flex gap-2">
-          <button onclick="closeBudgetModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50">취소</button>
+          <button onclick="closeBudgetModal()" class="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700">취소</button>
           <button onclick="saveCategoryBudgets()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold hover:bg-indigo-700 shadow-md">저장하기</button>
         </div>
       </div>
@@ -709,68 +722,68 @@
 
   <!-- 🔄 기기간 데이터 백업 / 복원 모달 -->
   <div id="syncModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
-      <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
         <div>
-          <h3 class="text-base sm:text-lg font-extrabold text-slate-900">🔄 기기간 데이터 백업 및 복원</h3>
+          <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">🔄 기기간 데이터 백업 및 복원</h3>
           <p class="text-xs text-slate-500">폴드8 ↔ 플립6, 또는 가족과 가계부 내역을 주고받으세요.</p>
         </div>
-        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold px-2">✕</button>
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-200 text-lg font-bold px-2">✕</button>
       </div>
 
-      <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-2">
-        <p class="text-xs font-bold text-slate-700">⚙️ 데이터를 불러올 때(복원 시) 적용 방식 선택</p>
+      <div class="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700 space-y-2">
+        <p class="text-xs font-bold text-slate-700 dark:text-slate-300">⚙️ 데이터를 불러올 때(복원 시) 적용 방식 선택</p>
         <div class="grid grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer">
+          <label class="flex items-center gap-2 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
             <input type="radio" name="restoreMode" value="overwrite" checked class="text-indigo-600 focus:ring-indigo-500">
             <div>
-              <span class="text-xs font-extrabold text-slate-800 block">🔄 전체 덮어쓰기</span>
+              <span class="text-xs font-extrabold text-slate-800 dark:text-slate-200 block">🔄 전체 덮어쓰기</span>
               <span class="text-[10px] text-slate-400">백업본으로 교체</span>
             </div>
           </label>
-          <label class="flex items-center gap-2 bg-white p-2.5 rounded-lg border border-slate-200 cursor-pointer">
+          <label class="flex items-center gap-2 bg-white dark:bg-slate-800 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer">
             <input type="radio" name="restoreMode" value="merge" class="text-indigo-600 focus:ring-indigo-500">
             <div>
-              <span class="text-xs font-extrabold text-slate-800 block">➕ 기존과 합치기</span>
+              <span class="text-xs font-extrabold text-slate-800 dark:text-slate-200 block">➕ 기존과 합치기</span>
               <span class="text-[10px] text-slate-400">새 내역만 추가</span>
             </div>
           </label>
         </div>
       </div>
 
-      <div class="space-y-2 border border-indigo-100 bg-indigo-50/30 p-3.5 rounded-xl">
+      <div class="space-y-2 border border-indigo-100 dark:border-slate-700 bg-indigo-50/30 dark:bg-slate-900 p-3.5 rounded-xl">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-extrabold text-indigo-950">📁 방법 1. 백업 파일(.json)로 주고받기</span>
+          <span class="text-xs font-extrabold text-indigo-950 dark:text-indigo-300">📁 방법 1. 백업 파일(.json)로 주고받기</span>
         </div>
         <div class="grid grid-cols-2 gap-2 pt-1">
           <button type="button" onclick="downloadBackupFile()" class="py-2.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-xs">
             📤 파일 다운로드
           </button>
-          <button type="button" onclick="document.getElementById('backupFileInput').click()" class="py-2.5 px-3 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 font-bold text-xs rounded-xl transition">
+          <button type="button" onclick="document.getElementById('backupFileInput').click()" class="py-2.5 px-3 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 hover:bg-indigo-50 dark:hover:bg-slate-700 text-indigo-700 dark:text-indigo-300 font-bold text-xs rounded-xl transition">
             📥 파일 불러오기
           </button>
           <input type="file" id="backupFileInput" accept=".json,application/json" onchange="handleBackupFileUpload(event)" class="hidden">
         </div>
       </div>
 
-      <div class="space-y-2 border border-emerald-100 bg-emerald-50/30 p-3.5 rounded-xl">
+      <div class="space-y-2 border border-emerald-100 dark:border-slate-700 bg-emerald-50/30 dark:bg-slate-900 p-3.5 rounded-xl">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-extrabold text-emerald-950">💬 방법 2. 카톡 코드로 1초 공유</span>
+          <span class="text-xs font-extrabold text-emerald-950 dark:text-emerald-300">💬 방법 2. 카톡 코드로 1초 공유</span>
         </div>
         <button type="button" onclick="copyBackupCode()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-xs">
           📋 현재 가계부 데이터 코드 복사하기
         </button>
 
         <div class="pt-1 space-y-2">
-          <textarea id="restoreCodeInput" rows="2" placeholder="복사한 백업 코드를 여기에 붙여넣으세요..." class="w-full border border-emerald-200 rounded-xl p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white resize-none"></textarea>
-          <button type="button" onclick="restoreFromCodeInput()" class="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition">
+          <textarea id="restoreCodeInput" rows="2" placeholder="복사한 백업 코드를 여기에 붙여넣으세요..." class="w-full border border-emerald-200 dark:border-slate-700 rounded-lg p-2.5 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white dark:bg-slate-800 resize-none"></textarea>
+          <button type="button" onclick="restoreFromCodeInput()" class="w-full py-2 bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition">
             ⚡ 붙여넣은 코드로 즉시 복원하기
           </button>
         </div>
       </div>
 
       <div class="flex justify-end pt-1">
-        <button onclick="closeSyncModal()" class="px-5 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-bold hover:bg-slate-50">닫기</button>
+        <button onclick="closeSyncModal()" class="px-5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700">닫기</button>
       </div>
     </div>
   </div>
@@ -782,24 +795,32 @@
 
   <script>
     // ==========================================
-    // 0. 버전 관리 & 업데이트 노트 (Pro v4.0 메이저)
+    // 0. 버전 관리 & 업데이트 노트 (Pro v4.1)
     // ==========================================
-    const APP_VERSION = '4.0';
+    const APP_VERSION = '4.1';
 
     const releaseNotesData = [
       {
-        version: 'Pro v4.0',
-        date: '2026.10.16 (최신 메이저)',
-        badge: '고정지출 & 정식 v4.0',
+        version: 'Pro v4.1',
+        date: '2026.10.16 (최신)',
+        badge: '다크 모드 추가',
         isLatest: true,
         items: [
-          '📌 <b>고정 지출 원클릭 일괄 등록 기능 정식 탑재:</b> 월세, 통신비, 구독료 등 정기 지출을 미리 등록하고 선택한 월에 버튼 하나로 일괄 반영',
-          '📅 <b>상세 내역 [날짜 최신순 + 같은 날 내 최신 등록순] 정렬 기본 적용 및 정렬 필터 추가</b>',
-          '📱 <b>갤럭시 Z 플립6 / 폴드8 맞춤 화면 꽉 채우기 패치 및 UI 다이어트 완료</b>'
+          '🌙 <b>다크 모드(Dark Mode) 정식 탑재:</b> [⚙️ 메뉴] ➔ [다크 모드 켜기]를 통해 어두운 곳에서도 눈이 편안한 세련된 야간 테마 즉시 적용 및 브라우저 자동 기억',
+          '📌 <b>고정 지출 관리 & ⚡ 날짜 최신순 + 최신 등록순 정렬 완성</b>'
         ]
       },
       {
-        version: 'Pro v3.0 ~ v3.8',
+        version: 'Pro v4.0',
+        date: '2026.10.16',
+        badge: '고정지출 엔진',
+        isLatest: false,
+        items: [
+          '📌 <b>고정 지출 원클릭 일괄 등록 기능 정식 탑재</b>'
+        ]
+      },
+      {
+        version: 'Pro v3.0 ~ v3.9',
         date: '2026.10.14 ~ 15',
         badge: '핵심 엔진',
         isLatest: false,
@@ -847,15 +868,15 @@
     function renderReleaseNotes() {
       const container = document.getElementById('releaseNotesContainer');
       container.innerHTML = releaseNotesData.map(r => `
-        <div class="p-4 rounded-xl border ${r.isLatest ? 'border-indigo-300 bg-indigo-50/40 ring-2 ring-indigo-50' : 'border-slate-200 bg-slate-50/60'} space-y-2">
+        <div class="p-4 rounded-xl border ${r.isLatest ? 'border-indigo-300 dark:border-indigo-800 bg-indigo-50/40 dark:bg-indigo-950/40 ring-2 ring-indigo-50 dark:ring-indigo-950' : 'border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900'} space-y-2">
           <div class="flex justify-between items-center">
             <div class="flex items-center gap-2">
-              <span class="font-extrabold text-sm ${r.isLatest ? 'text-indigo-700' : 'text-slate-800'}">${r.version}</span>
-              <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full ${r.isLatest ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}">${r.badge}</span>
+              <span class="font-extrabold text-sm ${r.isLatest ? 'text-indigo-700 dark:text-indigo-300' : 'text-slate-800 dark:text-slate-200'}">${r.version}</span>
+              <span class="px-2 py-0.5 text-[10px] font-extrabold rounded-full ${r.isLatest ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${r.badge}</span>
             </div>
             <span class="text-[11px] text-slate-400 font-medium">${r.date}</span>
           </div>
-          <ul class="space-y-1.5 text-xs text-slate-600 leading-relaxed pl-1">
+          <ul class="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed pl-1">
             ${r.items.map(item => `<li class="flex items-start gap-1.5"><span>•</span><span>${item}</span></li>`).join('')}
           </ul>
         </div>
@@ -896,8 +917,39 @@
       if (seenVersion !== APP_VERSION) {
         setTimeout(() => {
           openReleaseModal();
-          showToast(`🎉 Pro v${APP_VERSION} 메이저 업데이트 완료!`);
+          showToast(`🎉 Pro v${APP_VERSION} 다크 모드 업데이트 완료!`);
         }, 400);
+      }
+    }
+
+    // ==========================================
+    // 🌙 다크 모드 관리 엔진
+    // ==========================================
+    function initDarkMode() {
+      const isDark = localStorage.getItem('argon_dark_mode') === 'true';
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        const menuText = document.getElementById('darkModeMenuText');
+        if (menuText) menuText.textContent = '☀️ 라이트 모드로 전환';
+      }
+    }
+
+    function toggleDarkMode() {
+      closeHeaderMenu();
+      const htmlEl = document.documentElement;
+      const isCurrentlyDark = htmlEl.classList.contains('dark');
+      const menuText = document.getElementById('darkModeMenuText');
+
+      if (isCurrentlyDark) {
+        htmlEl.classList.remove('dark');
+        localStorage.setItem('argon_dark_mode', 'false');
+        if (menuText) menuText.textContent = '🌙 다크 모드 켜기';
+        showToast('☀️ 라이트 모드로 전환되었습니다.');
+      } else {
+        htmlEl.classList.add('dark');
+        localStorage.setItem('argon_dark_mode', 'true');
+        if (menuText) menuText.textContent = '☀️ 라이트 모드로 전환';
+        showToast('🌙 다크 모드가 켜졌습니다.');
       }
     }
 
@@ -1040,7 +1092,7 @@
         { id: 101, createdAt: 101, date: `${currentYearMonth}-01`, type: 'income', category: '💰 월급', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '(주)아르곤테크', memo: '이번 달 정기 급여', amount: 3500000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 3500000, groupId: null },
         { id: 102, createdAt: 102, date: `${currentYearMonth}-03`, type: 'expense', category: '🏠 주거/통신', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '관리사무소', memo: '월세 및 관리비', amount: 550000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 550000, groupId: null },
         { id: 103, createdAt: 103, date: `${currentYearMonth}-05`, type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 1/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 1, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
-        { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플ส토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+        { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-05`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
         { id: 105, createdAt: 105, date: addMonthsToDate(`${currentYearMonth}-05`, 2), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '현대카드', merchant: '애플스토어', memo: '에어팟 프로 구매 (할부 3/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 3, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
         { id: 106, createdAt: 106, date: today, type: 'expense', category: '🍔 식비', method: '신용카드', cardCompany: '신한카드', merchant: '성수동 국밥', memo: '점심 식사', amount: 11000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 11000, groupId: null },
         { id: 107, createdAt: 107, date: today, type: 'expense', category: '☕ 카페/간식', method: '신용카드', cardCompany: '신한카드', merchant: '스타벅스', memo: '아이스 아메리카노', amount: 4500, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 4500, groupId: null }
@@ -1053,7 +1105,7 @@
     // 📜 스마트 변경 이력
     // ==========================================
     let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [
-      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.0 업데이트', detail: 'Pro v4.0 메이저 업데이트가 적용되었습니다.' }
+      { id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.1 업데이트', detail: '다크 모드 및 고정 지출 기능이 활성화되었습니다.' }
     ];
 
     function toggleHistoryPanel(forceOpen) {
@@ -1183,7 +1235,7 @@
       const summaryEl = document.getElementById('latestLogSummary');
       if (changeLogs.length > 0) {
         const latest = changeLogs[0];
-        summaryEl.innerHTML = `<b class="text-slate-700">[${latest.action}]</b>${latest.detail} <span class="text-slate-400">(${latest.time})</span>`;
+        summaryEl.innerHTML = `<b class="text-slate-700 dark:text-slate-300">[${latest.action}]</b>${latest.detail} <span class="text-slate-400">(${latest.time})</span>`;
       } else {
         summaryEl.textContent = '기록된 변경 이력이 없습니다.';
       }
@@ -1206,10 +1258,10 @@
       emptyEl.classList.add('hidden');
 
       const badgeStyle = {
-        '등록': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-        '수정': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-        '삭제': 'bg-rose-100 text-rose-700 border-rose-200',
-        '예산/복원': 'bg-purple-100 text-purple-700 border-purple-200'
+        '등록': 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+        '수정': 'bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800',
+        '삭제': 'bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800',
+        '예산/복원': 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
       };
 
       const groups = {};
@@ -1222,17 +1274,17 @@
       listEl.innerHTML = Object.entries(groups).map(([dateKey, logs]) => {
         const dateLabel = dateKey === today ? `📅 오늘 (${dateKey})` : `📅 ${dateKey}`;
         const itemsHtml = logs.map(log => {
-          const style = badgeStyle[log.category] || 'bg-slate-100 text-slate-700';
+          const style = badgeStyle[log.category] || 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300';
           const canUndo = log.undoData && !log.undone;
           const undoBtnHtml = canUndo
-            ? `<button onclick="undoFromLog(${log.id})" class="px-2 py-0.5 bg-white hover:bg-indigo-600 hover:text-white text-indigo-600 border border-indigo-200 rounded-md font-bold text-[11px] transition shrink-0 shadow-2xs">↩️ 복구</button>`
+            ? `<button onclick="undoFromLog(${log.id})" class="px-2 py-0.5 bg-white dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-slate-700 rounded-md font-bold text-[11px] transition shrink-0 shadow-2xs">↩️ 복구</button>`
             : (log.undone ? `<span class="text-[10px] text-slate-400 font-semibold shrink-0">복구됨</span>` : '');
 
           return `
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-white hover:bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-200/70 text-xs transition">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 px-3.5 py-2 rounded-xl border border-slate-200/70 dark:border-slate-700 text-xs transition">
               <div class="flex items-start sm:items-center gap-2 min-w-0">
                 <span class="px-2 py-0.5 rounded-md font-extrabold text-[11px] border shrink-0 ${style}">${log.action}</span>
-                <span class="text-slate-700 font-medium break-all">${log.detail}</span>
+                <span class="text-slate-700 dark:text-slate-200 font-medium break-all">${log.detail}</span>
               </div>
               <div class="flex items-center gap-2 self-end sm:self-center shrink-0">
                 ${undoBtnHtml}
@@ -1484,13 +1536,13 @@
           ? `<span class="px-1.5 py-0.5 bg-indigo-600 text-white rounded font-bold text-[10px] shrink-0">${item.installmentMonths}개월 할부</span>` 
           : `<span class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-medium text-[10px] shrink-0">일시불</span>`;
         return `
-          <div class="flex flex-col gap-1 bg-white border border-indigo-100 rounded-lg p-2.5 text-xs shadow-xs">
+          <div class="flex flex-col gap-1 bg-white dark:bg-slate-900 border border-indigo-100 dark:border-slate-700 rounded-lg p-2.5 text-xs shadow-xs">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-1.5 truncate pr-2">
-                <span class="font-bold text-indigo-700 shrink-0">[${item.cardCompany}]</span>
-                <span class="font-extrabold text-slate-900 truncate">${item.merchant}</span>
+                <span class="font-bold text-indigo-700 dark:text-indigo-400 shrink-0">[${item.cardCompany}]</span>
+                <span class="font-extrabold text-slate-900 dark:text-slate-100 truncate">${item.merchant}</span>
               </div>
-              <span class="font-extrabold shrink-0 ${item.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">
+              <span class="font-extrabold shrink-0 ${item.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
                 ${item.type === 'income' ? '+' : '-'}${item.amount.toLocaleString()}원
               </span>
             </div>
@@ -1609,12 +1661,12 @@
       const payRow = document.getElementById('paymentOptionRow');
       
       if (type === 'expense') {
-        btnExp.className = 'py-2 text-sm font-bold rounded-md bg-white text-rose-600 shadow-sm transition';
-        btnInc.className = 'py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 transition';
+        btnExp.className = 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-rose-600 dark:text-rose-400 shadow-sm transition';
+        btnInc.className = 'py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 transition';
         payRow.classList.remove('hidden');
       } else {
-        btnInc.className = 'py-2 text-sm font-bold rounded-md bg-white text-emerald-600 shadow-sm transition';
-        btnExp.className = 'py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 transition';
+        btnInc.className = 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm transition';
+        btnExp.className = 'py-2 text-sm font-bold rounded-md text-slate-500 hover:text-slate-700 dark:text-slate-400 transition';
         payRow.classList.add('hidden');
       }
       
@@ -1686,7 +1738,7 @@
       const formCard = document.getElementById('formCard');
       formCard.classList.remove('border-transparent');
       formCard.classList.add('border-indigo-500', 'ring-4', 'ring-indigo-50');
-      document.getElementById('formTitle').innerHTML = `<span class="text-indigo-600">✏️ 내역 수정 모드</span>`;
+      document.getElementById('formTitle').innerHTML = `<span class="text-indigo-600 dark:text-indigo-400">✏️ 내역 수정 모드</span>`;
       document.getElementById('cancelEditBtn').classList.remove('hidden');
 
       const submitBtn = document.getElementById('submitBtn');
@@ -1714,7 +1766,7 @@
 
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.textContent = '가계부에 등록하기';
-      submitBtn.className = 'w-full bg-slate-900 active:bg-slate-800 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition shadow-md';
+      submitBtn.className = 'w-full bg-slate-900 dark:bg-indigo-600 active:bg-slate-800 hover:bg-slate-800 text-white font-bold py-3 rounded-xl transition shadow-md';
 
       render();
     }
@@ -1857,40 +1909,155 @@
     }
 
     // ==========================================
-    // 6. 카테고리별 예산 모달 제어
+    // 6. 고정지출 및 예산 모달 제어
     // ==========================================
+    let fixedExpenses = JSON.parse(localStorage.getItem('argon_fixed_expenses_v3')) || [
+      { id: 1, name: '월세', category: '🏠 주거/통신', day: 5, amount: 500000 },
+      { id: 2, name: '통신비 (휴대폰)', category: '🏠 주거/통신', day: 15, amount: 65000 }
+    ];
+
+    function openFixedExpenseModal() {
+      closeHeaderMenu();
+      setTimeout(() => {
+        renderFixedExpenseList();
+        const modal = document.getElementById('fixedExpenseModal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }, 50);
+    }
+
+    function closeFixedExpenseModal() {
+      const modal = document.getElementById('fixedExpenseModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function renderFixedExpenseList() {
+      const listEl = document.getElementById('fixedExpenseList');
+      if (!listEl) return;
+      if (fixedExpenses.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">등록된 고정 지출이 없습니다.</p>`;
+        return;
+      }
+      listEl.innerHTML = fixedExpenses.map(item => `
+        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/70 dark:border-slate-700 text-xs">
+          <div>
+            <span class="font-extrabold text-slate-900 dark:text-slate-100">${item.name}</span>
+            <span class="text-slate-400">(${item.category})</span>
+            <div class="text-[11px] text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">매월 ${item.day}일 · ${item.amount.toLocaleString()}원</div>
+          </div>
+          <button type="button" onclick="deleteFixedExpenseItem(${item.id})" class="text-slate-300 hover:text-rose-600 font-bold px-2 py-1 transition">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addFixedExpenseItem() {
+      const name = document.getElementById('feName').value.trim();
+      const category = document.getElementById('feCategory').value;
+      const day = Number(document.getElementById('feDay').value);
+      const amount = Number(document.getElementById('feAmount').value);
+
+      if (!name || !day || !amount || day < 1 || day > 31 || amount <= 0) {
+        return alert('사용처, 날짜(1~31), 올바른 금액을 모두 입력해 주세요.');
+      }
+
+      fixedExpenses.push({ id: Date.now(), name, category, day, amount });
+      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
+
+      document.getElementById('feName').value = '';
+      document.getElementById('feDay').value = '';
+      document.getElementById('feAmount').value = '';
+      renderFixedExpenseList();
+      showToast('📌 고정 지출 항목이 추가되었습니다.');
+    }
+
+    function deleteFixedExpenseItem(id) {
+      fixedExpenses = fixedExpenses.filter(item => item.id !== id);
+      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
+      renderFixedExpenseList();
+    }
+
+    function registerAllFixedExpenses() {
+      if (fixedExpenses.length === 0) return alert('등록할 고정 지출 항목이 없습니다.');
+      const selectedYM = document.getElementById('monthFilter').value;
+
+      let addedCount = 0;
+      fixedExpenses.forEach(fe => {
+        const dayStr = String(fe.day).padStart(2, '0');
+        const targetDate = `${selectedYM}-${dayStr}`;
+        const orderStamp = nextCreatedOrder();
+
+        const newItem = {
+          id: orderStamp,
+          createdAt: orderStamp,
+          date: targetDate,
+          type: 'expense',
+          category: fe.category,
+          method: '계좌이체',
+          cardCompany: '자동이체',
+          merchant: fe.name,
+          memo: '고정지출 자동등록',
+          amount: fe.amount,
+          installmentMonths: 1,
+          installmentCurrent: 1,
+          installmentTotalAmount: fe.amount,
+          groupId: null
+        };
+        transactions.push(newItem);
+        addedCount++;
+      });
+
+      addChangeLog('등록', '고정지출 일괄등록', `${selectedYM}월 고정 지출 ${addedCount}건 일괄 등록`);
+      closeFixedExpenseModal();
+      saveAndRender();
+      showToast(`⚡ ${selectedYM}월 고정 지출 ${addedCount}건이 일괄 등록되었습니다!`);
+    }
+
     function getTotalMonthlyBudget() {
       return Object.values(categoryBudgets).reduce((a, b) => a + Number(b || 0), 0);
     }
 
     function openBudgetModal() {
-      const container = document.getElementById('budgetModalInputs');
-      container.innerHTML = categories.expense.map(cat => `
-        <div class="flex items-center justify-between gap-3">
-          <label class="text-xs font-bold text-slate-700 w-28 shrink-0">${cat}</label>
-          <div class="relative flex-1">
-            <input type="number" data-cat="${cat}" oninput="updateModalTotalPreview()" value="${categoryBudgets[cat] || 0}" step="10000" min="0" class="budget-input w-full border border-slate-200 rounded-lg px-3 py-1.5 text-right text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-7">
-            <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">원</span>
+      closeHeaderMenu();
+      setTimeout(() => {
+        const container = document.getElementById('budgetModalInputs');
+        if (!container) return;
+        container.innerHTML = categories.expense.map(cat => `
+          <div class="flex items-center justify-between gap-3">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300 w-28 shrink-0">${cat}</label>
+            <div class="relative flex-1">
+              <input type="number" data-cat="${cat}" oninput="updateModalTotalPreview()" value="${categoryBudgets[cat] || 0}" step="10000" min="0" class="budget-input w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-right text-sm font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-900 pr-7">
+              <span class="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400">원</span>
+            </div>
           </div>
-        </div>
-      `).join('');
-      updateModalTotalPreview();
-      const modal = document.getElementById('budgetModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+        `).join('');
+        updateModalTotalPreview();
+        const modal = document.getElementById('budgetModal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }, 50);
     }
 
     function updateModalTotalPreview() {
       const inputs = document.querySelectorAll('.budget-input');
       let sum = 0;
       inputs.forEach(inp => sum += Number(inp.value || 0));
-      document.getElementById('modalTotalBudgetPreview').textContent = sum.toLocaleString() + '원';
+      const preview = document.getElementById('modalTotalBudgetPreview');
+      if (preview) preview.textContent = sum.toLocaleString() + '원';
     }
 
     function closeBudgetModal() {
       const modal = document.getElementById('budgetModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
     }
 
     function saveCategoryBudgets() {
@@ -1922,16 +2089,24 @@
     // 7. 기기간 데이터 백업 및 복원 엔진
     // ==========================================
     function openSyncModal() {
-      document.getElementById('restoreCodeInput').value = '';
-      const modal = document.getElementById('syncModal');
-      modal.classList.remove('hidden');
-      modal.classList.add('flex');
+      closeHeaderMenu();
+      setTimeout(() => {
+        const area = document.getElementById('restoreCodeInput');
+        if (area) area.value = '';
+        const modal = document.getElementById('syncModal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }, 50);
     }
 
     function closeSyncModal() {
       const modal = document.getElementById('syncModal');
-      modal.classList.add('hidden');
-      modal.classList.remove('flex');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
     }
 
     function buildBackupPayload(includeLogs = true) {
@@ -2040,114 +2215,7 @@
         alert('백업 데이터를 읽는 중 오류가 발생했습니다.');
       }
     }
-    // ==========================================
-    // 📌 고정 지출 관리 및 일괄 등록 엔진 (추가할 코드)
-    // ==========================================
-    let fixedExpenses = JSON.parse(localStorage.getItem('argon_fixed_expenses_v3')) || [
-      { id: 1, name: '월세', category: '🏠 주거/통신', day: 5, amount: 500000 },
-      { id: 2, name: '통신비 (휴대폰)', category: '🏠 주거/통신', day: 15, amount: 65000 }
-    ];
 
-    function openFixedExpenseModal() {
-      closeHeaderMenu();
-      setTimeout(() => {
-        renderFixedExpenseList();
-        const modal = document.getElementById('fixedExpenseModal');
-        if (modal) {
-          modal.classList.remove('hidden');
-          modal.classList.add('flex');
-        }
-      }, 50);
-    }
-
-    function closeFixedExpenseModal() {
-      const modal = document.getElementById('fixedExpenseModal');
-      if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      }
-    }
-
-    function renderFixedExpenseList() {
-      const listEl = document.getElementById('fixedExpenseList');
-      if (!listEl) return;
-      if (fixedExpenses.length === 0) {
-        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">등록된 고정 지출이 없습니다.</p>`;
-        return;
-      }
-      listEl.innerHTML = fixedExpenses.map(item => `
-        <div class="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-200/70 text-xs">
-          <div>
-            <span class="font-extrabold text-slate-900">${item.name}</span>
-            <span class="text-slate-400">(${item.category})</span>
-            <div class="text-[11px] text-indigo-600 font-bold mt-0.5">매월 ${item.day}일 · ${item.amount.toLocaleString()}원</div>
-          </div>
-          <button type="button" onclick="deleteFixedExpenseItem(${item.id})" class="text-slate-300 hover:text-rose-600 font-bold px-2 py-1 transition">✕</button>
-        </div>
-      `).join('');
-    }
-
-    function addFixedExpenseItem() {
-      const name = document.getElementById('feName').value.trim();
-      const category = document.getElementById('feCategory').value;
-      const day = Number(document.getElementById('feDay').value);
-      const amount = Number(document.getElementById('feAmount').value);
-
-      if (!name || !day || !amount || day < 1 || day > 31 || amount <= 0) {
-        return alert('사용처, 날짜(1~31), 올바른 금액을 모두 입력해 주세요.');
-      }
-
-      fixedExpenses.push({ id: Date.now(), name, category, day, amount });
-      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
-
-      document.getElementById('feName').value = '';
-      document.getElementById('feDay').value = '';
-      document.getElementById('feAmount').value = '';
-      renderFixedExpenseList();
-      showToast('📌 고정 지출 항목이 추가되었습니다.');
-    }
-
-    function deleteFixedExpenseItem(id) {
-      fixedExpenses = fixedExpenses.filter(item => item.id !== id);
-      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
-      renderFixedExpenseList();
-    }
-
-    function registerAllFixedExpenses() {
-      if (fixedExpenses.length === 0) return alert('등록할 고정 지출 항목이 없습니다.');
-      const selectedYM = document.getElementById('monthFilter').value;
-
-      let addedCount = 0;
-      fixedExpenses.forEach(fe => {
-        const dayStr = String(fe.day).padStart(2, '0');
-        const targetDate = `${selectedYM}-${dayStr}`;
-        const orderStamp = nextCreatedOrder();
-
-        const newItem = {
-          id: orderStamp,
-          createdAt: orderStamp,
-          date: targetDate,
-          type: 'expense',
-          category: fe.category,
-          method: '계좌이체',
-          cardCompany: '자동이체',
-          merchant: fe.name,
-          memo: '고정지출 자동등록',
-          amount: fe.amount,
-          installmentMonths: 1,
-          installmentCurrent: 1,
-          installmentTotalAmount: fe.amount,
-          groupId: null
-        };
-        transactions.push(newItem);
-        addedCount++;
-      });
-
-      addChangeLog('등록', '고정지출 일괄등록', `${selectedYM}월 고정 지출 ${addedCount}건 일괄 등록`);
-      closeFixedExpenseModal();
-      saveAndRender();
-      showToast(`⚡ ${selectedYM}월 고정 지출 ${addedCount}건이 일괄 등록되었습니다!`);
-    }
     // ==========================================
     // 8. 메인 렌더링
     // ==========================================
@@ -2226,19 +2294,19 @@
       const paceComment = document.getElementById('paceComment');
 
       if (todaySpent === 0) {
-        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700 shrink-0';
+        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0';
         paceBadge.textContent = '🟢 무지출 데이';
         paceComment.textContent = `오늘 아직 지출이 없네요! 하루 ${dailyRecommended.toLocaleString()}원 이내로 쓰시면 목표 예산을 지킬 수 있어요.`;
       } else if (todaySpent <= dailyAvg && todaySpent <= dailyRecommended) {
-        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 text-emerald-700 shrink-0';
+        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 shrink-0';
         paceBadge.textContent = '🟢 알뜰 소비';
         paceComment.textContent = `일평균(${dailyAvg.toLocaleString()}원)보다 ${Math.abs(dailyAvg - todaySpent).toLocaleString()}원 적게 쓰셨어요! 아주 훌륭한 페이스입니다.`;
       } else if (todaySpent <= dailyAvg * 1.3) {
-        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 text-amber-700 shrink-0';
+        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 shrink-0';
         paceBadge.textContent = '🟡 적정 수준';
         paceComment.textContent = `오늘 지출이 평소 일평균(${dailyAvg.toLocaleString()}원)과 비슷합니다. 하루 권장액(${dailyRecommended.toLocaleString()}원)을 참고해 보세요!`;
       } else {
-        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-700 shrink-0';
+        paceBadge.className = 'px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 shrink-0';
         paceBadge.textContent = '🔴 초과 주의';
         paceComment.textContent = `오늘 지출이 이번 달 일평균(${dailyAvg.toLocaleString()}원)보다 +${(todaySpent - dailyAvg).toLocaleString()}원 많습니다!`;
       }
@@ -2264,9 +2332,9 @@
         instMiniList.innerHTML = `<p class="text-slate-400">선택한 달에 납부할 할부 내역이 없습니다.</p>`;
       } else {
         instMiniList.innerHTML = thisMonthInst.map(t => `
-          <div class="flex justify-between items-center bg-indigo-50/60 px-2.5 py-1 rounded-md">
-            <span class="font-semibold text-slate-700 truncate pr-2">💳 [${t.cardCompany}]${t.merchant} <span class="text-indigo-600 font-bold">(${t.installmentCurrent}/${t.installmentMonths})</span></span>
-            <span class="font-bold text-rose-600 shrink-0">${t.amount.toLocaleString()}원</span>
+          <div class="flex justify-between items-center bg-indigo-50/60 dark:bg-indigo-950/50 px-2.5 py-1 rounded-md">
+            <span class="font-semibold text-slate-700 dark:text-slate-300 truncate pr-2">💳 [${t.cardCompany}]${t.merchant} <span class="text-indigo-600 dark:text-indigo-400 font-bold">(${t.installmentCurrent}/${t.installmentMonths})</span></span>
+            <span class="font-bold text-rose-600 dark:text-rose-400 shrink-0">${t.amount.toLocaleString()}원</span>
           </div>
         `).join('');
       }
@@ -2283,19 +2351,19 @@
         const isOver = budget > 0 && spent > budget;
         const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : (spent > 0 ? 100 : 0);
         const barColor = isOver ? 'bg-rose-500' : pct > 80 ? 'bg-amber-500' : 'bg-indigo-500';
-        const spentClass = isOver ? 'text-rose-600 font-extrabold' : 'text-indigo-700 font-bold';
+        const spentClass = isOver ? 'text-rose-600 dark:text-rose-400 font-extrabold' : 'text-indigo-700 dark:text-indigo-300 font-bold';
 
         return `
-          <div class="bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+          <div class="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700">
             <div class="flex justify-between items-center text-xs mb-1">
-              <span class="font-bold text-slate-800">${cat}</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">${cat}</span>
               <div class="space-x-1">
                 <span class="${spentClass}">사용 ${spent.toLocaleString()}원</span>
                 <span class="text-slate-300">/</span>
-                <span class="text-slate-500 font-semibold">예산 ${budget.toLocaleString()}원</span>
+                <span class="text-slate-500 dark:text-slate-400 font-semibold">예산 ${budget.toLocaleString()}원</span>
               </div>
             </div>
-            <div class="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+            <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
               <div class="${barColor} h-1.5 rounded-full transition-all duration-300" style="width: ${pct}%"></div>
             </div>
           </div>
@@ -2326,37 +2394,37 @@
         tbody.innerHTML = filteredTx.map(t => {
           const isEditing = (editingTxId === t.id);
           const rowClass = isEditing 
-            ? 'bg-indigo-50/90 ring-1 ring-indigo-400 cursor-pointer transition' 
-            : 'hover:bg-indigo-50/40 cursor-pointer transition';
+            ? 'bg-indigo-50/90 dark:bg-indigo-950/80 ring-1 ring-indigo-400 cursor-pointer transition' 
+            : 'hover:bg-indigo-50/40 dark:hover:bg-slate-700/50 cursor-pointer transition';
 
           const instTag = t.installmentMonths > 1
-            ? `<span class="px-1 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-extrabold">${t.installmentCurrent}/${t.installmentMonths}개월</span>`
+            ? `<span class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded text-[10px] font-extrabold">${t.installmentCurrent}/${t.installmentMonths}개월</span>`
             : ``;
 
           return `
             <tr onclick="enterEditMode(${t.id})" title="클릭하여 이 내역 수정하기" class="${rowClass}">
-              <td class="py-2.5 px-1.5 sm:px-2 text-slate-500 whitespace-nowrap font-medium align-top">${t.date.slice(5)}</td>
-              <td class="py-2.5 px-1.5 sm:px-2 whitespace-nowrap hidden sm:table-cell align-top"><span class="px-2 py-1 bg-slate-100 rounded-md text-xs font-semibold">${t.category}</span></td>
+              <td class="py-2.5 px-1.5 sm:px-2 text-slate-500 dark:text-slate-400 whitespace-nowrap font-medium align-top">${t.date.slice(5)}</td>
+              <td class="py-2.5 px-1.5 sm:px-2 whitespace-nowrap hidden sm:table-cell align-top"><span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-xs font-semibold">${t.category}</span></td>
               <td class="py-2.5 px-1.5 sm:px-2 whitespace-nowrap hidden md:table-cell align-top">
-                <div class="font-bold text-slate-700 text-xs">${t.cardCompany || t.method}</div>
+                <div class="font-bold text-slate-700 dark:text-slate-300 text-xs">${t.cardCompany || t.method}</div>
                 <div class="text-[11px] text-slate-400">${t.method} ${t.type === 'expense' ? instTag : ''}</div>
               </td>
               <td class="py-2.5 px-1.5 sm:px-2 max-w-[140px] sm:max-w-none">
-                <div class="font-extrabold text-slate-900 flex items-center gap-1 flex-wrap">
+                <div class="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1 flex-wrap">
                   <span class="truncate">${t.merchant || '-'}</span>
                   ${isEditing ? `<span class="text-[10px] bg-indigo-600 text-white px-1.5 py-0.5 rounded font-bold">수정중</span>` : ''}
                 </div>
-                ${t.memo ? `<div class="text-[11px] text-slate-500 truncate">${t.memo}</div>` : ''}
+                ${t.memo ? `<div class="text-[11px] text-slate-500 dark:text-slate-400 truncate">${t.memo}</div>` : ''}
                 <div class="sm:hidden flex flex-wrap items-center gap-1 mt-0.5 text-[10px] text-slate-400">
                   <span>${t.category}</span> · <span>${t.cardCompany || t.method}</span> ${instTag}
                 </div>
               </td>
-              <td class="py-2.5 px-1.5 sm:px-2 text-right font-extrabold whitespace-nowrap align-top ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">
+              <td class="py-2.5 px-1.5 sm:px-2 text-right font-extrabold whitespace-nowrap align-top ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">
                 <div>${t.type === 'income' ? '+' : '-'}${t.amount.toLocaleString()}원</div>
                 ${t.installmentMonths > 1 ? `<div class="text-[10px] text-slate-400 font-normal">총 ${t.installmentTotalAmount.toLocaleString()}원</div>` : ''}
               </td>
               <td class="py-2.5 px-1 text-center align-top">
-                <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-slate-300 hover:text-rose-600 transition px-1.5 py-0.5 font-bold">✕</button>
+                <button onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-slate-300 dark:text-slate-600 hover:text-rose-600 dark:hover:text-rose-400 transition px-1.5 py-0.5 font-bold">✕</button>
               </td>
             </tr>
           `;
@@ -2399,7 +2467,7 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155' } }
           },
           cutout: '62%'
         }
@@ -2435,6 +2503,7 @@
       exitEditMode();
       render();
     });
+    initDarkMode();
     setType('expense');
     toggleCardOptions();
     render();
