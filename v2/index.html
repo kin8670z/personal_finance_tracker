@@ -152,7 +152,10 @@ td.memo { min-width: 0; } td.memo .place { font-weight: 600; } td.memo .note { c
 td.inamt { color: var(--in); } td.outamt { color: var(--out); }
 td.del { white-space: nowrap; }
 td.del button { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: .8rem; padding: 2px 4px; }
-td.del button[data-edit] { color: var(--accent); }
+tr.row[data-eid] { cursor: pointer; }
+tr.row[data-eid]:hover td { background: color-mix(in srgb, var(--accent-soft) 55%, transparent); }
+tr.row[data-eid]:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+td.del button { padding: 6px 10px; font-size: .9rem; }
 tr.editing td { background: var(--accent-soft); }
 form.entry.editing { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 td.del button.confirm { color: var(--out); font-weight: 600; }
@@ -903,12 +906,12 @@ function render() {
       ? `<span class="place">${hl(e.place,terms)}</span>${instTag}${e.memo ? ` <span class="note">· ${hl(e.memo,terms)}</span>` : ""}`
       : `${hl(e.memo||e.cat,terms)}${instTag}`;
     const delLabel = confirm ? (isInst && e.groupId ? "할부 전체 삭제?" : "삭제?") : "✕";
-    return head + `<tr class="${editingIds.includes(e.id)?"editing":""}">
+    return head + `<tr class="row ${editingIds.includes(e.id)?"editing":""}"${canWrite ? ` data-eid="${e.id}" tabindex="0" aria-label="${esc(e.place || e.memo || e.cat)} 수정하기"` : ""}>
       <td class="memo">${title}<small>${hl(e.cat,terms)}${e.type==="out"&&payKey(e)?` · ${hl(payKey(e),terms)}`:""}${instInfo}</small></td>
       <td class="r num inamt">${e.type==="in"?won(e.amount):""}</td>
       <td class="r num outamt">${e.type==="out"?won(e.amount):""}</td>
       <td class="r num">${e._bal<0?"-":""}${won(Math.abs(e._bal))}</td>
-      <td class="del">${canWrite?`<button data-edit="${e.id}" aria-label="수정">수정</button><button data-id="${e.id}" class="${confirm?"confirm":""}" aria-label="삭제">${delLabel}</button>`:""}</td>
+      <td class="del">${canWrite?`<button data-id="${e.id}" class="${confirm?"confirm":""}" aria-label="삭제">${delLabel}</button>`:""}</td>
     </tr>`;
   }).join("");
   $("emptyState").hidden = shown.length>0;
@@ -916,9 +919,12 @@ function render() {
   else if (!shown.length) $("emptyState").textContent = terms.length ? `'${$("q").value.trim()}'에 맞는 기록이 없어요.` : "조건에 맞는 기록이 없어요.";
 }
 
+$("rows").addEventListener("keydown", ev => {
+  if ((ev.key === "Enter" || ev.key === " ") && ev.target.matches("tr[data-eid]")) { ev.preventDefault(); startEdit(ev.target.dataset.eid); }
+});
 $("rows").addEventListener("click", async ev => {
-  const eb = ev.target.closest("button[data-edit]");
-  if (eb) { startEdit(eb.dataset.edit); return; }
+  const row = ev.target.closest("tr[data-eid]");
+  if (row && !ev.target.closest("button[data-id]")) { pendingDel = null; startEdit(row.dataset.eid); return; }
   const btn = ev.target.closest("button[data-id]"); if (!btn) return;
   const id = btn.dataset.id;
   if (pendingDel !== id) { pendingDel = id; render(); setTimeout(()=>{ if(pendingDel===id){pendingDel=null;render();} }, 3000); return; }
