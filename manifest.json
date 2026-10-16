@@ -1,0 +1,16 @@
+{
+  "name": "아르곤 스마트 가계부 Pro",
+  "short_name": "아르곤 가계부",
+  "start_url": "/personal_finance_tracker/", 
+  "scope": "/personal_finance_tracker/",
+  "display": "standalone",
+  "background_color": "#f1f5f9",
+  "theme_color": "#f1f5f9",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512' width='512' height='512'><rect width='512' height='512' rx='115' fill='%234f46e5'/><path d='M144 160h224c26.5 0 48 21.5 48 48v144c0 26.5-21.5 48-48 48H144c-26.5 0-48-21.5-48-48V208c0-26.5 21.5-48 48-48zm208 96a24 24 0 1 0 0 48 24 24 0 0 0 0-48z' fill='%23ffffff'/></svg>",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
