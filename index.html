@@ -4,11 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f1f5f9">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="아르곤 가계부">
-  <meta name="mobile-web-app-capable" content="yes">
-  <link rel="manifest" href="/manifest.json" id="manifestLinkTag">
   <title>아르곤(Gemini) 스마트 가계부 Pro v4.2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -44,9 +39,7 @@
             <span>🚀 v4.2</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
-          <span id="storagePersistBadge" class="hidden px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded text-[10px] font-bold shrink-0">🛡️보존</span>
         </div>
-        <button id="installAppBtn" onclick="installPWA()" class="hidden sm:hidden bg-indigo-600 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg shadow-xs shrink-0">📲 설치</button>
       </div>
       <div class="flex items-center justify-between sm:justify-end gap-1.5 sm:gap-2 w-full sm:w-auto">
         <div class="flex items-center bg-slate-100 dark:bg-slate-800 rounded-xl p-0.5 sm:p-1 border border-slate-200/80 dark:border-slate-700 flex-1 sm:flex-none justify-between min-w-0">
@@ -272,7 +265,7 @@
     </section>
   </div>
 
-  <!-- 모달 영역 -->
+  <!-- 모달 4종 -->
   <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -307,7 +300,6 @@
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🤖 갤럭시 결제문자 자동 등록 & 팁</h3><button onclick="closeGalaxyAutoModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div class="space-y-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
         <div class="p-3.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-200 space-y-1.5"><p class="font-extrabold text-sm">⚡ 갤럭시 [모드 및 루틴] + 클립보드 원터치</p><p>문자가 오면 복사 후 가계부의 초록색 <b>[📋 복사한 결제문자 1초 자동등록]</b> 버튼만 터치하세요!</p></div>
-        <div class="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 space-y-2"><p class="font-extrabold text-sm">🔗 URL 자동 수신 테스트</p><div class="bg-slate-900 text-emerald-300 font-mono text-[11px] p-2.5 rounded-lg break-all" id="webhookUrlExample"></div><button type="button" onclick="testUrlAutoRegister()" class="w-full py-2 bg-slate-800 text-white font-bold rounded-lg">🧪 지금 URL 자동수신 시뮬레이션 테스트</button></div>
       </div>
       <div class="flex justify-end pt-2"><button onclick="closeGalaxyAutoModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인</button></div>
     </div>
@@ -357,8 +349,388 @@
 
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
-  <!-- 분리된 JS 파일 2개 연결 -->
-  <script src="parser.js"></script>
-  <script src="app.js"></script>
+  <script>
+    const APP_VERSION = '4.2';
+    const releaseNotesData = [
+      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '웹 바로가기 최적화', isLatest: true, items: [
+        '⚡ <b>웹 브라우저 최적화 버전:</b> Vercel 배포 및 모바일 브라우저 실행 오류 원천 차단',
+        '📅 <b>일자별 그룹핑 헤더 & 💰 건별 누적 잔액(입금-출금) 표시</b>',
+        '🌙 <b>다크 모드 & 📌 고정 지출 원클릭 등록 통합 완료</b>'
+      ]}
+    ];
+
+    function toggleHeaderMenu(e) { if (e) e.stopPropagation(); const m = document.getElementById('headerDropdownMenu'), a = document.getElementById('menuArrowIcon'); if (m.classList.contains('hidden')) { m.classList.remove('hidden'); a.style.transform = 'rotate(180deg)'; } else closeHeaderMenu(); }
+    function closeHeaderMenu() { const m = document.getElementById('headerDropdownMenu'), a = document.getElementById('menuArrowIcon'); if (m) m.classList.add('hidden'); if (a) a.style.transform = 'rotate(0deg)'; }
+    document.addEventListener('click', (e) => { const c = document.getElementById('headerMenuContainer'); if (c && !c.contains(e.target)) closeHeaderMenu(); });
+    function shiftMonth(d) { const inp = document.getElementById('monthFilter'); inp.value = addMonthsToYM(inp.value || currentYearMonth, d); exitEditMode(); render(); }
+
+    function renderReleaseNotes() {
+      document.getElementById('releaseNotesContainer').innerHTML = releaseNotesData.map(r => `
+        <div class="p-4 rounded-xl border border-indigo-300 bg-indigo-50/40 dark:bg-indigo-950/40 space-y-2">
+          <div class="flex justify-between items-center"><span class="font-extrabold text-sm">${r.version} <span class="px-2 py-0.5 text-[10px] rounded-full bg-indigo-600 text-white">${r.badge}</span></span><span class="text-[11px] text-slate-400">${r.date}</span></div>
+          <ul class="space-y-1 text-xs text-slate-600 dark:text-slate-300">${r.items.map(i => `<li>• ${i}</li>`).join('')}</ul>
+        </div>`).join('');
+    }
+    function openReleaseModal() { closeHeaderMenu(); setTimeout(() => { renderReleaseNotes(); const m = document.getElementById('releaseModal'); m.classList.remove('hidden'); m.classList.add('flex'); localStorage.setItem('argon_seen_version', APP_VERSION); }, 50); }
+    function closeReleaseModal() { const m = document.getElementById('releaseModal'); m.classList.add('hidden'); m.classList.remove('flex'); localStorage.setItem('argon_seen_version', APP_VERSION); }
+    function openGalaxyAutoModal() { closeHeaderMenu(); setTimeout(() => { const m = document.getElementById('galaxyAutoModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function closeGalaxyAutoModal() { const m = document.getElementById('galaxyAutoModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+
+    function initDarkMode() { if (localStorage.getItem('argon_dark_mode') === 'true') { document.documentElement.classList.add('dark'); const t = document.getElementById('darkModeMenuText'); if (t) t.textContent = '☀️ 라이트 모드로 전환'; } }
+    function toggleDarkMode() {
+      closeHeaderMenu(); const h = document.documentElement, isD = h.classList.contains('dark'), t = document.getElementById('darkModeMenuText');
+      if (isD) { h.classList.remove('dark'); localStorage.setItem('argon_dark_mode', 'false'); if (t) t.textContent = '🌙 다크 모드 켜기'; showToast('☀️ 라이트 모드 전환'); }
+      else { h.classList.add('dark'); localStorage.setItem('argon_dark_mode', 'true'); if (t) t.textContent = '☀️ 라이트 모드로 전환'; showToast('🌙 다크 모드 켜짐'); }
+      render();
+    }
+
+    function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }
+
+    const categories = { expense: ['🍔 식비', '☕ 카페/간식', '🛍️ 쇼핑/생활', '🚌 교통/차량', '🏠 주거/통신', '🏥 의료/건강', '🎬 문화/여가', '🎸 기타지출'], income: ['💰 월급', '🎁 용돈/보너스', '📈 금융/부수입', '🎸 기타수입'] };
+    const defaultCategoryBudgets = { '🍔 식비': 450000, '☕ 카페/간식': 100000, '🛍️ 쇼핑/생활': 300000, '🚌 교통/차량': 150000, '🏠 주거/통신': 600000, '🏥 의료/건강': 100000, '🎬 문화/여가': 150000, '🎸 기타지출': 150000 };
+    let categoryBudgets = JSON.parse(localStorage.getItem('argon_cat_budgets_v3')) || defaultCategoryBudgets;
+    let currentType = 'expense', editingTxId = null, parsedSMSResults = [], chartInstance = null, isHistoryOpen = false, registerSeq = 0;
+
+    function nextCreatedOrder() { registerSeq += 1; return Date.now() * 1000 + (registerSeq % 1000); }
+    function getLocalToday() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+    function getNowTimeOnly() { const d = new Date(); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`; }
+    function addMonthsToDate(dateStr, mAdd) { const [y, m, d] = dateStr.split('-').map(Number), ty = y + Math.floor((m - 1 + mAdd) / 12), tm = ((m - 1 + mAdd) % 12) + 1, md = new Date(ty, tm, 0).getDate(); return `${ty}-${String(tm).padStart(2, '0')}-${String(Math.min(d, md)).padStart(2, '0')}`; }
+    function addMonthsToYM(ymStr, mAdd) { const [y, m] = ymStr.split('-').map(Number); return `${y + Math.floor((m - 1 + mAdd) / 12)}-${String(((m - 1 + mAdd) % 12) + 1).padStart(2, '0')}`; }
+
+    const today = getLocalToday(), currentYearMonth = today.slice(0, 7);
+    let transactions = JSON.parse(localStorage.getItem('argon_tx_v3')) || [
+      { id: 101, createdAt: 101, date: `${currentYearMonth}-01`, type: 'income', category: '💰 월급', method: '계좌이체', cardCompany: '카카오뱅크', merchant: '(주)아르곤테크', memo: '정기 급여', amount: 3500000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 3500000, groupId: null },
+      { id: 102, createdAt: 102, date: `${currentYearMonth}-14`, type: 'expense', category: '☕ 카페/간식', method: '신용카드', cardCompany: 'KB국민카드', merchant: '텐퍼센트', memo: '아메리카노1', amount: 2000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 2000, groupId: null },
+      { id: 103, createdAt: 103, date: `${currentYearMonth}-14`, type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '삼성카드', merchant: '무신사', memo: '니트1 (할부 1/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 1, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+      { id: 104, createdAt: 104, date: addMonthsToDate(`${currentYearMonth}-14`, 1), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '삼성카드', merchant: '무신사', memo: '니트1 (할부 2/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 2, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+      { id: 105, createdAt: 105, date: addMonthsToDate(`${currentYearMonth}-14`, 2), type: 'expense', category: '🛍️ 쇼핑/생활', method: '신용카드', cardCompany: '삼성카드', merchant: '무신사', memo: '니트1 (할부 3/3회차)', amount: 120000, installmentMonths: 3, installmentCurrent: 3, installmentTotalAmount: 360000, groupId: 'sample_inst_1' },
+      { id: 106, createdAt: 106, date: today, type: 'expense', category: '🍔 식비', method: '신용카드', cardCompany: '하나카드', merchant: '버거킹', memo: '몬스터와퍼세트2', amount: 27000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 27000, groupId: null },
+      { id: 107, createdAt: 107, date: today, type: 'expense', category: '🎬 문화/여가', method: '신용카드', cardCompany: 'KB국민카드', merchant: '레고랜드', memo: '입장권 (대2,소1)', amount: 22000, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: 22000, groupId: null }
+    ];
+
+    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 최적화', detail: '웹 최적화 버전이 적용되었습니다.' }];
+
+    function toggleHistoryPanel(force) { const b = document.getElementById('historyBody'), t = document.getElementById('historyToggleBtnText'); isHistoryOpen = typeof force === 'boolean' ? force : !isHistoryOpen; b.classList.toggle('hidden', !isHistoryOpen); t.textContent = isHistoryOpen ? '접어두기 ▲' : '펼쳐보기 ▼'; if (isHistoryOpen) renderLogs(); }
+    function openAndScrollHistory() { closeHeaderMenu(); toggleHistoryPanel(true); document.getElementById('historySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+
+    function addChangeLog(category, action, detail, meta = {}) {
+      const now = Date.now(), latest = changeLogs[0];
+      if (category === '수정' && meta.targetTxId && latest && latest.category === '수정' && latest.targetTxId === meta.targetTxId && (now - (latest.timestamp || 0)) < 600000) {
+        latest.timestamp = now; latest.time = getNowTimeOnly(); latest.mergeCount = (latest.mergeCount || 1) + 1;
+        latest.initialBeforeStr = latest.initialBeforeStr || meta.beforeStr;
+        latest.detail = `${latest.initialBeforeStr} ➔ ${meta.afterStr} (연속수정 ${latest.mergeCount}회)`;
+        localStorage.setItem('argon_logs_v3', JSON.stringify(changeLogs)); renderLogs(); return;
+      }
+      changeLogs.unshift({ id: now + Math.random(), timestamp: now, dateStr: today, time: getNowTimeOnly(), category, action, detail, targetTxId: meta.targetTxId || null, initialBeforeStr: meta.beforeStr || null, undoData: meta.undoData || null, undone: false });
+      changeLogs = changeLogs.slice(0, 80); localStorage.setItem('argon_logs_v3', JSON.stringify(changeLogs)); renderLogs();
+    }
+
+    function undoFromLog(logId) {
+      const log = changeLogs.find(l => l.id === logId); if (!log || !log.undoData || log.undone) return;
+      const u = log.undoData; exitEditMode();
+      if (u.type === 'delete_single') { transactions.push({ ...u.tx }); log.undone = true; addChangeLog('예산/복원', '삭제 복구', `[${u.tx.merchant}] 복구됨`); }
+      else if (u.type === 'delete_group') { u.txList.forEach(i => transactions.push({ ...i })); log.undone = true; addChangeLog('예산/복원', '할부 복구', `[${u.txList[0].merchant}] 복구됨`); }
+      else if (u.type === 'edit_single') { const idx = transactions.findIndex(t => t.id === u.beforeTx.id); if (idx !== -1) transactions[idx] = { ...u.beforeTx }; else transactions.push({ ...u.beforeTx }); log.undone = true; addChangeLog('예산/복원', '수정 복구', `[${u.beforeTx.merchant}] 되돌림`); }
+      saveAndRender(); showToast('↩️ 복구되었습니다!');
+    }
+
+    function clearChangeLogs() { if (confirm('단순 등록 이력을 정리할까요?')) { changeLogs = changeLogs.filter(l => l.category !== '등록'); localStorage.setItem('argon_logs_v3', JSON.stringify(changeLogs)); renderLogs(); } }
+    function renderLogs() {
+      const f = document.getElementById('logFilter')?.value || 'IMPORTANT', kw = (document.getElementById('logSearchInput')?.value || '').toLowerCase();
+      document.getElementById('logCountBadge').textContent = `총 ${changeLogs.length}건`;
+      const mb = document.getElementById('menuLogCount'); if (mb) mb.textContent = `${changeLogs.length}건`;
+      const sumEl = document.getElementById('latestLogSummary'); if (changeLogs[0]) sumEl.innerHTML = `<b>[${changeLogs[0].action}]</b> ${changeLogs[0].detail}`;
+      const filtered = changeLogs.filter(l => (f === 'IMPORTANT' ? l.category !== '등록' : (f === 'ALL' || l.category === f)) && (!kw || l.detail.toLowerCase().includes(kw) || l.action.toLowerCase().includes(kw)));
+      const listEl = document.getElementById('changeLogList'), emptyEl = document.getElementById('emptyLogMsg');
+      if (!filtered.length) { listEl.innerHTML = ''; emptyEl.classList.remove('hidden'); return; }
+      emptyEl.classList.add('hidden');
+      listEl.innerHTML = filtered.map(log => `
+        <div class="flex items-center justify-between gap-2 bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200/70 dark:border-slate-700 text-xs">
+          <div class="truncate"><span class="font-extrabold text-indigo-600 dark:text-indigo-400 mr-1.5">[${log.action}]</span><span>${log.detail}</span></div>
+          <div class="flex items-center gap-1.5 shrink-0">${log.undoData && !log.undone ? `<button onclick="undoFromLog(${log.id})" class="px-2 py-0.5 bg-indigo-50 text-indigo-600 rounded font-bold text-[11px]">↩️ 복구</button>` : ''}<span class="text-[10px] text-slate-400 font-mono">${log.time}</span></div>
+        </div>`).join('');
+    }
+
+    function createTransactionsWithInstallment(item) {
+      const months = Number(item.installmentMonths) || 1, totalAmount = Number(item.amount), list = [];
+      if (item.type === 'income' || months <= 1) {
+        const s = nextCreatedOrder();
+        list.push({ id: s, createdAt: s, date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : (item.method || '신용카드'), cardCompany: item.cardCompany || '-', merchant: item.merchant, memo: item.memo || '', amount: totalAmount, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: totalAmount, groupId: null });
+      } else {
+        const gid = 'inst_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), base = Math.floor(totalAmount / months), rem = totalAmount - (base * months);
+        for (let i = 0; i < months; i++) {
+          const s = nextCreatedOrder(), cleanM = (item.memo || '').replace(/\s*\(할부\s*\d+\/\d+회차\)/g, '').trim();
+          list.push({ id: s, createdAt: s, date: addMonthsToDate(item.date, i), type: 'expense', category: item.category, method: item.method || '신용카드', cardCompany: item.cardCompany || '신한카드', merchant: item.merchant, memo: `${cleanM ? cleanM + ' ' : ''}(할부 ${i + 1}/${months}회차)`, amount: i === 0 ? base + rem : base, installmentMonths: months, installmentCurrent: i + 1, installmentTotalAmount: totalAmount, groupId: gid });
+        }
+      }
+      return list;
+    }
+
+    function guessCategory(m, type) {
+      if (type === 'income') return /급여|월급/.test(m) ? '💰 월급' : '🎁 용돈/보너스';
+      const rules = [
+        { c: '☕ 카페/간식', k: ['스타벅스', '투썸', '메가', '빽다방', '컴포즈', '텐퍼센트', '이디야', '커피', '카페', '베이커리', '아이스크림', '디저트'] },
+        { c: '🍔 식비', k: ['식당', '배민', '요기요', '쿠팡이츠', '맥도날드', '버거킹', '김밥', '국밥', '마라탕', '치킨', '피자'] },
+        { c: '🚌 교통/차량', k: ['택시', '카카오T', '코레일', 'SRT', '티머니', '주유', '주차'] },
+        { c: '🛍️ 쇼핑/생활', k: ['쿠팡', '네이버', '무신사', '올리브영', '다이소', '이마트', '백화점', '편의점', 'GS25', 'CU', '애플'] },
+        { c: '🏠 주거/통신', k: ['SKT', 'KT', 'LGU+', '관리비', '도시가스', '전기', '월세'] },
+        { c: '🏥 의료/건강', k: ['약국', '병원', '의원', '치과', '한의원'] },
+        { c: '🎬 문화/여가', k: ['CGV', '시네마', '넷플릭스', '유튜브', '레고랜드', '교보문고', '야놀자', '골프'] }
+      ];
+      for (const r of rules) if (r.k.some(w => m.toLowerCase().includes(w.toLowerCase()))) return r.c;
+      return '🍔 식비';
+    }
+
+    function parseSingleSMS(raw) {
+      let text = raw.replace(/\[Web발신\]|\[웹발신\]|\[국외발신\]/gi, ' ').trim(); if (!text) return null;
+      let clean = text.replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ').replace(/[\d,]+\s*원?\s*\(\s*(?:누적|잔액)\s*\)/gi, ' ');
+      let amount = 0; const w = [...clean.matchAll(/([\d,]+)\s*원/g)], c = [...clean.matchAll(/\b(\d{1,3}(?:,\d{3})+)\b/g)];
+      if (w.length) amount = parseInt(w[0][1].replace(/,/g, ''), 10); else if (c.length) amount = parseInt(c[0][1].replace(/,/g, ''), 10);
+      if (!amount || amount <= 0) return null;
+      let type = (/입금|급여|보너스|환급/.test(clean) && !/출금|승인|결제|취소/.test(clean)) ? 'income' : 'expense';
+      let cardCompany = '기타', method = type === 'income' ? '계좌이체' : '신용카드';
+      const cards = [['신한카드', /신한/i], ['현대카드', /현대/i], ['삼성카드', /삼성/i], ['KB국민카드', /국민|KB/i], ['우리카드', /우리/i], ['하나카드', /하나/i], ['롯데카드', /롯데/i], ['NH농협카드', /농협|NH/i], ['카카오뱅크', /카카오뱅크|카뱅/i], ['토스뱅크', /토스/i]];
+      for (const [n, rx] of cards) if (rx.test(clean)) { cardCompany = n; break; }
+      if (/체크/.test(clean)) method = '체크카드'; else if (/페이/.test(clean)) method = '간편페이';
+      let installmentMonths = 1; const im = clean.match(/(\d{1,2})\s*개월/); if (im && type === 'expense' && Number(im[1]) >= 2) { installmentMonths = Number(im[1]); method = '신용카드'; }
+      let dateStr = document.getElementById('txDate').value || today; const sm = clean.match(/(?:^|\s)(\d{1,2})[./](\d{1,2})(?=\s|$)/);
+      if (sm && Number(sm[1]) <= 12 && Number(sm[2]) <= 31) dateStr = `${new Date().getFullYear()}-${sm[1].padStart(2, '0')}-${sm[2].padStart(2, '0')}`;
+      let merchant = clean.replace(/20\d{2}[-./]\d{1,2}[-./]\d{1,2}|\b\d{1,2}[./]\d{1,2}\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|[\d,]+\s*원|\b\d{1,3}(?:,\d{3})+\b/g, ' ').replace(/(?:신한|국민|KB|우리|하나|현대|삼성|롯데|농협|NH|BC|카카오뱅크|카뱅|토스)(?:카드|은행|체크|페이)?/gi, ' ').replace(/(?:일시불|할부|\d{1,2}\s*개월|무이자|승인|결제|출금|입금|체크|신용|해외|국내|본인|가족|누적|잔액|가능액|한도|금액)/g, ' ').replace(/\([0-9*]+\)|\b[0-9*]{3,}\b|[가-힣]{2,4}\*+[가-힣]*님?|[[\]()/:-]/g, ' ').replace(/\s+/g, ' ').trim() || (type === 'income' ? '계좌 입금' : '카드 가맹점');
+      return { date: dateStr, type, category: guessCategory(merchant, type), method, cardCompany, installmentMonths, merchant, memo: '문자자동등록', amount };
+    }
+
+    function parseBulkSMS(raw) {
+      if (!raw || !raw.trim()) return [];
+      const pre = raw.replace(/\[?\s*(?:누적\vert{}잔액\vert{}가능액\vert{}한도\vert{}총누적\vert{}월누적\vert{}사용누적)(?:금액\vert{}액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
+      if (/[Web발신]|[웹발신]/i.test(pre)) return pre.split(/(?=[Web발신]|[웹발신])/i).map(s => parseSingleSMS(s.replace(/\n+/g, ' '))).filter(Boolean);
+      const lines = pre.split(/\n+/).map(s => s.trim()).filter(Boolean), res = []; let buf = '';
+      for (const l of lines) { buf = buf ? buf + ' ' + l : l; const p = parseSingleSMS(buf); if (p && p.amount > 0 && p.merchant !== '카드 가맹점') { res.push(p); buf = ''; } }
+      if (buf) { const last = parseSingleSMS(buf); if (last) res.push(last); }
+      return res;
+    }
+
+    function previewSMS() {
+      parsedSMSResults = parseBulkSMS(document.getElementById('smsInput').value);
+      const area = document.getElementById('smsPreviewArea'); if (!parsedSMSResults.length) { area.classList.add('hidden'); return; }
+      area.classList.remove('hidden'); document.getElementById('smsCountText').textContent = `🔍 자동 분석 완료 (${parsedSMSResults.length}건)`;
+      document.getElementById('smsPreviewList').innerHTML = parsedSMSResults.map(i => `<div class="flex justify-between bg-white dark:bg-slate-900 border border-indigo-100 rounded-lg p-2 text-xs"><span><b>[${i.cardCompany}]</b> ${i.merchant} (${i.category})</span><b class="${i.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">${i.amount.toLocaleString()}원</b></div>`).join('');
+    }
+    async function pasteAndRegisterClipboard() { try { const t = await navigator.clipboard.readText(); if (!t.trim()) return alert('클립보드가 비어있습니다.'); document.getElementById('smsInput').value = t; previewSMS(); if (parsedSMSResults.length) registerAllSMS(); } catch (e) { alert('아래 입력창에 직접 붙여넣기 해주세요.'); } }
+    function fillSampleSMS() { const m = today.slice(5, 7), d = today.slice(8, 10); document.getElementById('smsInput').value = `[Web발신] 삼성카드 승인 ${m}/${d} 13:10 450,000원 3개월 무신사스토어\n[Web발신] 신한카드 승인 ${m}/${d} 12:30 14,500원 일시불 버거킹강남점 누적 520,000원`; previewSMS(); }
+    function fillFormFromSMS() { if (!parsedSMSResults.length) return; exitEditMode(); const f = parsedSMSResults[0]; setType(f.type); document.getElementById('txDate').value = f.date; document.getElementById('txCategory').value = f.category; document.getElementById('txMethod').value = f.method; document.getElementById('txCardCompany').value = f.cardCompany; document.getElementById('txInstallment').value = String(f.installmentMonths); document.getElementById('txMerchant').value = f.merchant; document.getElementById('txMemo').value = f.memo; document.getElementById('txAmount').value = f.amount; toggleCardOptions(); updateInstallmentNotice(); }
+    function registerAllSMS() { if (!parsedSMSResults.length) return; parsedSMSResults.forEach(i => transactions.push(...createTransactionsWithInstallment(i))); addChangeLog('등록', '문자 자동등록', `${parsedSMSResults.length}건 자동 등록`); document.getElementById('monthFilter').value = parsedSMSResults[0].date.slice(0, 7); document.getElementById('smsInput').value = ''; document.getElementById('smsPreviewArea').classList.add('hidden'); parsedSMSResults = []; saveAndRender(); showToast('⚡ 결제문자 자동 등록 완료!'); }
+
+    function setType(type) {
+      currentType = type; const exp = type === 'expense';
+      document.getElementById('btnExpense').className = exp ? 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-rose-600 shadow-sm' : 'py-2 text-sm font-bold rounded-md text-slate-500';
+      document.getElementById('btnIncome').className = !exp ? 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-emerald-600 shadow-sm' : 'py-2 text-sm font-bold rounded-md text-slate-500';
+      document.getElementById('paymentOptionRow').classList.toggle('hidden', !exp);
+      document.getElementById('txCategory').innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
+      updateInstallmentNotice();
+    }
+    function toggleCardOptions() { const isC = document.getElementById('txMethod').value === '신용카드', b = document.getElementById('installmentBox'); if (!isC) document.getElementById('txInstallment').value = '1'; b.classList.toggle('opacity-40', !isC); b.classList.toggle('pointer-events-none', !isC); updateInstallmentNotice(); }
+    function updateInstallmentNotice() { const n = document.getElementById('installmentPreviewNotice'), m = Number(document.getElementById('txInstallment').value), a = Number(document.getElementById('txAmount').value); if (currentType === 'expense' && m > 1) { n.classList.remove('hidden'); n.textContent = a > 0 ? `💳 ${m}개월 할부: 매월 약 ${Math.floor(a / m).toLocaleString()}원씩 분할됩니다.` : `💳 ${m}개월 할부 선택됨`; } else n.classList.add('hidden'); }
+
+    function enterEditMode(id) {
+      const t = transactions.find(x => x.id === id); if (!t) return; editingTxId = id; setType(t.type);
+      document.getElementById('txDate').value = t.date; document.getElementById('txCategory').value = t.category; document.getElementById('txMethod').value = t.method || '신용카드'; document.getElementById('txCardCompany').value = t.cardCompany || '신한카드';
+      document.getElementById('txInstallment').value = String(t.installmentMonths || 1); document.getElementById('txMerchant').value = t.merchant || ''; document.getElementById('txMemo').value = (t.memo || '').replace(/\s*\(할부\s*\d+\/\d+회차\)/g, '').trim(); document.getElementById('txAmount').value = t.amount;
+      toggleCardOptions(); updateInstallmentNotice();
+      document.getElementById('formCard').classList.add('border-indigo-500', 'ring-4', 'ring-indigo-50'); document.getElementById('formTitle').innerHTML = `<span class="text-indigo-600">✏️ 내역 수정 모드</span>`; document.getElementById('cancelEditBtn').classList.remove('hidden'); document.getElementById('submitBtn').textContent = '수정 완료';
+      render(); document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function exitEditMode() {
+      editingTxId = null; document.getElementById('txMerchant').value = ''; document.getElementById('txMemo').value = ''; document.getElementById('txAmount').value = ''; document.getElementById('txInstallment').value = '1'; updateInstallmentNotice();
+      document.getElementById('formCard').classList.remove('border-indigo-500', 'ring-4', 'ring-indigo-50'); document.getElementById('formTitle').textContent = '✍️ 상세 내역 등록'; document.getElementById('cancelEditBtn').classList.add('hidden'); document.getElementById('submitBtn').textContent = '가계부에 등록하기'; render();
+    }
+
+    document.getElementById('txForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const item = { date: document.getElementById('txDate').value, type: currentType, category: document.getElementById('txCategory').value, method: document.getElementById('txMethod').value, cardCompany: document.getElementById('txCardCompany').value, installmentMonths: Number(document.getElementById('txInstallment').value), merchant: document.getElementById('txMerchant').value.trim(), memo: document.getElementById('txMemo').value.trim(), amount: Number(document.getElementById('txAmount').value) };
+      if (editingTxId !== null) {
+        const target = transactions.find(t => t.id === editingTxId);
+        if (target) {
+          const snap = { ...target }, bStr = `${target.merchant}(${target.amount.toLocaleString()}원)`, aStr = `${item.merchant}(${item.amount.toLocaleString()}원)`;
+          Object.assign(target, { date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : item.method, cardCompany: item.cardCompany, merchant: item.merchant, memo: item.memo, amount: item.amount });
+          addChangeLog('수정', '내역 수정', `${bStr} ➔ ${aStr}`, { targetTxId: target.id, beforeStr: bStr, afterStr: aStr, undoData: { type: 'edit_single', beforeTx: snap } });
+        }
+        exitEditMode(); saveAndRender(); showToast('✏️ 수정되었습니다!'); return;
+      }
+      transactions.push(...createTransactionsWithInstallment(item));
+      addChangeLog('등록', item.type === 'income' ? '수입 등록' : '지출 등록', `[${item.date.slice(5)}] ${item.merchant} ${item.amount.toLocaleString()}원`);
+      saveAndRender(); exitEditMode(); showToast('✅ 등록되었습니다.');
+    });
+
+    function deleteTx(id) {
+      const t = transactions.find(x => x.id === id); if (!t) return; if (editingTxId === id) exitEditMode();
+      if (t.groupId && confirm(`[${t.merchant}] 할부 전체 회차를 삭제할까요?`)) {
+        const grp = transactions.filter(x => x.groupId === t.groupId).map(x => ({ ...x })); transactions = transactions.filter(x => x.groupId !== t.groupId);
+        addChangeLog('삭제', '할부 삭제', `${t.merchant} 할부 전체 삭제`, { undoData: { type: 'delete_group', txList: grp } });
+      } else {
+        const snap = { ...t }; transactions = transactions.filter(x => x.id !== id);
+        addChangeLog('삭제', '내역 삭제', `${t.merchant} ${t.amount.toLocaleString()}원 삭제`, { undoData: { type: 'delete_single', tx: snap } });
+      }
+      saveAndRender(); showToast('🗑️ 삭제되었습니다.');
+    }
+
+    function openFixedExpenseModal() { closeHeaderMenu(); setTimeout(() => { renderFixedExpenseList(); const m = document.getElementById('fixedExpenseModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function closeFixedExpenseModal() { const m = document.getElementById('fixedExpenseModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+    function renderFixedExpenseList() {
+      const el = document.getElementById('fixedExpenseList'); if (!fixedExpenses.length) { el.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">등록된 고정 지출이 없습니다.</p>`; return; }
+      el.innerHTML = fixedExpenses.map(i => `<div class="flex justify-between items-center bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/70 text-xs"><div><b>${i.name}</b> (${i.category}) · 매월 ${i.day}일 · <b class="text-indigo-600">${i.amount.toLocaleString()}원</b></div><button onclick="deleteFixedExpenseItem(${i.id})" class="text-slate-400 hover:text-rose-600 font-bold px-2">✕</button></div>`).join('');
+    }
+    function addFixedExpenseItem() {
+      const name = document.getElementById('feName').value.trim(), category = document.getElementById('feCategory').value, day = Number(document.getElementById('feDay').value), amount = Number(document.getElementById('feAmount').value);
+      if (!name || !day || !amount) return alert('모든 항목을 입력해 주세요.');
+      fixedExpenses.push({ id: Date.now(), name, category, day, amount }); localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
+      document.getElementById('feName').value = ''; document.getElementById('feDay').value = ''; document.getElementById('feAmount').value = ''; renderFixedExpenseList();
+    }
+    function deleteFixedExpenseItem(id) { fixedExpenses = fixedExpenses.filter(i => i.id !== id); localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses)); renderFixedExpenseList(); }
+    function registerAllFixedExpenses() {
+      if (!fixedExpenses.length) return alert('고정 지출 항목이 없습니다.'); const ym = document.getElementById('monthFilter').value;
+      fixedExpenses.forEach(fe => { const s = nextCreatedOrder(); transactions.push({ id: s, createdAt: s, date: `${ym}-${String(fe.day).padStart(2, '0')}`, type: 'expense', category: fe.category, method: '계좌이체', cardCompany: '자동이체', merchant: fe.name, memo: '고정지출 자동등록', amount: fe.amount, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: fe.amount, groupId: null }); });
+      addChangeLog('등록', '고정지출 등록', `${ym}월 고정 지출 ${fixedExpenses.length}건 등록`); closeFixedExpenseModal(); saveAndRender(); showToast(`⚡ 고정 지출 ${fixedExpenses.length}건 일괄 등록 완료!`);
+    }
+
+    function getTotalMonthlyBudget() { return Object.values(categoryBudgets).reduce((a, b) => a + Number(b || 0), 0); }
+    function openBudgetModal() { closeHeaderMenu(); setTimeout(() => { document.getElementById('budgetModalInputs').innerHTML = categories.expense.map(c => `<div class="flex items-center justify-between gap-3"><label class="text-xs font-bold w-28">${c}</label><input type="number" data-cat="${c}" oninput="updateModalTotalPreview()" value="${categoryBudgets[c] || 0}" step="10000" class="budget-input flex-1 border rounded-lg px-3 py-1.5 text-right text-sm font-bold"></div>`).join(''); updateModalTotalPreview(); const m = document.getElementById('budgetModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function updateModalTotalPreview() { let s = 0; document.querySelectorAll('.budget-input').forEach(i => s += Number(i.value || 0)); document.getElementById('modalTotalBudgetPreview').textContent = s.toLocaleString() + '원'; }
+    function closeBudgetModal() { const m = document.getElementById('budgetModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+    function saveCategoryBudgets() { document.querySelectorAll('.budget-input').forEach(i => categoryBudgets[i.getAttribute('data-cat')] = Math.max(0, Number(i.value || 0))); localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets)); closeBudgetModal(); render(); showToast('🎯 예산 저장 완료!'); }
+
+    function openSyncModal() { closeHeaderMenu(); setTimeout(() => { document.getElementById('restoreCodeInput').value = ''; const m = document.getElementById('syncModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function closeSyncModal() { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+    function downloadBackupFile() { const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, transactions, changeLogs }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); }
+    function handleBackupFileUpload(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => applyBackupData(ev.target.result); r.readAsText(f); }
+    async function copyBackupCode() { const s = JSON.stringify({ categoryBudgets, transactions }); try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } }
+    function restoreFromCodeInput() { applyBackupData(document.getElementById('restoreCodeInput').value.trim()); }
+    function applyBackupData(raw) { try { const p = JSON.parse(raw), tx = Array.isArray(p) ? p : p.transactions; if (!Array.isArray(tx)) return alert('올바른 백업 형식이 아닙니다.'); if (document.querySelector('input[name="restoreMode"]:checked').value === 'overwrite') transactions = tx; else transactions.push(...tx); if (p.categoryBudgets) { categoryBudgets = p.categoryBudgets; localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets)); } saveAndRender(); closeSyncModal(); showToast('🔄 데이터 복원 완료!'); } catch (e) { alert('데이터 복원 오류'); } }
+
+    function saveAndRender() { localStorage.setItem('argon_tx_v3', JSON.stringify(transactions)); render(); }
+
+    function render() {
+      const selectedMonth = document.getElementById('monthFilter').value, nextMonth = addMonthsToYM(selectedMonth, 1);
+      const keyword = document.getElementById('searchInput').value.toLowerCase(), sortMode = document.getElementById('sortFilter')?.value || 'DATE_DESC';
+      const catFilter = document.getElementById('categoryFilter').value, cardFilter = document.getElementById('cardFilter').value, totalBudget = getTotalMonthlyBudget();
+
+      const monthTx = transactions.filter(t => t.date.startsWith(selectedMonth)).sort((a, b) => {
+        const ac = Number(a.createdAt || a.id || 0), bc = Number(b.createdAt || b.id || 0);
+        if (sortMode === 'DATE_DESC') return b.date.localeCompare(a.date) || (bc - ac);
+        if (sortMode === 'CREATED_DESC') return (bc - ac) || b.date.localeCompare(a.date);
+        if (sortMode === 'AMOUNT_DESC') return (b.amount - a.amount) || (bc - ac);
+        return (a.amount - b.amount) || (bc - ac);
+      });
+
+      const income = monthTx.filter(t => t.type === 'income').reduce((a, c) => a + c.amount, 0);
+      const expense = monthTx.filter(t => t.type === 'expense').reduce((a, c) => a + c.amount, 0);
+      const balance = income - expense;
+      document.getElementById('totalIncome').textContent = income.toLocaleString() + '원';
+      document.getElementById('totalExpense').textContent = expense.toLocaleString() + '원';
+      document.getElementById('netBalance').textContent = (balance >= 0 ? '+' : '') + balance.toLocaleString() + '원';
+
+      const rawRatio = totalBudget > 0 ? Math.round((expense / totalBudget) * 100) : 0;
+      document.getElementById('budgetStatusText').textContent = `${rawRatio}% (${expense.toLocaleString()}원)`;
+      document.getElementById('budgetTotalText').textContent = `/ ${totalBudget.toLocaleString()}원`;
+      document.getElementById('budgetBar').style.width = `${Math.min(rawRatio, 100)}%`;
+
+      const todayExp = transactions.filter(t => t.date === today && t.type === 'expense'), todaySpent = todayExp.reduce((a, c) => a + c.amount, 0);
+      document.getElementById('todaySpentText').textContent = todaySpent.toLocaleString() + '원';
+      document.getElementById('todayCountText').textContent = `오늘 ${todayExp.length}건 결제`;
+      const dayNum = new Date().getDate(), daysInM = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+      const dailyAvg = Math.round(expense / Math.max(1, dayNum)), dailyRec = Math.max(0, Math.round((totalBudget - expense) / Math.max(1, daysInM - dayNum + 1)));
+      document.getElementById('dailyAvgText').textContent = dailyAvg.toLocaleString() + '원';
+      document.getElementById('dailyRecText').textContent = dailyRec.toLocaleString() + '원';
+
+      const allInst = transactions.filter(t => t.type === 'expense' && t.installmentMonths > 1);
+      const thisInst = allInst.filter(t => t.date.startsWith(selectedMonth)), nextInst = allInst.filter(t => t.date.startsWith(nextMonth)), remInst = allInst.filter(t => t.date.slice(0, 7) > selectedMonth);
+      document.getElementById('instThisMonthText').textContent = thisInst.reduce((a, b) => a + b.amount, 0).toLocaleString() + '원';
+      document.getElementById('instNextMonthText').textContent = nextInst.reduce((a, b) => a + b.amount, 0).toLocaleString() + '원';
+      document.getElementById('instTotalRemainText').textContent = remInst.reduce((a, b) => a + b.amount, 0).toLocaleString() + '원';
+      document.getElementById('installmentActiveBadge').textContent = `이번 달 ${thisInst.length}건`;
+      document.getElementById('instMiniList').innerHTML = thisInst.length ? thisInst.map(t => `<div class="flex justify-between bg-indigo-50/60 dark:bg-indigo-950/50 px-2.5 py-1 rounded"><span>💳 [${t.cardCompany}] ${t.merchant} (${t.installmentCurrent}/${t.installmentMonths})</span><b class="text-rose-600">${t.amount.toLocaleString()}원</b></div>`).join('') : `<p class="text-slate-400">할부 내역이 없습니다.</p>`;
+
+      const catSpent = {}; monthTx.filter(t => t.type === 'expense').forEach(t => catSpent[t.category] = (catSpent[t.category] || 0) + t.amount);
+      document.getElementById('categoryBudgetList').innerHTML = categories.expense.map(cat => {
+        const s = catSpent[cat] || 0, b = categoryBudgets[cat] || 0, pct = b > 0 ? Math.min(100, Math.round((s / b) * 100)) : 0;
+        return `<div class="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700"><div class="flex justify-between text-xs mb-1"><b>${cat}</b><span><b class="${s > b && b > 0 ? 'text-rose-600' : 'text-indigo-600'}">사용 ${s.toLocaleString()}원</b> / 예산 ${b.toLocaleString()}원</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5"><div class="bg-indigo-500 h-1.5 rounded-full" style="width:${pct}%"></div></div></div>`;
+      }).join('');
+
+      const filteredTx = monthTx.filter(t => {
+        const mKw = (t.merchant || '').toLowerCase().includes(keyword) || (t.memo || '').toLowerCase().includes(keyword) || (t.category || '').toLowerCase().includes(keyword) || (t.cardCompany || '').toLowerCase().includes(keyword);
+        if (!mKw || (catFilter !== 'ALL' && t.category !== catFilter)) return false;
+        return cardFilter === 'ALL' ? true : (cardFilter === 'INSTALLMENT' ? t.installmentMonths > 1 : t.cardCompany === cardFilter);
+      });
+
+      document.getElementById('txTotalCountBadge').textContent = `${filteredTx.length}건`;
+      const tbody = document.getElementById('txList'), emptyMsg = document.getElementById('emptyListMsg');
+
+      if (!filteredTx.length) {
+        tbody.innerHTML = ''; emptyMsg.classList.add('hidden'); // 에러 방지용
+      } else {
+        emptyMsg.classList.add('hidden');
+        const chrono = [...monthTx].sort((a, b) => a.date.localeCompare(b.date) || (Number(a.createdAt || a.id || 0) - Number(b.createdAt || b.id || 0)));
+        let runBal = 0; const balMap = {};
+        chrono.forEach(t => { runBal += (t.type === 'income' ? t.amount : -t.amount); balMap[t.id] = runBal; });
+
+        const daySum = {};
+        filteredTx.forEach(t => { if (!daySum[t.date]) daySum[t.date] = { inc: 0, exp: 0 }; if (t.type === 'income') daySum[t.date].inc += t.amount; else daySum[t.date].exp += t.amount; });
+        const wDays = ['일', '월', '화', '수', '목', '금', '토'];
+
+        let html = '', lastDate = null;
+        filteredTx.forEach(t => {
+          if (t.date !== lastDate) {
+            lastDate = t.date;
+            const [y, m, d] = t.date.split('-').map(Number), dow = wDays[new Date(y, m - 1, d).getDay()];
+            const ds = daySum[t.date], todayBadge = t.date === today ? `<span class="ml-1.5 px-1.5 py-0.5 bg-sky-600 text-white rounded text-[10px] font-extrabold">오늘</span>` : '';
+            const sums = []; if (ds.inc > 0) sums.push(`수입 <b class="text-emerald-500">${ds.inc.toLocaleString()}원</b>`); if (ds.exp > 0) sums.push(`지출 <b class="text-rose-400">${ds.exp.toLocaleString()}원</b>`);
+            html += `
+              <tr class="bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200 dark:border-slate-700">
+                <td colspan="5" class="py-2 px-2.5">
+                  <div class="flex justify-between items-center text-xs">
+                    <div class="font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><span>${m}월 ${d}일 (${dow})</span>${todayBadge}</div>
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">${sums.join(' · ')}</div>
+                  </div>
+                </td>
+              </tr>`;
+          }
+          const isEd = editingTxId === t.id, cleanCat = (t.category || '').replace(/^[^\w가-힣]+\s*/, '');
+          const instTxt = t.installmentMonths > 1 ? ` · 할부 ${t.installmentCurrent}/${t.installmentMonths}` : '';
+          html += `
+            <tr onclick="enterEditMode(${t.id})" class="${isEd ? 'bg-indigo-50/90 dark:bg-indigo-950/80' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'} cursor-pointer transition">
+              <td class="py-3 px-2.5 align-top">
+                <div class="text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                  <span class="font-extrabold">${t.merchant || '-'}</span>
+                  ${t.memo ? `<span class="text-slate-400 mx-1">·</span><span class="text-slate-600 dark:text-slate-300 font-medium">${t.memo}</span>` : ''}
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">${cleanCat} · ${t.cardCompany || t.method}${instTxt}</div>
+              </td>
+              <td class="py-3 px-1.5 text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap align-top font-mono">${t.type === 'income' ? t.amount.toLocaleString() : ''}</td>
+              <td class="py-3 px-1.5 text-right font-bold text-rose-500 dark:text-rose-400 whitespace-nowrap align-top font-mono">${t.type === 'expense' ? t.amount.toLocaleString() : ''}</td>
+              <td class="py-3 px-2 text-right font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap align-top font-mono">${(balMap[t.id] || 0).toLocaleString()}</td>
+              <td class="py-3 px-1.5 text-center whitespace-nowrap align-top">
+                <button type="button" onclick="event.stopPropagation(); enterEditMode(${t.id})" class="text-[11px] text-sky-500 hover:underline font-bold mr-1">수정</button>
+                <button type="button" onclick="event.stopPropagation(); deleteTx(${t.id})" class="text-[11px] text-slate-300 hover:text-rose-500 font-bold">✕</button>
+              </td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+      }
+      updateChart(monthTx.filter(t => t.type === 'expense')); renderLogs();
+    }
+
+    function updateChart(expList) {
+      const ctx = document.getElementById('expenseChart').getContext('2d'), msg = document.getElementById('emptyChartMsg');
+      if (!expList.length) { if (chartInstance) chartInstance.destroy(); msg.classList.remove('hidden'); return; }
+      msg.classList.add('hidden'); const totals = {}; expList.forEach(t => totals[t.category] = (totals[t.category] || 0) + t.amount);
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#64748b'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155' } } }, cutout: '62%' } });
+    }
+    function resetData() { closeHeaderMenu(); if (confirm('모든 거래 내역을 초기화하시겠습니까?')) { transactions = []; saveAndRender(); } }
+    function exportCSV() { closeHeaderMenu(); if (!transactions.length) return alert('내역이 없습니다.'); let c = '\uFEFF날짜,구분,카테고리,결제수단,카드사,사용처,내용,금액\n'; transactions.forEach(t => c += `${t.date},${t.type === 'income' ? '수입' : '지출'},${t.category},${t.method},${t.cardCompany},"${t.merchant}","${t.memo}",${t.amount}\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv;charset=utf-8;' })); a.download = `아르곤가계부_${document.getElementById('monthFilter').value}.csv`; a.click(); }
+
+    document.getElementById('monthFilter').addEventListener('change', () => { exitEditMode(); render(); });
+    document.getElementById('txDate').value = today; document.getElementById('monthFilter').value = currentYearMonth;
+    initDarkMode(); setType('expense'); toggleCardOptions(); render(); checkVersionUpdatePopup();
+  </script>
 </body>
 </html>
