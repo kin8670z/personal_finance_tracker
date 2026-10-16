@@ -28,6 +28,15 @@
     .dark .text-slate-500, .dark .text-slate-600 { color: #94a3b8 !important; }
     .dark table thead tr { border-color: #334155 !important; }
     .dark tbody tr:hover { background-color: rgba(51, 65, 85, 0.5) !important; }
+    /* 일자 헤더: 테마 토글(.dark)을 따라가도록 직접 지정 */
+    .day-head td { background-color: #eef2ff; border-top: 1px solid #c7d2fe; border-bottom: 1px solid #c7d2fe; box-shadow: inset 3px 0 0 #6366f1; }
+    .day-head .day-date { color: #1e1b4b; } .day-head .day-sum { color: #475569; }
+    .day-head b.inc { color: #059669; } .day-head b.exp { color: #e11d48; }
+    .day-head.is-today td { background-color: #e0f2fe; border-color: #bae6fd; box-shadow: inset 3px 0 0 #0284c7; }
+    .dark .day-head td { background-color: #312e81 !important; border-color: #4338ca !important; box-shadow: inset 3px 0 0 #818cf8; }
+    .dark .day-head .day-date { color: #eef2ff !important; } .dark .day-head .day-sum { color: #c7d2fe !important; }
+    .dark .day-head b.inc { color: #6ee7b7 !important; } .dark .day-head b.exp { color: #fda4af !important; }
+    .dark .day-head.is-today td { background-color: #075985 !important; border-color: #0369a1 !important; box-shadow: inset 3px 0 0 #38bdf8; }
   </style>
 </head>
 <body class="text-slate-800 select-none">
@@ -767,13 +776,13 @@
             lastDate = t.date;
             const [y, m, d] = t.date.split('-').map(Number), dow = wDays[new Date(y, m - 1, d).getDay()];
             const ds = daySum[t.date], todayBadge = t.date === today ? `<span class="ml-1.5 px-1.5 py-0.5 bg-sky-600 text-white rounded text-[10px] font-extrabold">오늘</span>` : '';
-            const sums = []; if (ds.inc > 0) sums.push(`수입 <b class="text-emerald-500">${ds.inc.toLocaleString()}원</b>`); if (ds.exp > 0) sums.push(`지출 <b class="text-rose-400">${ds.exp.toLocaleString()}원</b>`);
+            const sums = []; if (ds.inc > 0) sums.push(`수입 <b class="inc">${ds.inc.toLocaleString()}원</b>`); if (ds.exp > 0) sums.push(`지출 <b class="exp">${ds.exp.toLocaleString()}원</b>`);
             html += `
-              <tr class="bg-slate-100/95 dark:bg-slate-800/95 border-y border-slate-200 dark:border-slate-700">
+              <tr class="day-head${t.date === today ? ' is-today' : ''}">
                 <td colspan="5" class="py-2 px-2.5">
                   <div class="flex justify-between items-center text-xs">
-                    <div class="font-extrabold text-slate-800 dark:text-slate-100 flex items-center"><span>${m}월 ${d}일 (${dow})</span>${todayBadge}</div>
-                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">${sums.join(' · ')}</div>
+                    <div class="day-date font-extrabold flex items-center"><span>${m}월 ${d}일 (${dow})</span>${todayBadge}</div>
+                    <div class="day-sum text-[11px] font-semibold">${sums.join(' · ')}</div>
                   </div>
                 </td>
               </tr>`;
