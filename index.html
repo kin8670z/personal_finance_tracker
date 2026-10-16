@@ -2040,7 +2040,114 @@
         alert('백업 데이터를 읽는 중 오류가 발생했습니다.');
       }
     }
+    // ==========================================
+    // 📌 고정 지출 관리 및 일괄 등록 엔진 (추가할 코드)
+    // ==========================================
+    let fixedExpenses = JSON.parse(localStorage.getItem('argon_fixed_expenses_v3')) || [
+      { id: 1, name: '월세', category: '🏠 주거/통신', day: 5, amount: 500000 },
+      { id: 2, name: '통신비 (휴대폰)', category: '🏠 주거/통신', day: 15, amount: 65000 }
+    ];
 
+    function openFixedExpenseModal() {
+      closeHeaderMenu();
+      setTimeout(() => {
+        renderFixedExpenseList();
+        const modal = document.getElementById('fixedExpenseModal');
+        if (modal) {
+          modal.classList.remove('hidden');
+          modal.classList.add('flex');
+        }
+      }, 50);
+    }
+
+    function closeFixedExpenseModal() {
+      const modal = document.getElementById('fixedExpenseModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+
+    function renderFixedExpenseList() {
+      const listEl = document.getElementById('fixedExpenseList');
+      if (!listEl) return;
+      if (fixedExpenses.length === 0) {
+        listEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">등록된 고정 지출이 없습니다.</p>`;
+        return;
+      }
+      listEl.innerHTML = fixedExpenses.map(item => `
+        <div class="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-200/70 text-xs">
+          <div>
+            <span class="font-extrabold text-slate-900">${item.name}</span>
+            <span class="text-slate-400">(${item.category})</span>
+            <div class="text-[11px] text-indigo-600 font-bold mt-0.5">매월 ${item.day}일 · ${item.amount.toLocaleString()}원</div>
+          </div>
+          <button type="button" onclick="deleteFixedExpenseItem(${item.id})" class="text-slate-300 hover:text-rose-600 font-bold px-2 py-1 transition">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addFixedExpenseItem() {
+      const name = document.getElementById('feName').value.trim();
+      const category = document.getElementById('feCategory').value;
+      const day = Number(document.getElementById('feDay').value);
+      const amount = Number(document.getElementById('feAmount').value);
+
+      if (!name || !day || !amount || day < 1 || day > 31 || amount <= 0) {
+        return alert('사용처, 날짜(1~31), 올바른 금액을 모두 입력해 주세요.');
+      }
+
+      fixedExpenses.push({ id: Date.now(), name, category, day, amount });
+      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
+
+      document.getElementById('feName').value = '';
+      document.getElementById('feDay').value = '';
+      document.getElementById('feAmount').value = '';
+      renderFixedExpenseList();
+      showToast('📌 고정 지출 항목이 추가되었습니다.');
+    }
+
+    function deleteFixedExpenseItem(id) {
+      fixedExpenses = fixedExpenses.filter(item => item.id !== id);
+      localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
+      renderFixedExpenseList();
+    }
+
+    function registerAllFixedExpenses() {
+      if (fixedExpenses.length === 0) return alert('등록할 고정 지출 항목이 없습니다.');
+      const selectedYM = document.getElementById('monthFilter').value;
+
+      let addedCount = 0;
+      fixedExpenses.forEach(fe => {
+        const dayStr = String(fe.day).padStart(2, '0');
+        const targetDate = `${selectedYM}-${dayStr}`;
+        const orderStamp = nextCreatedOrder();
+
+        const newItem = {
+          id: orderStamp,
+          createdAt: orderStamp,
+          date: targetDate,
+          type: 'expense',
+          category: fe.category,
+          method: '계좌이체',
+          cardCompany: '자동이체',
+          merchant: fe.name,
+          memo: '고정지출 자동등록',
+          amount: fe.amount,
+          installmentMonths: 1,
+          installmentCurrent: 1,
+          installmentTotalAmount: fe.amount,
+          groupId: null
+        };
+        transactions.push(newItem);
+        addedCount++;
+      });
+
+      addChangeLog('등록', '고정지출 일괄등록', `${selectedYM}월 고정 지출 ${addedCount}건 일괄 등록`);
+      closeFixedExpenseModal();
+      saveAndRender();
+      showToast(`⚡ ${selectedYM}월 고정 지출 ${addedCount}건이 일괄 등록되었습니다!`);
+    }
     // ==========================================
     // 8. 메인 렌더링
     // ==========================================
