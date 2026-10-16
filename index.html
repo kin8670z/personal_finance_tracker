@@ -351,8 +351,8 @@
   <script>
     const APP_VERSION = '4.2';
     const releaseNotesData = [
-      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '고정지출 백업 포함', isLatest: true, items: [
-        '📌 <b>고정 지출 목록 백업 및 복원 기능 완벽 포함</b>',
+      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '문법 오류 수정 완료', isLatest: true, items: [
+        '🛠️ <b>자바스크립트 문법 오류(SyntaxError) 및 고정지출 백업 연동 수정</b>',
         '📅 <b>일자별 그룹핑 헤더 & 💰 건별 누적 잔액(입금-출금) 표시</b>',
         '🌙 <b>다크 모드 완벽 지원</b>'
       ]}
@@ -392,7 +392,7 @@
     function openGalaxyAutoModal() { closeHeaderMenu(); setTimeout(() => { const m = document.getElementById('galaxyAutoModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
     function closeGalaxyAutoModal() { const m = document.getElementById('galaxyAutoModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
 
-    function initDarkMode() { if (localStorage.getItem('argon_dark_mode'] === 'true') { document.documentElement.classList.add('dark'); const t = document.getElementById('darkModeMenuText'); if (t) t.textContent = '☀️ 라이트 모드로 전환'; } }
+    function initDarkMode() { if (localStorage.getItem('argon_dark_mode') === 'true') { document.documentElement.classList.add('dark'); const t = document.getElementById('darkModeMenuText'); if (t) t.textContent = '☀️ 라이트 모드로 전환'; } }
     function toggleDarkMode() {
       closeHeaderMenu(); const h = document.documentElement, isD = h.classList.contains('dark'), t = document.getElementById('darkModeMenuText');
       if (isD) { h.classList.remove('dark'); localStorage.setItem('argon_dark_mode', 'false'); if (t) t.textContent = '🌙 다크 모드 켜기'; showToast('☀️ 라이트 모드 전환'); }
@@ -429,7 +429,7 @@
       { id: 2, name: '통신비', category: '🏠 주거/통신', day: 15, amount: 65000 }
     ];
 
-    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 백업완벽포함', detail: '고정지출 백업 및 복원이 정상 작동합니다.' }];
+    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 오류수정', detail: '문법 오류가 수정되었습니다.' }];
 
     function toggleHistoryPanel(force) { const b = document.getElementById('historyBody'), t = document.getElementById('historyToggleBtnText'); isHistoryOpen = typeof force === 'boolean' ? force : !isHistoryOpen; b.classList.toggle('hidden', !isHistoryOpen); t.textContent = isHistoryOpen ? '접어두기 ▲' : '펼쳐보기 ▼'; if (isHistoryOpen) renderLogs(); }
     function openAndScrollHistory() { closeHeaderMenu(); toggleHistoryPanel(true); document.getElementById('historySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -627,7 +627,6 @@
     function openSyncModal() { closeHeaderMenu(); setTimeout(() => { document.getElementById('restoreCodeInput').value = ''; const m = document.getElementById('syncModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
     function closeSyncModal() { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
     
-    // 💡 백업 파일 다운로드 (고정지출 목록 완벽 포함)
     function downloadBackupFile() { 
       const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
       const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); 
@@ -635,7 +634,6 @@
     
     function handleBackupFileUpload(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => applyBackupData(ev.target.result); r.readAsText(f); }
     
-    // 💡 현재 데이터 코드 복사 (고정지출 목록 완벽 포함)
     async function copyBackupCode() { 
       const s = JSON.stringify({ categoryBudgets, fixedExpenses, transactions, changeLogs }); 
       try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } 
@@ -643,7 +641,6 @@
     
     function restoreFromCodeInput() { applyBackupData(document.getElementById('restoreCodeInput').value.trim()); }
     
-    // 💡 데이터 복원 적용 (고정지출 목록 반영)
     function applyBackupData(raw) { 
       try { 
         const p = JSON.parse(raw); 
@@ -659,7 +656,6 @@
         } else {
           transactions.push(...tx);
           if (p.fixedExpenses && Array.isArray(p.fixedExpenses)) {
-            // 중복 아이디 제외하고 합치기
             const existingIds = new Set(fixedExpenses.map(i => i.id));
             p.fixedExpenses.forEach(fe => { if (!existingIds.has(fe.id)) fixedExpenses.push(fe); });
           }
