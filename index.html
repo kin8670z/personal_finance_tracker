@@ -265,7 +265,6 @@
     </section>
   </div>
 
-  <!-- 모달 영역 (고정 지출 / 갤럭시 가이드 / 릴리즈 / 예산 / 백업) -->
   <div id="fixedExpenseModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -352,8 +351,8 @@
   <script>
     const APP_VERSION = '4.2';
     const releaseNotesData = [
-      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '고정지출 모달 수정', isLatest: true, items: [
-        '📌 <b>고정 지출 관리 팝업 열기/닫기 로직 보완</b>',
+      { version: 'Pro v4.2', date: '2026.10.16 (최신)', badge: '고정지출 백업 포함', isLatest: true, items: [
+        '📌 <b>고정 지출 목록 백업 및 복원 기능 완벽 포함</b>',
         '📅 <b>일자별 그룹핑 헤더 & 💰 건별 누적 잔액(입금-출금) 표시</b>',
         '🌙 <b>다크 모드 완벽 지원</b>'
       ]}
@@ -430,7 +429,7 @@
       { id: 2, name: '통신비', category: '🏠 주거/통신', day: 15, amount: 65000 }
     ];
 
-    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 수정', detail: '고정지출 모달 오류가 수정되었습니다.' }];
+    let changeLogs = JSON.parse(localStorage.getItem('argon_logs_v3')) || [{ id: 1, timestamp: Date.now(), dateStr: today, time: getNowTimeOnly(), category: '예산/복원', action: 'v4.2 백업보완', detail: '고정지출 백업/복원이 포함되었습니다.' }];
 
     function toggleHistoryPanel(force) { const b = document.getElementById('historyBody'), t = document.getElementById('historyToggleBtnText'); isHistoryOpen = typeof force === 'boolean' ? force : !isHistoryOpen; b.classList.toggle('hidden', !isHistoryOpen); t.textContent = isHistoryOpen ? '접어두기 ▲' : '펼쳐보기 ▼'; if (isHistoryOpen) renderLogs(); }
     function openAndScrollHistory() { closeHeaderMenu(); toggleHistoryPanel(true); document.getElementById('historySection').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -538,6 +537,8 @@
       document.getElementById('smsPreviewList').innerHTML = parsedSMSResults.map(i => `<div class="flex justify-between bg-white dark:bg-slate-900 border border-indigo-100 rounded-lg p-2 text-xs"><span><b>[${i.cardCompany}]</b> ${i.merchant} (${i.category})</span><b class="${i.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">${i.amount.toLocaleString()}원</b></div>`).join('');
     }
     async function pasteAndRegisterClipboard() { try { const t = await navigator.clipboard.readText(); if (!t.trim()) return alert('클립보드가 비어있습니다.'); document.getElementById('smsInput').value = t; previewSMS(); if (parsedSMSResults.length) registerAllSMS(); } catch (e) { alert('아래 입력창에 직접 붙여넣기 해주세요.'); } }
+    function checkIncomingSharedSMS() { const p = new URLSearchParams(window.location.search), txt = p.get('sms') || p.get('text'); if (txt) { document.getElementById('smsInput').value = txt; previewSMS(); window.history.replaceState({}, document.title, window.location.pathname); if (parsedSMSResults.length) setTimeout(() => registerAllSMS(), 250); } }
+    function testUrlAutoRegister() { closeGalaxyAutoModal(); const u = `${window.location.pathname}?sms=${encodeURIComponent(`[Web발신] 현대카드 승인 ${today.slice(5,7)}/${today.slice(8,10)} 15:20 18,900원 일시불 쿠팡이츠`)}&auto=1`; window.history.replaceState({}, document.title, u); checkIncomingSharedSMS(); }
     function fillSampleSMS() { const m = today.slice(5, 7), d = today.slice(8, 10); document.getElementById('smsInput').value = `[Web발신] 삼성카드 승인 ${m}/${d} 13:10 450,000원 3개월 무신사스토어\n[Web발신] 신한카드 승인 ${m}/${d} 12:30 14,500원 일시불 버거킹강남점 누적 520,000원`; previewSMS(); }
     function fillFormFromSMS() { if (!parsedSMSResults.length) return; exitEditMode(); const f = parsedSMSResults[0]; setType(f.type); document.getElementById('txDate').value = f.date; document.getElementById('txCategory').value = f.category; document.getElementById('txMethod').value = f.method; document.getElementById('txCardCompany').value = f.cardCompany; document.getElementById('txInstallment').value = String(f.installmentMonths); document.getElementById('txMerchant').value = f.merchant; document.getElementById('txMemo').value = f.memo; document.getElementById('txAmount').value = f.amount; toggleCardOptions(); updateInstallmentNotice(); }
     function registerAllSMS() { if (!parsedSMSResults.length) return; parsedSMSResults.forEach(i => transactions.push(...createTransactionsWithInstallment(i))); addChangeLog('등록', '문자 자동등록', `${parsedSMSResults.length}건 자동 등록`); document.getElementById('monthFilter').value = parsedSMSResults[0].date.slice(0, 7); document.getElementById('smsInput').value = ''; document.getElementById('smsPreviewArea').classList.add('hidden'); parsedSMSResults = []; saveAndRender(); showToast('⚡ 결제문자 자동 등록 완료!'); }
@@ -620,11 +621,37 @@
 
     function openSyncModal() { closeHeaderMenu(); setTimeout(() => { document.getElementById('restoreCodeInput').value = ''; const m = document.getElementById('syncModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
     function closeSyncModal() { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
-    function downloadBackupFile() { const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, transactions, changeLogs }, null, 2)], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); }
+    
+    // 💡 백업 파일 다운로드 (고정지출 fixedExpenses 포함)
+    function downloadBackupFile() { 
+      const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
+      const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); 
+    }
+    
     function handleBackupFileUpload(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => applyBackupData(ev.target.result); r.readAsText(f); }
-    async function copyBackupCode() { const s = JSON.stringify({ categoryBudgets, transactions }); try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } }
+    
+    // 💡 현재 데이터 코드 복사 (고정지출 fixedExpenses 포함)
+    async function copyBackupCode() { 
+      const s = JSON.stringify({ categoryBudgets, fixedExpenses, transactions }); 
+      try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } 
+    }
+    
     function restoreFromCodeInput() { applyBackupData(document.getElementById('restoreCodeInput').value.trim()); }
-    function applyBackupData(raw) { try { const p = JSON.parse(raw), tx = Array.isArray(p) ? p : p.transactions; if (!Array.isArray(tx)) return alert('올바른 백업 형식이 아닙니다.'); if (document.querySelector('input[name="restoreMode"]:checked').value === 'overwrite') transactions = tx; else transactions.push(...tx); if (p.categoryBudgets) { categoryBudgets = p.categoryBudgets; localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets)); } saveAndRender(); closeSyncModal(); showToast('🔄 데이터 복원 완료!'); } catch (e) { alert('데이터 복원 오류'); } }
+    
+    // 💡 데이터 복원 적용 (고정지출 fixedExpenses 반영)
+    function applyBackupData(raw) { 
+      try { 
+        const p = JSON.parse(raw), tx = Array.isArray(p) ? p : p.transactions; 
+        if (!Array.isArray(tx)) return alert('올바른 백업 형식이 아닙니다.'); 
+        if (document.querySelector('input[name="restoreMode"]:checked').value === 'overwrite') transactions = tx; 
+        else transactions.push(...tx); 
+        
+        if (p.categoryBudgets) { categoryBudgets = p.categoryBudgets; localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets)); } 
+        if (p.fixedExpenses) { fixedExpenses = p.fixedExpenses; localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses)); }
+        
+        saveAndRender(); closeSyncModal(); showToast('🔄 데이터 복원 완료!'); 
+      } catch (e) { alert('데이터 복원 오류'); } 
+    }
 
     function saveAndRender() { localStorage.setItem('argon_tx_v3', JSON.stringify(transactions)); render(); }
 
