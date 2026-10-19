@@ -521,7 +521,43 @@
         { c: '🎬 문화/여가', k: ['CGV', '시네마', '레고랜드', '교보문고', '야놀자', '골프'] }
       ];
       for (const r of rules) if (r.k.some(w => m.toLowerCase().includes(w.toLowerCase()))) return r.c;
-      return '🍔 식비';
+      return '🎸 기타지출';
+    }
+
+    const SMS_CARDS = [['신한카드', /신한/i], ['현대카드', /현대/i], ['삼성카드', /삼성/i], ['KB국민카드', /국민|KB/i], ['우리카드', /우리/i], ['하나카드', /하나/i], ['롯데카드', /롯데/i], ['NH농협카드', /농협|NH/i], ['카카오뱅크', /카카오뱅크|카뱅/i], ['토스뱅크', /토스/i]];
+
+    // 항목별 줄바꿈 형식 (예: 하나카드) — '금액 8,000원 / 카드 하나**** / 사용처 OO약국 / 거래시간 10/19 12:18'
+    const SMS_LABELS = {
+      amount: /^(?:금액|승인금액|이용금액|결제금액|거래금액)\s*[:：]?\s*(.+)$/,
+      card: /^(?:카드|카드명|카드사|이용카드)\s*[:：]?\s*(.+)$/,
+      kind: /^(?:거래종류|카드종류)\s*[:：]?\s*(.+)$/,
+      plan: /^(?:거래구분|할부|할부개월|결제구분)\s*[:：]?\s*(.+)$/,
+      merchant: /^(?:사용처|가맹점|가맹점명|이용가맹점|이용처|상호|사용장소)\s*[:：]?\s*(.+)$/,
+      time: /^(?:거래시간|거래일시|승인일시|이용일시|승인시간|일시)\s*[:：]?\s*(.+)$/
+    };
+    function parseLabeledSMS(raw) {
+      const lines = raw.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+      const keyOf = l => Object.keys(SMS_LABELS).find(k => SMS_LABELS[k].test(l));
+      if (lines.filter(keyOf).length < 3 || !lines.some(l => SMS_LABELS.merchant.test(l))) return null;
+      const recs = []; let cur = null;
+      for (const l of lines) {
+        const k = keyOf(l);
+        if (!cur || (k && k in cur.f)) { cur = { f: {}, rest: [] }; recs.push(cur); }   // 같은 항목이 다시 나오면 다음 문자
+        if (k) cur.f[k] = l.match(SMS_LABELS[k])[1].trim(); else cur.rest.push(l);
+      }
+      return recs.map(r => {
+        const f = r.f, all = Object.values(f).concat(r.rest).join(' ');
+        const am = (f.amount || '').match(/[\d,]+/), amount = am ? parseInt(am[0].replace(/,/g, ''), 10) : 0;
+        if (!amount || !f.merchant || /취소/.test(all)) return null;
+        let cardCompany = '기타'; const cardSrc = (f.card || '') + ' ' + r.rest.join(' ');
+        for (const [n, rx] of SMS_CARDS) if (rx.test(cardSrc)) { cardCompany = n; break; }
+        const pm = (f.plan || '').match(/(\d{1,2})\s*개월/), installmentMonths = pm && Number(pm[1]) >= 2 ? Number(pm[1]) : 1;
+        const method = installmentMonths > 1 ? '신용카드' : (/체크/.test(f.kind || all) ? '체크카드' : '신용카드');
+        let date = document.getElementById('txDate').value || today; const dm = (f.time || all).match(/(\d{1,2})[./-](\d{1,2})/);
+        if (dm && Number(dm[1]) <= 12 && Number(dm[2]) <= 31) date = `${new Date().getFullYear()}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}`;
+        const merchant = f.merchant.replace(/\s+/g, ' ').trim();
+        return { date, type: 'expense', category: guessCategory(merchant, 'expense'), method, cardCompany, installmentMonths, merchant, memo: '문자자동등록', amount };
+      }).filter(Boolean);
     }
 
     function parseSingleSMS(raw) {
@@ -532,7 +568,7 @@
       if (!amount || amount <= 0) return null;
       let type = (/입금|급여|보너스|환급/.test(clean) && !/출금|승인|결제|취소/.test(clean)) ? 'income' : 'expense';
       let cardCompany = '기타', method = type === 'income' ? '계좌이체' : '신용카드';
-      const cards = [['신한카드', /신한/i], ['현대카드', /현대/i], ['삼성카드', /삼성/i], ['KB국민카드', /국민|KB/i], ['우리카드', /우리/i], ['하나카드', /하나/i], ['롯데카드', /롯데/i], ['NH농협카드', /농협|NH/i], ['카카오뱅크', /카카오뱅크|카뱅/i], ['토스뱅크', /토스/i]];
+      const cards = SMS_CARDS;
       for (const [n, rx] of cards) if (rx.test(clean)) { cardCompany = n; break; }
       if (/체크/.test(clean)) method = '체크카드'; else if (/페이/.test(clean)) method = '간편페이';
       let installmentMonths = 1; const im = clean.match(/(\d{1,2})\s*개월/); if (im && type === 'expense' && Number(im[1]) >= 2) { installmentMonths = Number(im[1]); method = '신용카드'; }
@@ -544,6 +580,7 @@
 
     function parseBulkSMS(raw) {
       if (!raw || !raw.trim()) return [];
+      const labeled = parseLabeledSMS(raw); if (labeled) return labeled;
       const pre = raw.replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
       if (/\[(?:Web발신|웹발신|국외발신)\]/i.test(pre)) return pre.split(/(?=\[(?:Web발신|웹발신|국외발신)\])/i).map(s => parseSingleSMS(s.replace(/\s+/g, ' '))).filter(Boolean);
       const lines = pre.split(/\n+/).map(s => s.trim()).filter(Boolean), res = []; let buf = '';
