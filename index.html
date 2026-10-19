@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f1f5f9">
-  <title>아르곤(Gemini) 스마트 가계부 Pro v4.4</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v4.5</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -45,7 +45,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v4.4</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v4.5</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
         </div>
@@ -64,6 +64,7 @@
           <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-700 py-2 z-50 divide-y divide-slate-100 dark:divide-slate-700">
             <div class="px-2 py-1.5 space-y-0.5">
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가계부 관리 및 실행</p>
+              <button type="button" onclick="openSmsTemplateModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>💬 카드사 문자 형식 등록</span><span id="menuTplCount" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">0개</span></button>
               <button type="button" onclick="openFixedExpenseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>📌 고정 지출 관리</span><span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">자동등록</span></button>
               <button type="button" onclick="openBudgetModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>🎯 카테고리별 예산 설정</span><span class="text-[10px] text-slate-400">설정</span></button>
               <button type="button" onclick="openSyncModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>🔄 기기간 데이터 백업/복원</span><span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold">동기화</span></button>
@@ -74,7 +75,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.4</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.5</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -303,6 +304,28 @@
     </div>
   </div>
 
+  <div id="smsTemplateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <div><h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">💬 카드사 문자 형식 등록</h3><p class="text-xs text-slate-500">카드사 결제 문자 하나를 붙여넣으면, 앞으로 그 카드 문자는 같은 방식으로 읽어요.</p></div>
+        <button onclick="closeSmsTemplateModal()" class="text-slate-400 text-lg font-bold px-2">✕</button>
+      </div>
+      <div class="space-y-2.5">
+        <label class="block text-xs font-bold text-slate-600">① 샘플 결제 문자 (실제 받은 문자 그대로)</label>
+        <textarea id="tplSample" rows="6" oninput="tplAutoFill()" placeholder="KB국민카드6009승인&#10;김*형님&#10;65,000원 일시불&#10;10/18 10:48&#10;신세계 하남점&#10;누적 5,670,111 원" class="w-full border border-slate-200 rounded-xl p-3 text-sm bg-white resize-none"></textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">② 카드사</label><input id="tplCard" list="tplCardList" oninput="tplPreview()" placeholder="예: KB국민카드" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"><datalist id="tplCardList"><option value="신한카드"><option value="현대카드"><option value="삼성카드"><option value="KB국민카드"><option value="우리카드"><option value="하나카드"><option value="롯데카드"><option value="NH농협카드"><option value="카카오뱅크"><option value="토스뱅크"></datalist></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">③ 이 카드 문자를 알아보는 글자</label><input id="tplKey" oninput="tplPreview()" placeholder="예: KB국민카드" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></div>
+        </div>
+        <div><label class="block text-[11px] font-bold text-slate-500 mb-1">④ 샘플에서 사용처(가맹점) 부분 — 자동으로 찾은 값이 틀리면 고쳐주세요</label><input id="tplMerchant" oninput="tplPreview()" placeholder="예: 신세계 하남점" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></div>
+        <div id="tplPreviewBox" class="hidden text-xs rounded-xl p-3 border"></div>
+        <button type="button" onclick="saveSmsTemplate()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl">이 형식 저장하기</button>
+      </div>
+      <div class="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-3"><p class="text-xs font-bold text-slate-700 dark:text-slate-300">📋 등록된 문자 형식</p><div id="smsTemplateList" class="space-y-1.5"></div>
+        <p class="text-[11px] text-slate-400">등록한 형식이 먼저 쓰이고, 없으면 기본 분석기가 읽어요. 형식은 백업 파일에도 함께 저장돼요.</p></div>
+    </div>
+  </div>
+
   <div id="galaxyAutoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🤖 갤럭시 결제문자 자동 등록 & 팁</h3><button onclick="closeGalaxyAutoModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
@@ -317,7 +340,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v4.4</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v4.5</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -358,9 +381,13 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '4.4';
+    const APP_VERSION = '4.5';
     const releaseNotesData = [
-      { version: 'Pro v4.4', date: '2026.10.18 (최신)', badge: '카테고리 추가', isLatest: true, items: [
+      { version: 'Pro v4.5', date: '2026.10.19 (최신)', badge: '카드사별 문자', isLatest: true, items: [
+        '💬 <b>카드사 문자 형식 등록</b> (메뉴): 샘플 문자 하나로 새 카드 형식을 직접 추가',
+        '💳 <b>하나카드</b>(항목별 줄바꿈)·<b>KB국민카드</b>(줄 순서형) 결제 문자 기본 지원',
+        '🚫 취소 문자는 건너뛰고, 분류 못 한 가맹점은 기타지출로'
+      ]}, { version: 'Pro v4.4', date: '2026.10.18', badge: '카테고리 추가', isLatest: false, items: [
         '📺 <b>구독</b> · 💐 <b>경조사</b> 카테고리 추가 (예산·필터·고정지출·차트 모두 지원)',
         '💬 넷플릭스·유튜브·티빙 등 결제 문자는 <b>구독</b>으로, 축의금·조의금은 <b>경조사</b>로 자동 분류'
       ]}, { version: 'Pro v4.3', date: '2026.10.16', badge: '버그 수정', isLatest: false, items: [
@@ -515,13 +542,181 @@
         { c: '☕ 카페/간식', k: ['스타벅스', '투썸', '메가', '빽다방', '컴포즈', '텐퍼센트', '이디야', '커피', '카페', '베이커리', '아이스크림', '디저트'] },
         { c: '🍔 식비', k: ['식당', '배민', '요기요', '쿠팡이츠', '맥도날드', '버거킹', '김밥', '국밥', '마라탕', '치킨', '피자'] },
         { c: '🚌 교통/차량', k: ['택시', '카카오T', '코레일', 'SRT', '티머니', '주유', '주차'] },
-        { c: '🛍️ 쇼핑/생활', k: ['쿠팡', '네이버', '무신사', '올리브영', '다이소', '이마트', '백화점', '편의점', 'GS25', 'CU', '애플'] },
+        { c: '🛍️ 쇼핑/생활', k: ['쿠팡', '네이버', '무신사', '올리브영', '다이소', '이마트', '신세계', '롯데마트', '홈플러스', '코스트코', '하이마트', '백화점', '편의점', 'GS25', 'CU', '애플'] },
         { c: '🏠 주거/통신', k: ['SKT', 'KT', 'LGU+', '관리비', '도시가스', '전기', '월세'] },
         { c: '🏥 의료/건강', k: ['약국', '병원', '의원', '치과', '한의원'] },
         { c: '🎬 문화/여가', k: ['CGV', '시네마', '레고랜드', '교보문고', '야놀자', '골프'] }
       ];
       for (const r of rules) if (r.k.some(w => m.toLowerCase().includes(w.toLowerCase()))) return r.c;
-      return '🍔 식비';
+      return '🎸 기타지출';
+    }
+
+    const SMS_CARDS = [['신한카드', /신한/i], ['현대카드', /현대/i], ['삼성카드', /삼성/i], ['KB국민카드', /국민|KB/i], ['우리카드', /우리/i], ['하나카드', /하나/i], ['롯데카드', /롯데/i], ['NH농협카드', /농협|NH/i], ['카카오뱅크', /카카오뱅크|카뱅/i], ['토스뱅크', /토스/i]];
+
+    // 항목별 줄바꿈 형식 (예: 하나카드) — '금액 8,000원 / 카드 하나**** / 사용처 OO약국 / 거래시간 10/19 12:18'
+    const SMS_LABELS = {
+      amount: /^(?:승인금액|이용금액|결제금액|거래금액|금액)\s*[:：]?\s*(.+)$/,
+      card: /^(?:이용카드|카드명|카드사|카드)\s*[:：]?\s*(.+)$/,
+      kind: /^(?:거래종류|카드종류)\s*[:：]?\s*(.+)$/,
+      plan: /^(?:할부개월|거래구분|결제구분|할부)\s*[:：]?\s*(.+)$/,
+      merchant: /^(?:이용가맹점|가맹점명|가맹점|사용처|이용처|사용장소|상호)\s*[:：]?\s*(.+)$/,
+      time: /^(?:거래시간|거래일시|승인일시|이용일시|승인시간|일시)\s*[:：]?\s*(.+)$/
+    };
+    function parseLabeledSMS(raw) {
+      const lines = raw.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+      const keyOf = l => Object.keys(SMS_LABELS).find(k => SMS_LABELS[k].test(l));
+      if (lines.filter(keyOf).length < 3 || !lines.some(l => SMS_LABELS.merchant.test(l))) return null;
+      const recs = []; let cur = null;
+      for (const l of lines) {
+        const k = keyOf(l);
+        if (!cur || (k && k in cur.f)) { cur = { f: {}, rest: [] }; recs.push(cur); }   // 같은 항목이 다시 나오면 다음 문자
+        if (k) cur.f[k] = l.match(SMS_LABELS[k])[1].trim(); else cur.rest.push(l);
+      }
+      return recs.map(r => {
+        const f = r.f, all = Object.values(f).concat(r.rest).join(' ');
+        const am = (f.amount || '').match(/[\d,]+/), amount = am ? parseInt(am[0].replace(/,/g, ''), 10) : 0;
+        if (!amount || !f.merchant || /취소/.test(all)) return null;
+        let cardCompany = '기타'; const cardSrc = (f.card || '') + ' ' + r.rest.join(' ');
+        for (const [n, rx] of SMS_CARDS) if (rx.test(cardSrc)) { cardCompany = n; break; }
+        const pm = (f.plan || '').match(/(\d{1,2})\s*개월/), installmentMonths = pm && Number(pm[1]) >= 2 ? Number(pm[1]) : 1;
+        const method = installmentMonths > 1 ? '신용카드' : (/체크/.test(f.kind || all) ? '체크카드' : '신용카드');
+        let date = document.getElementById('txDate').value || today; const dm = (f.time || all).match(/(\d{1,2})[./-](\d{1,2})/);
+        if (dm && Number(dm[1]) <= 12 && Number(dm[2]) <= 31) date = `${new Date().getFullYear()}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}`;
+        const merchant = f.merchant.replace(/\s+/g, ' ').trim();
+        return { date, type: 'expense', category: guessCategory(merchant, 'expense'), method, cardCompany, installmentMonths, merchant, memo: '문자자동등록', amount };
+      }).filter(Boolean);
+    }
+
+    // ===== 사용자가 등록한 카드사별 문자 형식 =====
+    let smsTemplates = (() => { try { return JSON.parse(localStorage.getItem('argon_sms_templates_v1')) || []; } catch (e) { return []; } })();
+    function saveSmsTemplatesLS() { localStorage.setItem('argon_sms_templates_v1', JSON.stringify(smsTemplates)); const c = document.getElementById('menuTplCount'); if (c) c.textContent = `${smsTemplates.length}개`; }
+    const smsLines = raw => String(raw || '').replace(/\r/g, '').split('\n').map(l => l.trim()).filter(l => l && !/^\[(?:Web발신|웹발신|국외발신)\]$/i.test(l));
+    const TPL_AMT = /(\d{1,3}(?:,\d{3})+|\d+)\s*원/, TPL_DATE = /(\d{1,2})[./](\d{1,2})/;
+    const tplIsAmount = l => TPL_AMT.test(l) && !/누적|잔액|한도|가능/.test(l);
+    const tplIsDate = l => TPL_DATE.test(l) && !tplIsAmount(l);
+    // 샘플 한 건으로 형식 만들기: 줄 위치 + '날짜 다음 n번째 줄' + 사용처 앞 글자(예: '사용처')를 함께 기억
+    function buildSmsTemplate(card, key, sample, merchantText) {
+      const lines = smsLines(sample);
+      if (!lines.length) throw new Error('샘플 문자를 붙여넣어 주세요.');
+      if (!card) throw new Error('카드사를 입력해 주세요.');
+      const keyLine = key ? lines.findIndex(l => l.includes(key)) : -1;
+      if (keyLine < 0) throw new Error('③ 알아보는 글자가 샘플에 없어요.');
+      const mi = merchantText ? lines.findIndex(l => l.includes(merchantText)) : -1;
+      if (mi < 0) throw new Error('④ 사용처가 샘플에 그대로 들어 있어야 해요.');
+      const amountLine = lines.findIndex(tplIsAmount);
+      if (amountLine < 0) throw new Error('샘플에서 금액(○○원)을 찾지 못했어요.');
+      const dateLine = lines.findIndex(tplIsDate), at = lines[mi].indexOf(merchantText);
+      return { id: Date.now(), card, key, keyLine, amountLine, dateLine, merchantLine: mi,
+        merchantPrefix: lines[mi].slice(0, at).trim(), merchantSuffix: lines[mi].slice(at + merchantText.length).trim(),
+        merchantFromDate: dateLine >= 0 ? mi - dateLine : null, sample: lines.join('\n'), createdAt: Date.now() };
+    }
+    function applySmsTemplate(t, lines) {
+      const pick = (want, test) => (want >= 0 && want < lines.length && test(lines[want])) ? want : lines.findIndex(test);
+      const all = lines.join(' '); if (/취소/.test(all)) return null;
+      const ai = pick(t.amountLine, tplIsAmount); if (ai < 0) return null;
+      const amount = parseInt(lines[ai].match(TPL_AMT)[1].replace(/,/g, ''), 10);
+      const di = t.dateLine >= 0 ? pick(t.dateLine, tplIsDate) : -1;
+      let mi = t.merchantPrefix ? lines.findIndex(l => l.startsWith(t.merchantPrefix)) : -1;
+      if (mi < 0 && di >= 0 && t.merchantFromDate != null) mi = di + t.merchantFromDate;
+      if (mi < 0 || mi >= lines.length) mi = t.merchantLine;
+      let merchant = lines[mi] || '';
+      if (t.merchantPrefix && merchant.startsWith(t.merchantPrefix)) merchant = merchant.slice(t.merchantPrefix.length);
+      if (t.merchantSuffix && merchant.endsWith(t.merchantSuffix)) merchant = merchant.slice(0, -t.merchantSuffix.length);
+      merchant = merchant.replace(/^[:：\s]+/, '').trim();
+      if (!amount || !merchant || tplIsAmount(merchant)) return null;
+      const pm = all.match(/(\d{1,2})\s*개월/), installmentMonths = pm && Number(pm[1]) >= 2 ? Number(pm[1]) : 1;
+      let date = document.getElementById('txDate').value || today; const dm = di >= 0 ? lines[di].match(TPL_DATE) : null;
+      if (dm && Number(dm[1]) <= 12 && Number(dm[2]) <= 31) date = `${new Date().getFullYear()}-${dm[1].padStart(2, '0')}-${dm[2].padStart(2, '0')}`;
+      const method = installmentMonths > 1 ? '신용카드' : (/체크/.test(all) ? '체크카드' : '신용카드');
+      return { date, type: 'expense', category: guessCategory(merchant, 'expense'), method, cardCompany: t.card, installmentMonths, merchant, memo: '문자자동등록', amount };
+    }
+    function parseTemplatedSMS(raw, list = smsTemplates) {
+      const lines = smsLines(raw);
+      for (const t of list) {
+        const hits = lines.map((l, i) => l.includes(t.key) ? i : -1).filter(i => i >= 0); if (!hits.length) continue;
+        const starts = [...new Set(hits.map(i => Math.max(0, i - t.keyLine)))];   // 여러 건이면 '알아보는 글자' 줄 기준으로 나눔
+        const res = starts.map((st, k) => applySmsTemplate(t, lines.slice(st, k + 1 < starts.length ? starts[k + 1] : lines.length))).filter(Boolean);
+        if (res.length) return res;
+      }
+      return null;
+    }
+    function openSmsTemplateModal() { closeHeaderMenu(); setTimeout(() => { renderSmsTemplateList(); const m = document.getElementById('smsTemplateModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function closeSmsTemplateModal() { const m = document.getElementById('smsTemplateModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+    function tplAutoFill() {
+      const sample = document.getElementById('tplSample').value, lines = smsLines(sample);
+      const cardLine = lines.find(l => SMS_CARDS.some(([, rx]) => rx.test(l))) || '';
+      const found = SMS_CARDS.find(([, rx]) => rx.test(cardLine));
+      if (found) document.getElementById('tplCard').value = found[0];
+      if (cardLine) { let k = cardLine.replace(/\([^)]*\)|\[[^\]]*\]/g, ' ').replace(/[\d*]+/g, ' ').replace(/승인|취소/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!cardLine.includes(k)) k = k.split(' ').filter(w => cardLine.includes(w)).sort((a, b) => b.length - a.length)[0] || '';
+        document.getElementById('tplKey').value = k; }
+      let guess = '';
+      try { const r = (parseFormattedSMS(sample) || parseLabeledSMS(sample) || [])[0]; if (r && lines.some(l => l.includes(r.merchant))) guess = r.merchant; } catch (e) {}
+      if (!guess) { const di = lines.findIndex(tplIsDate); const cand = (di >= 0 ? lines.slice(di + 1) : lines).find(l => !tplIsAmount(l) && !tplIsDate(l) && !/누적|잔액|님$|승인|취소/.test(l) && l !== cardLine); guess = cand || ''; }
+      document.getElementById('tplMerchant').value = guess;
+      tplPreview();
+    }
+    function tplPreview() {
+      const box = document.getElementById('tplPreviewBox'), v = id => document.getElementById(id).value.trim();
+      if (!v('tplSample')) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      try {
+        const t = buildSmsTemplate(v('tplCard'), v('tplKey'), v('tplSample'), v('tplMerchant'));
+        const r = parseTemplatedSMS(v('tplSample'), [t]);
+        if (!r || !r.length) throw new Error('이 설정으로는 샘플을 읽지 못했어요. 사용처나 알아보는 글자를 확인해 주세요.');
+        const x = r[0];
+        box.className = 'text-xs rounded-xl p-3 border border-emerald-200 bg-emerald-50/60 text-slate-700';
+        box.innerHTML = `✅ 이렇게 읽어요: <b>[${x.cardCompany}]</b> ${x.merchant} · <b>${x.amount.toLocaleString()}원</b> · ${x.date.slice(5).replace('-', '/')} · ${x.installmentMonths > 1 ? x.installmentMonths + '개월' : '일시불'} · ${x.category}`;
+      } catch (e) {
+        box.className = 'text-xs rounded-xl p-3 border border-rose-200 bg-rose-50 text-rose-700';
+        box.textContent = '⚠️ ' + e.message;
+      }
+    }
+    function saveSmsTemplate() {
+      const v = id => document.getElementById(id).value.trim();
+      let t; try { t = buildSmsTemplate(v('tplCard'), v('tplKey'), v('tplSample'), v('tplMerchant')); } catch (e) { return alert(e.message); }
+      if (!parseTemplatedSMS(v('tplSample'), [t])) return alert('이 설정으로는 샘플을 읽지 못했어요.');
+      smsTemplates = smsTemplates.filter(x => x.key !== t.key); smsTemplates.unshift(t); saveSmsTemplatesLS();
+      addChangeLog('예산/복원', '문자 형식 등록', `[${t.card}] '${t.key}' 형식 저장`);
+      ['tplSample', 'tplCard', 'tplKey', 'tplMerchant'].forEach(id => document.getElementById(id).value = ''); document.getElementById('tplPreviewBox').classList.add('hidden');
+      renderSmsTemplateList(); showToast(`💬 ${t.card} 문자 형식을 저장했어요`);
+    }
+    function deleteSmsTemplate(id) { const t = smsTemplates.find(x => x.id === id); if (!t || !confirm(`[${t.card}] 문자 형식을 지울까요?`)) return; smsTemplates = smsTemplates.filter(x => x.id !== id); saveSmsTemplatesLS(); renderSmsTemplateList(); }
+    function renderSmsTemplateList() {
+      const el = document.getElementById('smsTemplateList'); saveSmsTemplatesLS();
+      const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      el.innerHTML = smsTemplates.length ? smsTemplates.map(t => `<div class="flex justify-between items-start gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/70 text-xs"><div class="min-w-0"><b>${esc(t.card)}</b> <span class="text-slate-400">· '${esc(t.key)}' 포함 문자</span><pre class="mt-1 text-[10px] text-slate-500 whitespace-pre-wrap break-all font-sans">${esc(t.sample)}</pre></div><button onclick="deleteSmsTemplate(${t.id})" class="text-slate-400 hover:text-rose-600 font-bold px-2 shrink-0">✕</button></div>`).join('')
+        : `<p class="text-xs text-slate-400 text-center py-3">아직 등록한 형식이 없어요. (하나카드·KB국민카드는 기본으로 읽어요)</p>`;
+    }
+
+    // 카드사별 문자 형식 — 줄 번호 대신 '줄 모양'으로 찾아서 머리글/이름 줄이 빠지거나 늘어도 동작
+    // 새 카드 형식은 여기에 { card, header, parse } 를 하나 더 추가하면 됨
+    const SMS_FORMATS = [
+      { // KB국민카드: 'KB국민카드6009승인 / 김*형님 / 65,000원 일시불 / 10/18 10:48 / 신세계 하남점 / 누적 …'
+        card: 'KB국민카드',
+        header: /^(?:\[[^\]]*\]\s*)?KB국민(?:카드|체크)?\s*\d{0,4}\s*(?:체크)?\s*(승인|취소)/,
+        parse(lines) {
+          if (/취소/.test(lines[0].match(this.header)[1])) return null;
+          const ai = lines.findIndex(l => /^[\d,]+\s*원/.test(l)), di = lines.findIndex(l => /^\d{1,2}\/\d{1,2}(?:\s+\d{1,2}:\d{2})?$/.test(l));
+          if (ai < 0) return null;
+          const amount = parseInt(lines[ai].match(/^([\d,]+)/)[1].replace(/,/g, ''), 10);
+          const pm = lines[ai].match(/(\d{1,2})\s*개월/), installmentMonths = pm && Number(pm[1]) >= 2 ? Number(pm[1]) : 1;
+          const dm = di >= 0 ? lines[di].match(/^(\d{1,2})\/(\d{1,2})/) : null;
+          const merchant = (di >= 0 ? lines.slice(di + 1) : lines.slice(ai + 1)).find(l => !/^누적|님$|^\d{1,2}\/\d{1,2}/.test(l)) || '';
+          return { amount, installmentMonths, merchant, date: dm ? [dm[1], dm[2]] : null, method: /체크/.test(lines[0]) ? '체크카드' : '신용카드' };
+        }
+      }
+    ];
+    function parseFormattedSMS(raw) {
+      const lines = raw.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(l => l && !/^\[(?:Web발신|웹발신|국외발신)\]$/i.test(l));
+      const fmt = SMS_FORMATS.find(f => lines.some(l => f.header.test(l))); if (!fmt) return null;
+      const chunks = []; for (const l of lines) { if (fmt.header.test(l)) chunks.push([l]); else if (chunks.length) chunks[chunks.length - 1].push(l); }
+      return chunks.map(c => {
+        const r = fmt.parse(c); if (!r || !r.amount || !r.merchant) return null;
+        let date = document.getElementById('txDate').value || today;
+        if (r.date && Number(r.date[0]) <= 12 && Number(r.date[1]) <= 31) date = `${new Date().getFullYear()}-${r.date[0].padStart(2, '0')}-${r.date[1].padStart(2, '0')}`;
+        return { date, type: 'expense', category: guessCategory(r.merchant, 'expense'), method: r.installmentMonths > 1 ? '신용카드' : r.method, cardCompany: fmt.card, installmentMonths: r.installmentMonths, merchant: r.merchant, memo: '문자자동등록', amount: r.amount };
+      }).filter(Boolean);
     }
 
     function parseSingleSMS(raw) {
@@ -532,18 +727,21 @@
       if (!amount || amount <= 0) return null;
       let type = (/입금|급여|보너스|환급/.test(clean) && !/출금|승인|결제|취소/.test(clean)) ? 'income' : 'expense';
       let cardCompany = '기타', method = type === 'income' ? '계좌이체' : '신용카드';
-      const cards = [['신한카드', /신한/i], ['현대카드', /현대/i], ['삼성카드', /삼성/i], ['KB국민카드', /국민|KB/i], ['우리카드', /우리/i], ['하나카드', /하나/i], ['롯데카드', /롯데/i], ['NH농협카드', /농협|NH/i], ['카카오뱅크', /카카오뱅크|카뱅/i], ['토스뱅크', /토스/i]];
+      const cards = SMS_CARDS;
       for (const [n, rx] of cards) if (rx.test(clean)) { cardCompany = n; break; }
       if (/체크/.test(clean)) method = '체크카드'; else if (/페이/.test(clean)) method = '간편페이';
       let installmentMonths = 1; const im = clean.match(/(\d{1,2})\s*개월/); if (im && type === 'expense' && Number(im[1]) >= 2) { installmentMonths = Number(im[1]); method = '신용카드'; }
       let dateStr = document.getElementById('txDate').value || today; const sm = clean.match(/(?:^|\s)(\d{1,2})[./](\d{1,2})(?=\s|$)/);
       if (sm && Number(sm[1]) <= 12 && Number(sm[2]) <= 31) dateStr = `${new Date().getFullYear()}-${sm[1].padStart(2, '0')}-${sm[2].padStart(2, '0')}`;
-      let merchant = clean.replace(/20\d{2}[-./]\d{1,2}[-./]\d{1,2}|\b\d{1,2}[./]\d{1,2}\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|[\d,]+\s*원|\b\d{1,3}(?:,\d{3})+\b/g, ' ').replace(/(?:신한|국민|KB|우리|하나|현대|삼성|롯데|농협|NH|BC|카카오뱅크|카뱅|토스)(?:카드|은행|체크|페이)?/gi, ' ').replace(/(?:일시불|할부|\d{1,2}\s*개월|무이자|승인|결제|출금|입금|체크|신용|해외|국내|본인|가족|누적|잔액|가능액|한도|금액)/g, ' ').replace(/\([0-9*]+\)|\b[0-9*]{3,}\b|[가-힣]{2,4}\*+[가-힣]*님?|[[\]()/:-]/g, ' ').replace(/\s+/g, ' ').trim() || (type === 'income' ? '계좌 입금' : '카드 가맹점');
+      let merchant = clean.replace(/20\d{2}[-./]\d{1,2}[-./]\d{1,2}|\b\d{1,2}[./]\d{1,2}\b|\b\d{1,2}:\d{2}(?::\d{2})?\b|[\d,]+\s*원|\b\d{1,3}(?:,\d{3})+\b/g, ' ').replace(/(?:신한|국민|KB|우리|하나|현대|삼성|롯데|농협|NH|BC|카카오뱅크|카뱅|토스)(?:카드|은행|체크|페이)?/gi, ' ').replace(/(?:일시불|할부|\d{1,2}\s*개월|무이자|승인|결제|출금|입금|체크|신용|해외|국내|본인|가족|누적|잔액|가능액|한도|금액)/g, ' ').replace(/\([0-9*]+\)|\b[0-9*]{3,}\b|[가-힣]{1,4}\*+[가-힣]*님?|[[\]()/:-]/g, ' ').replace(/\s+/g, ' ').trim() || (type === 'income' ? '계좌 입금' : '카드 가맹점');
       return { date: dateStr, type, category: guessCategory(merchant, type), method, cardCompany, installmentMonths, merchant, memo: '문자자동등록', amount };
     }
 
     function parseBulkSMS(raw) {
       if (!raw || !raw.trim()) return [];
+      const templated = parseTemplatedSMS(raw); if (templated) return templated;
+      const formatted = parseFormattedSMS(raw); if (formatted) return formatted;
+      const labeled = parseLabeledSMS(raw); if (labeled) return labeled;
       const pre = raw.replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
       if (/\[(?:Web발신|웹발신|국외발신)\]/i.test(pre)) return pre.split(/(?=\[(?:Web발신|웹발신|국외발신)\])/i).map(s => parseSingleSMS(s.replace(/\s+/g, ' '))).filter(Boolean);
       const lines = pre.split(/\n+/).map(s => s.trim()).filter(Boolean), res = []; let buf = '';
@@ -659,14 +857,14 @@
     function closeSyncModal() { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
     
     function downloadBackupFile() { 
-      const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
+      const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, smsTemplates, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
       const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); 
     }
     
     function handleBackupFileUpload(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => applyBackupData(ev.target.result); r.readAsText(f); }
     
     async function copyBackupCode() { 
-      const s = JSON.stringify({ categoryBudgets, fixedExpenses, transactions, changeLogs }); 
+      const s = JSON.stringify({ categoryBudgets, fixedExpenses, smsTemplates, transactions, changeLogs }); 
       try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } 
     }
     
@@ -684,18 +882,21 @@
           if (p.fixedExpenses && Array.isArray(p.fixedExpenses)) fixedExpenses = p.fixedExpenses;
           if (p.categoryBudgets) categoryBudgets = p.categoryBudgets;
           if (p.changeLogs) changeLogs = p.changeLogs;
+          if (Array.isArray(p.smsTemplates)) smsTemplates = p.smsTemplates;
         } else {
           transactions.push(...tx);
           if (p.fixedExpenses && Array.isArray(p.fixedExpenses)) {
             const existingIds = new Set(fixedExpenses.map(i => i.id));
             p.fixedExpenses.forEach(fe => { if (!existingIds.has(fe.id)) fixedExpenses.push(fe); });
           }
+          if (Array.isArray(p.smsTemplates)) { const keys = new Set(smsTemplates.map(t => t.key)); p.smsTemplates.forEach(t => { if (!keys.has(t.key)) smsTemplates.push(t); }); }
         }
 
         localStorage.setItem('argon_tx_v3', JSON.stringify(transactions));
         localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
         localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets));
         localStorage.setItem('argon_logs_v3', JSON.stringify(changeLogs));
+        saveSmsTemplatesLS();
 
         saveAndRender(); 
         closeSyncModal(); 
@@ -829,7 +1030,7 @@
 
     document.getElementById('monthFilter').addEventListener('change', () => { exitEditMode(); render(); });
     document.getElementById('txDate').value = today; document.getElementById('monthFilter').value = currentYearMonth;
-    initDarkMode(); setType('expense'); toggleCardOptions(); render(); checkVersionUpdatePopup();
+    initDarkMode(); setType('expense'); toggleCardOptions(); render(); { const c = document.getElementById('menuTplCount'); if (c) c.textContent = `${smsTemplates.length}개`; } checkVersionUpdatePopup();
   </script>
 </body>
 </html>
