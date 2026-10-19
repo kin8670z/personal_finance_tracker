@@ -515,7 +515,7 @@
         { c: '☕ 카페/간식', k: ['스타벅스', '투썸', '메가', '빽다방', '컴포즈', '텐퍼센트', '이디야', '커피', '카페', '베이커리', '아이스크림', '디저트'] },
         { c: '🍔 식비', k: ['식당', '배민', '요기요', '쿠팡이츠', '맥도날드', '버거킹', '김밥', '국밥', '마라탕', '치킨', '피자'] },
         { c: '🚌 교통/차량', k: ['택시', '카카오T', '코레일', 'SRT', '티머니', '주유', '주차'] },
-        { c: '🛍️ 쇼핑/생활', k: ['쿠팡', '네이버', '무신사', '올리브영', '다이소', '이마트', '백화점', '편의점', 'GS25', 'CU', '애플'] },
+        { c: '🛍️ 쇼핑/생활', k: ['쿠팡', '네이버', '무신사', '올리브영', '다이소', '이마트', '신세계', '롯데마트', '홈플러스', '코스트코', '하이마트', '백화점', '편의점', 'GS25', 'CU', '애플'] },
         { c: '🏠 주거/통신', k: ['SKT', 'KT', 'LGU+', '관리비', '도시가스', '전기', '월세'] },
         { c: '🏥 의료/건강', k: ['약국', '병원', '의원', '치과', '한의원'] },
         { c: '🎬 문화/여가', k: ['CGV', '시네마', '레고랜드', '교보문고', '야놀자', '골프'] }
@@ -560,6 +560,36 @@
       }).filter(Boolean);
     }
 
+    // 카드사별 문자 형식 — 줄 번호 대신 '줄 모양'으로 찾아서 머리글/이름 줄이 빠지거나 늘어도 동작
+    // 새 카드 형식은 여기에 { card, header, parse } 를 하나 더 추가하면 됨
+    const SMS_FORMATS = [
+      { // KB국민카드: 'KB국민카드6009승인 / 김*형님 / 65,000원 일시불 / 10/18 10:48 / 신세계 하남점 / 누적 …'
+        card: 'KB국민카드',
+        header: /^(?:\[[^\]]*\]\s*)?KB국민(?:카드|체크)?\s*\d{0,4}\s*(?:체크)?\s*(승인|취소)/,
+        parse(lines) {
+          if (/취소/.test(lines[0].match(this.header)[1])) return null;
+          const ai = lines.findIndex(l => /^[\d,]+\s*원/.test(l)), di = lines.findIndex(l => /^\d{1,2}\/\d{1,2}(?:\s+\d{1,2}:\d{2})?$/.test(l));
+          if (ai < 0) return null;
+          const amount = parseInt(lines[ai].match(/^([\d,]+)/)[1].replace(/,/g, ''), 10);
+          const pm = lines[ai].match(/(\d{1,2})\s*개월/), installmentMonths = pm && Number(pm[1]) >= 2 ? Number(pm[1]) : 1;
+          const dm = di >= 0 ? lines[di].match(/^(\d{1,2})\/(\d{1,2})/) : null;
+          const merchant = (di >= 0 ? lines.slice(di + 1) : lines.slice(ai + 1)).find(l => !/^누적|님$|^\d{1,2}\/\d{1,2}/.test(l)) || '';
+          return { amount, installmentMonths, merchant, date: dm ? [dm[1], dm[2]] : null, method: /체크/.test(lines[0]) ? '체크카드' : '신용카드' };
+        }
+      }
+    ];
+    function parseFormattedSMS(raw) {
+      const lines = raw.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(l => l && !/^\[(?:Web발신|웹발신|국외발신)\]$/i.test(l));
+      const fmt = SMS_FORMATS.find(f => lines.some(l => f.header.test(l))); if (!fmt) return null;
+      const chunks = []; for (const l of lines) { if (fmt.header.test(l)) chunks.push([l]); else if (chunks.length) chunks[chunks.length - 1].push(l); }
+      return chunks.map(c => {
+        const r = fmt.parse(c); if (!r || !r.amount || !r.merchant) return null;
+        let date = document.getElementById('txDate').value || today;
+        if (r.date && Number(r.date[0]) <= 12 && Number(r.date[1]) <= 31) date = `${new Date().getFullYear()}-${r.date[0].padStart(2, '0')}-${r.date[1].padStart(2, '0')}`;
+        return { date, type: 'expense', category: guessCategory(r.merchant, 'expense'), method: r.installmentMonths > 1 ? '신용카드' : r.method, cardCompany: fmt.card, installmentMonths: r.installmentMonths, merchant: r.merchant, memo: '문자자동등록', amount: r.amount };
+      }).filter(Boolean);
+    }
+
     function parseSingleSMS(raw) {
       let text = raw.replace(/\[Web발신\]|\[웹발신\]|\[국외발신\]/gi, ' ').trim(); if (!text) return null;
       let clean = text.replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ').replace(/[\d,]+\s*원?\s*\(\s*(?:누적|잔액)\s*\)/gi, ' ');
@@ -580,6 +610,7 @@
 
     function parseBulkSMS(raw) {
       if (!raw || !raw.trim()) return [];
+      const formatted = parseFormattedSMS(raw); if (formatted) return formatted;
       const labeled = parseLabeledSMS(raw); if (labeled) return labeled;
       const pre = raw.replace(/\[?\s*(?:누적|잔액|가능액|한도|총누적|월누적|사용누적)(?:금액|액)?\s*[:：=]?\s*[\d,]+\s*원?\s*\]?/gi, ' ');
       if (/\[(?:Web발신|웹발신|국외발신)\]/i.test(pre)) return pre.split(/(?=\[(?:Web발신|웹발신|국외발신)\])/i).map(s => parseSingleSMS(s.replace(/\s+/g, ' '))).filter(Boolean);
