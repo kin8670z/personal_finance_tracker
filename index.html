@@ -202,7 +202,7 @@
       <div class="lg:col-span-7 space-y-3.5 md:space-y-5">
         <div class="card p-4 md:p-5">
           <div class="flex justify-between items-center gap-2 mb-3">
-            <div><h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100">📊 카테고리별 예산 및 지출 현황</h2><p class="text-[11px] text-slate-500">사용 금액과 설정된 예산 금액을 비교하세요.</p></div>
+            <div><h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100">📊 카테고리별 예산 및 지출 현황</h2><p id="budgetSectionSub" class="text-[11px] text-slate-500">사용 금액과 설정된 예산 금액을 비교하세요.</p></div>
             <button onclick="openBudgetModal()" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1.5 rounded-lg shrink-0">⚙️ 예산 수정</button>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
@@ -949,18 +949,35 @@
       document.getElementById('installmentActiveBadge').textContent = `이번 달 ${thisInst.length}건`;
       document.getElementById('instMiniList').innerHTML = thisInst.length ? thisInst.map(t => `<div class="flex justify-between bg-indigo-50/60 dark:bg-indigo-950/50 px-2.5 py-1 rounded"><span>💳 [${t.cardCompany}] ${t.merchant} (${t.installmentCurrent}/${t.installmentMonths})</span><b class="text-rose-600">${t.amount.toLocaleString()}원</b></div>`).join('') : `<p class="text-slate-400">할부 내역이 없습니다.</p>`;
 
-      const catSpent = {}; monthTx.filter(t => t.type === 'expense').forEach(t => catSpent[t.category] = (catSpent[t.category] || 0) + t.amount);
-      document.getElementById('categoryBudgetList').innerHTML = categories.expense.map(cat => {
-        const s = catSpent[cat] || 0, b = categoryBudgets[cat] || 0, pct = b > 0 ? Math.min(100, Math.round((s / b) * 100)) : 0;
-        return `<div class="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700"><div class="flex justify-between text-xs mb-1"><b>${cat}</b><span><b class="${s > b && b > 0 ? 'text-rose-600' : 'text-indigo-600'}">사용 ${s.toLocaleString()}원</b> / 예산 ${b.toLocaleString()}원</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5"><div class="bg-indigo-500 h-1.5 rounded-full" style="width:${pct}%"></div></div></div>`;
-      }).join('');
-
       const filteredTx = monthTx.filter(t => {
         const mKw = (t.merchant || '').toLowerCase().includes(keyword) || (t.memo || '').toLowerCase().includes(keyword) || (t.category || '').toLowerCase().includes(keyword) || (t.cardCompany || '').toLowerCase().includes(keyword);
         if (!mKw || (catFilter !== 'ALL' && t.category !== catFilter)) return false;
         return cardFilter === 'ALL' ? true : (cardFilter === 'INSTALLMENT' ? t.installmentMonths > 1 : t.cardCompany === cardFilter);
       });
 
+      const catSpent = {}; monthTx.filter(t => t.type === 'expense').forEach(t => catSpent[t.category] = (catSpent[t.category] || 0) + t.amount);
+      // 하단 목록을 카테고리로 필터하면 예산·지출 현황도 그 카테고리만 (사용처별 내역 포함)
+      const catIsExpense = catFilter !== 'ALL' && categories.expense.includes(catFilter);
+      const budgetCard = cat => {
+        const s = catSpent[cat] || 0, b = categoryBudgets[cat] || 0, pct = b > 0 ? Math.min(100, Math.round((s / b) * 100)) : 0;
+        return `<div class="bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-100 dark:border-slate-700"><div class="flex justify-between text-xs mb-1"><b>${cat}</b><span><b class="${s > b && b > 0 ? 'text-rose-600' : 'text-indigo-600'}">사용 ${s.toLocaleString()}원</b> / 예산 ${b.toLocaleString()}원</span></div><div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5"><div class="${s > b && b > 0 ? 'bg-rose-500' : 'bg-indigo-500'} h-1.5 rounded-full" style="width:${pct}%"></div></div>${b > 0 ? `<p class="text-[10px] mt-1 ${s > b ? 'text-rose-600 font-bold' : 'text-slate-500'}">${s > b ? `${(s - b).toLocaleString()}원 초과` : `남은 예산 ${(b - s).toLocaleString()}원 · ${Math.round(s / b * 100)}% 사용`}</p>` : ''}</div>`;
+      };
+      const escH = x => String(x).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+      const byMerchant = list => { const m = {}; list.forEach(t => { const k = t.merchant || t.category; (m[k] = m[k] || { n: 0, sum: 0 }); m[k].n++; m[k].sum += t.amount; }); return Object.entries(m).sort((x, y) => y[1].sum - x[1].sum); };
+      const merchantRows = (rows, total, color) => rows.slice(0, 10).map(([k, v]) => `<div class="px-1"><div class="flex justify-between text-[11px]"><span class="truncate min-w-0">${escH(k)} <span class="text-slate-400">· ${v.n}건</span></span><b class="shrink-0 ml-2">${v.sum.toLocaleString()}원</b></div><div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1 mt-0.5"><div class="${color} h-1 rounded-full" style="width:${total ? Math.round(v.sum / total * 100) : 0}%"></div></div></div>`).join('') + (rows.length > 10 ? `<p class="text-[10px] text-slate-400 px-1">외 ${rows.length - 10}곳</p>` : '');
+      const budgetSub = document.getElementById('budgetSectionSub');
+      if (catFilter === 'ALL') {
+        budgetSub.textContent = '사용 금액과 설정된 예산 금액을 비교하세요.';
+        document.getElementById('categoryBudgetList').innerHTML = categories.expense.map(budgetCard).join('');
+      } else {
+        budgetSub.innerHTML = `🔍 <b class="text-indigo-600">${escH(catFilter)}</b> 필터 적용 중 · <button type="button" onclick="clearCategoryFilter()" class="underline font-bold">전체 보기</button>`;
+        const list = filteredTx.filter(t => t.type === (catIsExpense ? 'expense' : 'income')), total = list.reduce((x, t) => x + t.amount, 0), rows = byMerchant(list);
+        const head = catIsExpense ? budgetCard(catFilter)
+          : `<div class="bg-emerald-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-emerald-100 dark:border-slate-700 text-xs"><b>${escH(catFilter)}</b> <span class="text-slate-500">· 수입 카테고리는 예산이 없어요</span><div class="mt-1">이번 달 <b class="text-emerald-600">${total.toLocaleString()}원</b> (${list.length}건)</div></div>`;
+        document.getElementById('categoryBudgetList').innerHTML = head + (rows.length
+          ? `<p class="text-[11px] font-bold text-slate-500 mt-2 px-1">사용처별 ${catIsExpense ? '지출' : '수입'}${cardFilter !== 'ALL' || keyword ? ' (목록 필터 반영)' : ''}</p>` + merchantRows(rows, total, catIsExpense ? 'bg-indigo-400' : 'bg-emerald-400')
+          : `<p class="text-[11px] text-slate-400 text-center py-3">이 달에는 이 카테고리 내역이 없어요.</p>`);
+      }
       document.getElementById('txTotalCountBadge').textContent = `${filteredTx.length}건`;
       const tbody = document.getElementById('txList'), emptyMsg = document.getElementById('emptyListMsg');
 
@@ -1015,16 +1032,20 @@
         });
         tbody.innerHTML = html;
       }
-      updateChart(monthTx.filter(t => t.type === 'expense')); renderLogs();
+      if (catFilter === 'ALL') updateChart(monthTx.filter(t => t.type === 'expense'));
+      else updateChart(filteredTx.filter(t => t.type === (catIsExpense ? 'expense' : 'income')), 'merchant');
+      renderLogs();
     }
 
-    function updateChart(expList) {
+    function updateChart(expList, groupBy = 'category') {
       const ctx = document.getElementById('expenseChart').getContext('2d'), msg = document.getElementById('emptyChartMsg');
       if (!expList.length) { if (chartInstance) chartInstance.destroy(); msg.classList.remove('hidden'); return; }
-      msg.classList.add('hidden'); const totals = {}; expList.forEach(t => totals[t.category] = (totals[t.category] || 0) + t.amount);
+      msg.classList.add('hidden'); let totals = {}; expList.forEach(t => { const k = groupBy === 'merchant' ? (t.merchant || t.category) : t.category; totals[k] = (totals[k] || 0) + t.amount; });
+      if (groupBy === 'merchant') { const e = Object.entries(totals).sort((x, y) => y[1] - x[1]); totals = Object.fromEntries(e.slice(0, 9)); if (e.length > 9) totals['그 외'] = e.slice(9).reduce((x, y) => x + y[1], 0); }
       if (chartInstance) chartInstance.destroy();
       chartInstance = new Chart(ctx, { type: 'doughnut', data: { labels: Object.keys(totals), datasets: [{ data: Object.values(totals), backgroundColor: ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#64748b', '#14b8a6', '#f97316'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 }, color: document.documentElement.classList.contains('dark') ? '#cbd5e1' : '#334155' } } }, cutout: '62%' } });
     }
+    function clearCategoryFilter() { document.getElementById('categoryFilter').value = 'ALL'; render(); }
     function resetData() { closeHeaderMenu(); if (confirm('모든 거래 내역을 초기화하시겠습니까?')) { transactions = []; saveAndRender(); } }
     function exportCSV() { closeHeaderMenu(); if (!transactions.length) return alert('내역이 없습니다.'); let c = '\uFEFF날짜,구분,카테고리,결제수단,카드사,사용처,내용,금액\n'; transactions.forEach(t => c += `${t.date},${t.type === 'income' ? '수입' : '지출'},${t.category},${t.method},${t.cardCompany},"${t.merchant}","${t.memo}",${t.amount}\n`); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([c], { type: 'text/csv;charset=utf-8;' })); a.download = `아르곤가계부_${document.getElementById('monthFilter').value}.csv`; a.click(); }
 
