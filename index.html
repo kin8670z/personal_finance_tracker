@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f1f5f9">
-  <title>아르곤(Gemini) 스마트 가계부 Pro v4.7</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v4.8</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -45,7 +45,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v4.7</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v4.8</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
         </div>
@@ -64,6 +64,7 @@
           <div id="headerDropdownMenu" class="hidden absolute right-0 mt-2 w-60 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-700 py-2 z-50 divide-y divide-slate-100 dark:divide-slate-700">
             <div class="px-2 py-1.5 space-y-0.5">
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">가계부 관리 및 실행</p>
+              <button type="button" onclick="openCardPerfModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>🎯 카드 실적 설정</span><span id="menuPerfCount" class="text-[10px] text-emerald-600 dark:text-emerald-400 font-extrabold">0개</span></button>
               <button type="button" onclick="openSmsTemplateModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>💬 카드사 문자 형식 등록</span><span id="menuTplCount" class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">0개</span></button>
               <button type="button" onclick="openFixedExpenseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>📌 고정 지출 관리</span><span class="text-[10px] text-indigo-600 dark:text-indigo-400 font-extrabold">자동등록</span></button>
               <button type="button" onclick="openBudgetModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span>🎯 카테고리별 예산 설정</span><span class="text-[10px] text-slate-400">설정</span></button>
@@ -75,7 +76,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.7</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v4.8</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -127,6 +128,14 @@
         </div>
         <div id="instMiniList" class="text-xs text-slate-600 dark:text-slate-300 mt-2.5 max-h-14 overflow-y-auto space-y-1"></div>
       </div>
+    </div>
+
+    <div id="cardPerfCard" class="card p-4 md:p-5 border border-emerald-100 dark:border-slate-700">
+      <div class="flex justify-between items-center gap-2 mb-3">
+        <div class="flex items-center gap-1.5 min-w-0"><span class="text-base">🎯</span><h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">카드 실적 현황</h2><span id="cardPerfPeriod" class="text-[11px] text-slate-400 font-medium shrink-0"></span></div>
+        <button type="button" onclick="openCardPerfModal()" class="text-xs bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1.5 rounded-lg shrink-0">⚙️ 카드 설정</button>
+      </div>
+      <div id="cardPerfList" class="grid grid-cols-1 md:grid-cols-2 gap-2.5"></div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 md:gap-5">
@@ -304,6 +313,29 @@
     </div>
   </div>
 
+  <div id="cardPerfModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
+        <div><h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100">🎯 카드 실적 설정</h3><p class="text-xs text-slate-500">카드마다 실적 기준을 넣어두면 이번 달 얼마 남았는지 알려줘요.</p></div>
+        <button onclick="closeCardPerfModal()" class="text-slate-400 text-lg font-bold px-2">✕</button>
+      </div>
+      <div class="space-y-2.5">
+        <div class="grid grid-cols-2 gap-2">
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">카드사</label><select id="cpCompany" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></select></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">카드 이름 (선택)</label><input id="cpName" placeholder="예: 원더카드" maxlength="20" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">결제 구분</label><select id="cpMethod" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"><option value="ALL">신용·체크 모두</option><option value="신용카드">신용카드만</option><option value="체크카드">체크카드만</option></select></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">실적 기준 (만원, 여러 구간은 쉼표)</label><input id="cpTiers" placeholder="예: 30, 50, 100" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">실적 집계 기간</label><select id="cpStartDay" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"></select></div>
+          <div><label class="block text-[11px] font-bold text-slate-500 mb-1">할부 실적 계산</label><select id="cpInst" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs bg-white"><option value="total">결제한 달에 총액</option><option value="monthly">매달 납부액</option></select></div>
+        </div>
+        <div><label class="block text-[11px] font-bold text-slate-500 mb-1">실적에서 빼는 카테고리 (카드 약관의 실적 제외 항목)</label><div id="cpExclude" class="flex flex-wrap gap-1.5"></div></div>
+        <div class="flex gap-2"><button type="button" id="cpCancelEdit" onclick="resetCardPerfForm()" class="hidden flex-1 py-2.5 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl">취소</button><button type="button" id="cpSaveBtn" onclick="saveCardPerf()" class="flex-[2] w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl">카드 추가</button></div>
+      </div>
+      <div class="space-y-2 border-t border-slate-100 dark:border-slate-700 pt-3"><p class="text-xs font-bold text-slate-700 dark:text-slate-300">💳 등록된 카드 <span class="text-slate-400 font-normal">· 누르면 수정</span></p><div id="cardPerfSettingList" class="space-y-1.5"></div>
+        <p class="text-[11px] text-slate-400">실적은 이 가계부에 기록된 내역으로만 계산해요. 카드사 앱의 실적과 다를 수 있어요 (취소·제외 가맹점 등).</p></div>
+    </div>
+  </div>
+
   <div id="smsTemplateModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-xs hidden items-center justify-center p-3 sm:p-4 z-50">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-3">
@@ -340,7 +372,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v4.7</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v4.8</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -381,9 +413,13 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '4.7';
+    const APP_VERSION = '4.8';
     const releaseNotesData = [
-      { version: 'Pro v4.7', date: '2026.11.06 (최신)', badge: '카드사 필터 연동', isLatest: true, items: [
+      { version: 'Pro v4.8', date: '2026.11.11 (최신)', badge: '카드 실적', isLatest: true, items: [
+        '🎯 <b>카드 실적 현황</b> 추가: 카드별 실적 기준(예: 30만·50만원)까지 얼마 남았는지, 남은 기간 하루 얼마 쓰면 되는지 표시',
+        '📅 실적 집계 기간(1일~말일 / 전월 n일~당월 n-1일), 할부 계산(총액·월 납부액), 실적 제외 카테고리 설정',
+        '✅ 지난 기간 실적으로 이번 달 혜택 구간 확인 · 카드를 누르면 그 카드 내역만 보기'
+      ]}, { version: 'Pro v4.7', date: '2026.11.06', badge: '카드사 필터 연동', isLatest: false, items: [
         '💳 하단 목록에서 <b>카드사(또는 할부)로 필터</b>하면 <b>도넛 차트·예산 현황</b>도 그 카드 내역 기준으로 표시',
         '📊 카테고리별로 <b>이 카드 사용액 / 전체 사용액 / 예산</b>을 함께 보여주고, 이 달 전체 지출 중 비중 표시',
         '🔍 검색어도 같이 반영 · <b>전체 보기</b>를 누르면 카테고리·카드사·검색 필터를 한 번에 해제'
@@ -594,6 +630,97 @@
         const merchant = f.merchant.replace(/\s+/g, ' ').trim();
         return { date, type: 'expense', category: guessCategory(merchant, 'expense'), method, cardCompany, installmentMonths, merchant, memo: '문자자동등록', amount };
       }).filter(Boolean);
+    }
+
+    // ===== 카드 실적 =====
+    let cardPerfs = (() => { try { return JSON.parse(localStorage.getItem('argon_card_perf_v1')) || []; } catch (e) { return []; } })();
+    let editingPerfId = null;
+    function saveCardPerfsLS() { localStorage.setItem('argon_card_perf_v1', JSON.stringify(cardPerfs)); const c = document.getElementById('menuPerfCount'); if (c) c.textContent = `${cardPerfs.length}개`; }
+    const man = n => { const v = n / 10000; return (Math.abs(v) >= 100 ? Math.round(v) : Math.round(v * 10) / 10).toLocaleString() + '만'; };
+    const ymd = (y, m, d) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    // 실적 기간: 시작일 1 → 그 달 1일~말일, 시작일 d → 전월 d일 ~ 그 달 (d-1)일
+    function perfPeriod(ym, startDay) {
+      const [y, m] = ym.split('-').map(Number), dim = (yy, mm) => new Date(yy, mm, 0).getDate();
+      if (!startDay || startDay <= 1) return { from: ymd(y, m, 1), to: ymd(y, m, dim(y, m)) };
+      const py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1;
+      return { from: ymd(py, pm, Math.min(startDay, dim(py, pm))), to: ymd(y, m, Math.min(startDay - 1, dim(y, m))) };
+    }
+    function perfSpent(cp, ym) {
+      const { from, to } = perfPeriod(ym, cp.startDay), ex = new Set(cp.exclude || []);
+      let sum = 0, n = 0;
+      transactions.forEach(t => {
+        if (t.type !== 'expense' || t.cardCompany !== cp.company || ex.has(t.category)) return;
+        if (cp.method !== 'ALL' && t.method !== cp.method) return;
+        const isInst = t.installmentMonths > 1;
+        if (isInst && cp.inst === 'total') { if ((t.installmentCurrent || 1) !== 1) return; if (t.date < from || t.date > to) return; sum += (t.installmentTotalAmount || t.amount); n++; return; }
+        if (t.date < from || t.date > to) return; sum += t.amount; n++;
+      });
+      return { sum, n, from, to };
+    }
+    function renderCardPerf() {
+      const el = document.getElementById('cardPerfList'); if (!el) return;
+      const ym = document.getElementById('monthFilter').value, prevYm = addMonthsToYM(ym, -1), nextYm = addMonthsToYM(ym, 1);
+      const esc = x => String(x).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+      document.getElementById('cardPerfPeriod').textContent = `${Number(ym.slice(5))}월 실적 → ${Number(nextYm.slice(5))}월 혜택`;
+      if (!cardPerfs.length) { el.innerHTML = `<button type="button" onclick="openCardPerfModal()" class="md:col-span-2 text-xs text-slate-500 bg-slate-50 dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-xl py-4">➕ 쓰는 카드의 <b>전월 실적 기준</b>(예: 30만원)을 등록하면 얼마 남았는지 알려드려요</button>`; return; }
+      el.innerHTML = cardPerfs.map(cp => {
+        const cur = perfSpent(cp, ym), prev = perfSpent(cp, prevYm), tiers = (cp.tiers || []).map(x => x * 10000).sort((a, b) => a - b), top = tiers[tiers.length - 1] || 1;
+        const next = tiers.find(x => cur.sum < x), reached = tiers.filter(x => cur.sum >= x).pop(), prevReached = tiers.filter(x => prev.sum >= x).pop();
+        const todayIn = today >= cur.from && today <= cur.to, daysLeft = todayIn ? Math.round((new Date(cur.to) - new Date(today)) / 86400000) + 1 : 0;
+        const pct = Math.min(100, Math.round(cur.sum / top * 100));
+        const ticks = tiers.map(x => `<div class="absolute top-0 bottom-0 w-px bg-white/90 dark:bg-slate-800" style="left:${Math.min(100, x / top * 100)}%"></div>`).join('');
+        let msg;
+        if (!tiers.length) msg = '실적 기준을 넣어주세요';
+        else if (next) msg = `<b class="text-rose-600 dark:text-rose-400">${man(next)}까지 ${man(next - cur.sum)} 남음</b>${reached ? ` <span class="text-emerald-600">(${man(reached)} 달성)</span>` : ''}${daysLeft ? ` · ${daysLeft}일 남음 · 하루 ${Math.ceil((next - cur.sum) / daysLeft).toLocaleString()}원` : (ym < currentYearMonth ? ' · 기간 종료' : '')}`;
+        else msg = `<b class="text-emerald-600 dark:text-emerald-400">✅ 최고 구간 ${man(top)} 달성!</b>`;
+        const title = esc(cp.name ? `${cp.company} ${cp.name}` : cp.company) + (cp.method !== 'ALL' ? ` <span class="text-[10px] text-slate-400">${cp.method === '체크카드' ? '체크' : '신용'}</span>` : '');
+        return `<div onclick="filterByPerfCard('${esc(cp.company)}')" title="이 카드 내역만 보기" class="cursor-pointer bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50/60 dark:hover:bg-slate-900/70 px-3 py-2.5 rounded-xl border border-slate-100 dark:border-slate-700">`
+          + `<div class="flex justify-between items-baseline gap-2 text-xs mb-1.5"><b class="truncate">${title}</b><span class="shrink-0"><b class="text-sm ${next ? 'text-slate-900 dark:text-slate-100' : 'text-emerald-600'}">${man(cur.sum)}</b><span class="text-slate-400"> / ${tiers.map(man).join(' · ') || '-'}</span></span></div>`
+          + `<div class="relative w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden"><div class="absolute inset-y-0 left-0 rounded-full ${next ? 'bg-emerald-500' : 'bg-emerald-600'}" style="width:${pct}%"></div>${ticks}</div>`
+          + `<p class="text-[11px] mt-1.5 text-slate-600 dark:text-slate-300">${msg}</p>`
+          + `<p class="text-[10px] mt-0.5 text-slate-400">${cur.from.slice(5).replace('-', '/')}~${cur.to.slice(5).replace('-', '/')} · ${cur.n}건 · 지난 기간 ${man(prev.sum)} → ${prevReached ? `<span class="text-emerald-600 font-bold">${Number(ym.slice(5))}월 ${man(prevReached)} 구간 혜택</span>` : `<span class="text-rose-500">${Number(ym.slice(5))}월 혜택 구간 미달</span>`}</p></div>`;
+      }).join('');
+    }
+    function filterByPerfCard(company) {
+      const sel = document.getElementById('cardFilter');
+      if (![...sel.options].some(o => o.value === company)) sel.insertAdjacentHTML('beforeend', `<option value="${company}">${company}</option>`);
+      sel.value = company; render(); document.getElementById('budgetSectionSub').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function perfCompanies() { const set = new Set(['신한카드', '현대카드', '삼성카드', 'KB국민카드', '우리카드', '하나카드', '롯데카드', 'NH농협카드', '카카오뱅크', '토스뱅크']); transactions.forEach(t => { if (t.cardCompany && !['-', '기타', '자동이체'].includes(t.cardCompany)) set.add(t.cardCompany); }); return [...set]; }
+    function resetCardPerfForm() {
+      editingPerfId = null;
+      document.getElementById('cpCompany').innerHTML = perfCompanies().map(c => `<option>${c}</option>`).join('');
+      document.getElementById('cpStartDay').innerHTML = `<option value="1">매달 1일 ~ 말일</option>` + Array.from({ length: 27 }, (_, i) => i + 2).map(d => `<option value="${d}">전월 ${d}일 ~ 당월 ${d - 1}일</option>`).join('');
+      document.getElementById('cpExclude').innerHTML = categories.expense.map(c => `<label class="flex items-center gap-1 text-[11px] bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1"><input type="checkbox" value="${c}" class="accent-emerald-600"> ${c}</label>`).join('');
+      ['cpName', 'cpTiers'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('cpMethod').value = 'ALL'; document.getElementById('cpInst').value = 'total'; document.getElementById('cpStartDay').value = '1';
+      document.getElementById('cpSaveBtn').textContent = '카드 추가'; document.getElementById('cpCancelEdit').classList.add('hidden');
+    }
+    function openCardPerfModal() { closeHeaderMenu(); setTimeout(() => { resetCardPerfForm(); renderCardPerfSettingList(); const m = document.getElementById('cardPerfModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
+    function closeCardPerfModal() { const m = document.getElementById('cardPerfModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+    function editCardPerf(id) {
+      const cp = cardPerfs.find(x => x.id === id); if (!cp) return; resetCardPerfForm(); editingPerfId = id;
+      const sel = document.getElementById('cpCompany'); if (![...sel.options].some(o => o.value === cp.company)) sel.insertAdjacentHTML('beforeend', `<option>${cp.company}</option>`);
+      sel.value = cp.company; document.getElementById('cpName').value = cp.name || ''; document.getElementById('cpMethod').value = cp.method || 'ALL';
+      document.getElementById('cpTiers').value = (cp.tiers || []).join(', '); document.getElementById('cpStartDay').value = String(cp.startDay || 1); document.getElementById('cpInst').value = cp.inst || 'total';
+      document.querySelectorAll('#cpExclude input').forEach(i => i.checked = (cp.exclude || []).includes(i.value));
+      document.getElementById('cpSaveBtn').textContent = '수정 저장'; document.getElementById('cpCancelEdit').classList.remove('hidden');
+    }
+    function saveCardPerf() {
+      const tiers = [...new Set(document.getElementById('cpTiers').value.split(/[,\s/]+/).map(x => Number(x.replace(/[^\d.]/g, ''))).filter(x => x > 0))].sort((a, b) => a - b);
+      if (!tiers.length) return alert('실적 기준을 만원 단위로 넣어주세요. 예: 30 또는 30, 50');
+      const cp = { id: editingPerfId || Date.now(), company: document.getElementById('cpCompany').value, name: document.getElementById('cpName').value.trim(), method: document.getElementById('cpMethod').value,
+        tiers, startDay: Number(document.getElementById('cpStartDay').value) || 1, inst: document.getElementById('cpInst').value, exclude: [...document.querySelectorAll('#cpExclude input:checked')].map(i => i.value) };
+      const before = cardPerfs.findIndex(x => x.id === cp.id); if (before >= 0) cardPerfs[before] = cp; else cardPerfs.push(cp);
+      saveCardPerfsLS(); addChangeLog('예산/복원', '카드 실적', `[${cp.company}${cp.name ? ' ' + cp.name : ''}] ${tiers.join('/')}만원 ${before >= 0 ? '수정' : '등록'}`);
+      resetCardPerfForm(); renderCardPerfSettingList(); renderCardPerf(); showToast(`🎯 ${cp.company} 실적 기준을 저장했어요`);
+    }
+    function deleteCardPerf(id) { const cp = cardPerfs.find(x => x.id === id); if (!cp || !confirm(`[${cp.company}${cp.name ? ' ' + cp.name : ''}] 실적 설정을 지울까요?`)) return; cardPerfs = cardPerfs.filter(x => x.id !== id); saveCardPerfsLS(); if (editingPerfId === id) resetCardPerfForm(); renderCardPerfSettingList(); renderCardPerf(); }
+    function renderCardPerfSettingList() {
+      const el = document.getElementById('cardPerfSettingList'); saveCardPerfsLS();
+      const sd = d => d > 1 ? `전월 ${d}일~당월 ${d - 1}일` : '매달 1일~말일';
+      el.innerHTML = cardPerfs.length ? cardPerfs.map(cp => `<div class="flex justify-between items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-2 rounded-xl border border-slate-200/70 text-xs"><button type="button" onclick="editCardPerf(${cp.id})" class="text-left min-w-0"><b>${cp.company}${cp.name ? ' ' + cp.name : ''}</b> <span class="text-slate-400">${cp.method === 'ALL' ? '' : '· ' + cp.method}</span><div class="text-[10px] text-slate-500">${cp.tiers.join(' / ')}만원 · ${sd(cp.startDay)} · 할부 ${cp.inst === 'total' ? '총액' : '월 납부액'}${(cp.exclude || []).length ? ' · 제외: ' + cp.exclude.join(', ') : ''}</div></button><button onclick="deleteCardPerf(${cp.id})" class="text-slate-400 hover:text-rose-600 font-bold px-2 shrink-0">✕</button></div>`).join('')
+        : `<p class="text-xs text-slate-400 text-center py-3">아직 등록한 카드가 없어요.</p>`;
     }
 
     // ===== 사용자가 등록한 카드사별 문자 형식 =====
@@ -866,14 +993,14 @@
     function closeSyncModal() { const m = document.getElementById('syncModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
     
     function downloadBackupFile() { 
-      const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, smsTemplates, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
+      const b = new Blob([JSON.stringify({ app: 'ArgonLedgerPro', version: APP_VERSION, categoryBudgets, fixedExpenses, smsTemplates, cardPerfs, transactions, changeLogs }, null, 2)], { type: 'application/json' }); 
       const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `아르곤가계부_백업_${today}.json`; a.click(); 
     }
     
     function handleBackupFileUpload(e) { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => applyBackupData(ev.target.result); r.readAsText(f); }
     
     async function copyBackupCode() { 
-      const s = JSON.stringify({ categoryBudgets, fixedExpenses, smsTemplates, transactions, changeLogs }); 
+      const s = JSON.stringify({ categoryBudgets, fixedExpenses, smsTemplates, cardPerfs, transactions, changeLogs }); 
       try { await navigator.clipboard.writeText(s); showToast('📋 백업 코드 복사 완료!'); } catch (e) { document.getElementById('restoreCodeInput').value = s; } 
     }
     
@@ -892,12 +1019,14 @@
           if (p.categoryBudgets) categoryBudgets = p.categoryBudgets;
           if (p.changeLogs) changeLogs = p.changeLogs;
           if (Array.isArray(p.smsTemplates)) smsTemplates = p.smsTemplates;
+          if (Array.isArray(p.cardPerfs)) cardPerfs = p.cardPerfs;
         } else {
           transactions.push(...tx);
           if (p.fixedExpenses && Array.isArray(p.fixedExpenses)) {
             const existingIds = new Set(fixedExpenses.map(i => i.id));
             p.fixedExpenses.forEach(fe => { if (!existingIds.has(fe.id)) fixedExpenses.push(fe); });
           }
+          if (Array.isArray(p.cardPerfs)) { const ids = new Set(cardPerfs.map(c => c.id)); p.cardPerfs.forEach(c => { if (!ids.has(c.id)) cardPerfs.push(c); }); }
           if (Array.isArray(p.smsTemplates)) { const keys = new Set(smsTemplates.map(t => t.key)); p.smsTemplates.forEach(t => { if (!keys.has(t.key)) smsTemplates.push(t); }); }
         }
 
@@ -905,7 +1034,7 @@
         localStorage.setItem('argon_fixed_expenses_v3', JSON.stringify(fixedExpenses));
         localStorage.setItem('argon_cat_budgets_v3', JSON.stringify(categoryBudgets));
         localStorage.setItem('argon_logs_v3', JSON.stringify(changeLogs));
-        saveSmsTemplatesLS();
+        saveSmsTemplatesLS(); saveCardPerfsLS();
 
         saveAndRender(); 
         closeSyncModal(); 
@@ -1059,7 +1188,7 @@
       }
       if (catFilter === 'ALL') updateChart((listFiltered ? filteredTx : monthTx).filter(t => t.type === 'expense'));
       else updateChart(filteredTx.filter(t => t.type === (catIsExpense ? 'expense' : 'income')), 'merchant');
-      renderLogs();
+      renderLogs(); renderCardPerf();
     }
 
     function updateChart(expList, groupBy = 'category') {
@@ -1077,7 +1206,7 @@
 
     document.getElementById('monthFilter').addEventListener('change', () => { exitEditMode(); render(); });
     document.getElementById('txDate').value = today; document.getElementById('monthFilter').value = currentYearMonth;
-    initDarkMode(); setType('expense'); toggleCardOptions(); render(); { const c = document.getElementById('menuTplCount'); if (c) c.textContent = `${smsTemplates.length}개`; } checkVersionUpdatePopup();
+    initDarkMode(); setType('expense'); toggleCardOptions(); render(); { const c = document.getElementById('menuTplCount'); if (c) c.textContent = `${smsTemplates.length}개`; const pc = document.getElementById('menuPerfCount'); if (pc) pc.textContent = `${cardPerfs.length}개`; } checkVersionUpdatePopup();
   </script>
 </body>
 </html>
