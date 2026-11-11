@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f1f5f9">
-  <title>아르곤(Gemini) 스마트 가계부 Pro v5.0</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v5.1</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -45,7 +45,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v5.0</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v5.1</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
         </div>
@@ -76,7 +76,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v5.0</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v5.1</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -146,6 +146,21 @@
       <div id="cardBillSummary" class="hidden grid grid-cols-2 gap-2 mb-2.5"></div>
       <div id="cardBillList" class="grid grid-cols-1 gap-2.5"></div>
     </div>
+    </div>
+
+    <div id="compareCard" class="card p-4 md:p-5 border border-sky-100 dark:border-slate-700">
+      <div class="flex justify-between items-center gap-2 mb-3">
+        <div class="flex items-center gap-1.5 min-w-0"><span class="text-base">📈</span><h2 class="text-sm md:text-base font-extrabold text-slate-900 dark:text-slate-100 truncate">지난달과 비교</h2><span id="compareBasis" class="text-[11px] text-slate-400 font-medium shrink-0"></span></div>
+        <span id="compareBadge" class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-slate-100 text-slate-600 shrink-0">-</span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="min-w-0">
+          <div id="compareHead" class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700"></div>
+          <p class="text-[11px] font-bold text-slate-500 mt-3 mb-1.5">최근 6개월 지출</p>
+          <div id="compareTrend" class="flex items-end gap-1.5 h-32 px-1"></div>
+        </div>
+        <div class="min-w-0"><p class="text-[11px] font-bold text-slate-500 mb-1.5">카테고리별 변화 <span class="font-normal text-slate-400">· 많이 바뀐 순</span></p><div id="compareCats" class="space-y-1.5"></div></div>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-3.5 md:gap-5">
@@ -391,7 +406,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v5.0</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v5.1</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -432,9 +447,12 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '5.0';
+    const APP_VERSION = '5.1';
     const releaseNotesData = [
-      { version: 'Pro v5.0', date: '2026.11.11 (최신)', badge: '카드 대금 미리보기', isLatest: true, items: [
+      { version: 'Pro v5.1', date: '2026.11.11 (최신)', badge: '지난달과 비교', isLatest: true, items: [
+        '📈 <b>지난달과 비교</b>: 진행 중인 달은 <b>같은 기간(1일~오늘)</b>끼리 비교해서 공정하게',
+        '🔺 카테고리별 증감을 많이 바뀐 순으로, 최근 6개월 지출 추이 막대그래프'
+      ]}, { version: 'Pro v5.0', date: '2026.11.11', badge: '카드 대금 미리보기', isLatest: false, items: [
         '💸 <b>카드 대금 미리보기</b>: 카드별 다음 결제일·이용기간·청구 예정액(할부 포함)과 월별 카드값 합계',
         '⚙️ 카드 설정에 <b>결제일·이용기간</b> 추가 (예: 14일 결제 → 전월 1일~말일 사용분), 실적 기준은 이제 선택'
       ]}, { version: 'Pro v4.9', date: '2026.11.11', badge: '할부 실적 제외', isLatest: false, items: [
@@ -707,6 +725,41 @@
           + `<p class="text-[10px] mt-0.5 text-slate-400">${cur.from.slice(5).replace('-', '/')}~${cur.to.slice(5).replace('-', '/')} · ${cur.n}건 · 지난 기간 ${man(prev.sum)} → ${prevReached ? `<span class="text-emerald-600 font-bold">${Number(ym.slice(5))}월 ${man(prevReached)} 구간 혜택</span>` : `<span class="text-rose-500">${Number(ym.slice(5))}월 혜택 구간 미달</span>`}</p></div>`;
       }).join('');
     }
+    // ===== 지난달과 비교 =====
+    function renderCompare() {
+      const box = document.getElementById('compareCats'); if (!box) return;
+      const ym = document.getElementById('monthFilter').value, prev = addMonthsToYM(ym, -1), mo = x => Number(x.slice(5));
+      const isCur = ym === currentYearMonth, cutDay = isCur ? new Date().getDate() : null;   // 진행 중인 달은 같은 기간(1~오늘)끼리
+      const agg = (m, upto) => { const r = { total: 0, n: 0, cats: {} }; transactions.forEach(t => { if (t.type !== 'expense' || !t.date.startsWith(m)) return; if (upto && Number(t.date.slice(8)) > upto) return; r.total += t.amount; r.n++; r.cats[t.category] = (r.cats[t.category] || 0) + t.amount; }); return r; };
+      const cur = agg(ym, cutDay), base = agg(prev, cutDay), prevFull = agg(prev, null);
+      const pctTxt = (a, b) => b ? `${a >= b ? '+' : ''}${Math.round((a - b) / b * 100)}%` : (a ? '새로 생김' : '0%');
+      const diff = cur.total - base.total;
+      document.getElementById('compareBasis').textContent = isCur ? `${mo(ym)}월 1~${cutDay}일 vs ${mo(prev)}월 1~${cutDay}일` : `${mo(ym)}월 vs ${mo(prev)}월`;
+      const badge = document.getElementById('compareBadge');
+      badge.textContent = base.total || cur.total ? `${diff > 0 ? '▲' : diff < 0 ? '▼' : '='} ${pctTxt(cur.total, base.total)}` : '-';
+      badge.className = `px-2 py-0.5 rounded-full text-[11px] font-extrabold shrink-0 ${diff > 0 ? 'bg-rose-100 text-rose-700' : diff < 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`;
+      const cell = (label, val, sub, cls, first) => `<div class="min-w-0 ${first ? '' : 'border-l border-slate-200 dark:border-slate-700 pl-2 sm:pl-3'}"><p class="text-[10px] sm:text-[11px] font-semibold text-slate-400 truncate">${label}</p><p class="text-sm sm:text-base font-extrabold mt-0.5 truncate ${cls}">${val}</p><p class="text-[10px] text-slate-400 truncate">${sub}</p></div>`;
+      document.getElementById('compareHead').innerHTML =
+        cell(isCur ? `${mo(ym)}월 (~${cutDay}일)` : `${mo(ym)}월`, cur.total.toLocaleString() + '원', `${cur.n}건`, 'text-slate-900 dark:text-slate-100', true)
+        + cell(isCur ? `${mo(prev)}월 같은 기간` : `${mo(prev)}월`, base.total.toLocaleString() + '원', `${base.n}건`, 'text-slate-600 dark:text-slate-300')
+        + cell('차이', `${diff > 0 ? '+' : ''}${diff.toLocaleString()}원`, isCur ? `${mo(prev)}월 전체 ${man(prevFull.total)}` : pctTxt(cur.total, base.total), diff > 0 ? 'text-rose-600 dark:text-rose-400' : diff < 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500');
+      // 카테고리: 변화 큰 순
+      const cats = [...new Set([...Object.keys(cur.cats), ...Object.keys(base.cats)])].map(c => ({ c, a: cur.cats[c] || 0, b: base.cats[c] || 0 })).map(x => ({ ...x, d: x.a - x.b })).filter(x => x.d).sort((x, y) => Math.abs(y.d) - Math.abs(x.d));
+      const maxAbs = Math.max(1, ...cats.map(x => Math.abs(x.d)));
+      box.innerHTML = cats.length ? cats.slice(0, 8).map(x => `<div class="bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-slate-700"><div class="flex justify-between items-baseline gap-2 text-xs"><b class="truncate">${x.c}</b><span class="shrink-0 font-extrabold ${x.d > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">${x.d > 0 ? '▲' : '▼'} ${Math.abs(x.d).toLocaleString()}원 <span class="text-[10px] font-semibold">(${pctTxt(x.a, x.b)})</span></span></div>`
+        + `<div class="flex items-center gap-2 mt-0.5"><div class="flex-1 bg-slate-200 dark:bg-slate-700 rounded-full h-1"><div class="h-1 rounded-full ${x.d > 0 ? 'bg-rose-400' : 'bg-emerald-400'}" style="width:${Math.round(Math.abs(x.d) / maxAbs * 100)}%"></div></div><span class="text-[10px] text-slate-400 shrink-0">${x.b.toLocaleString()} → ${x.a.toLocaleString()}</span></div></div>`).join('')
+        + (cats.length > 8 ? `<p class="text-[10px] text-slate-400 px-1">외 ${cats.length - 8}개 카테고리</p>` : '')
+        : `<p class="text-xs text-slate-400 text-center py-6">${base.total || cur.total ? '카테고리별 변화가 없어요.' : '비교할 지출 내역이 아직 없어요.'}</p>`;
+      // 최근 6개월 (선택한 달까지)
+      const months = Array.from({ length: 6 }, (_, i) => addMonthsToYM(ym, i - 5)), totals = months.map(m => agg(m, null).total), top = Math.max(1, ...totals);
+      const done = totals.filter((v, i) => i < 5 && v > 0), avg = done.length ? Math.round(done.reduce((x, y) => x + y, 0) / done.length) : 0;
+      document.getElementById('compareTrend').innerHTML = months.map((m, i) => {
+        const v = totals[i], h = Math.max(v ? 4 : 0, Math.round(v / top * 100)), sel = m === ym, live = m === currentYearMonth;
+        return `<div class="flex-1 min-w-0 h-full flex flex-col justify-end items-center" title="${mo(m)}월 ${v.toLocaleString()}원${live ? ' (진행 중)' : ''}"><span class="text-[10px] font-bold ${sel ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500'} mb-0.5">${v ? man(v) : ''}</span><div class="w-full max-w-[38px] rounded-t-md ${sel ? 'bg-sky-500' : 'bg-sky-200 dark:bg-sky-900'} ${live ? 'opacity-80 bg-[repeating-linear-gradient(135deg,transparent,transparent_4px,rgba(255,255,255,.35)_4px,rgba(255,255,255,.35)_7px)]' : ''}" style="height:${h}%"></div><span class="text-[10px] mt-1 ${sel ? 'font-extrabold text-slate-800 dark:text-slate-100' : 'text-slate-400'}">${mo(m)}월</span></div>`;
+      }).join('');
+      document.getElementById('compareTrend').title = avg ? `직전 5개월 평균 ${avg.toLocaleString()}원` : '';
+    }
+
     // ===== 카드 대금 미리보기 =====
     // 결제월 P의 이용기간: 끝나는 달 = P - lag, 시작일 규칙은 실적 기간과 같음
     const billPeriod = (cp, payYm) => perfPeriod(addMonthsToYM(payYm, -(cp.billLag ?? 1)), cp.billStart || 1);
@@ -1264,7 +1317,7 @@
       }
       if (catFilter === 'ALL') updateChart((listFiltered ? filteredTx : monthTx).filter(t => t.type === 'expense'));
       else updateChart(filteredTx.filter(t => t.type === (catIsExpense ? 'expense' : 'income')), 'merchant');
-      renderLogs(); renderCardPerf(); renderCardBill();
+      renderLogs(); renderCardPerf(); renderCardBill(); renderCompare();
     }
 
     function updateChart(expList, groupBy = 'category') {
