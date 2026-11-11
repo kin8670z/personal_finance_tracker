@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#f1f5f9">
-  <title>아르곤(Gemini) 스마트 가계부 Pro v5.1</title>
+  <title>아르곤(Gemini) 스마트 가계부 Pro v5.2</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -45,7 +45,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v5.1</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v5.2</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 스마트 가계부</h1>
         </div>
@@ -76,7 +76,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v5.1</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v5.2</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -156,7 +156,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="min-w-0">
           <div id="compareHead" class="grid grid-cols-3 gap-1.5 sm:gap-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700"></div>
-          <p class="text-[11px] font-bold text-slate-500 mt-3 mb-1.5">최근 6개월 지출</p>
+          <p class="text-[11px] font-bold text-slate-500 mt-3 mb-1.5">최근 6개월 지출 <span class="font-normal text-slate-400">· 막대를 누르면 그 달로 이동</span></p>
           <div id="compareTrend" class="flex items-end gap-1.5 h-32 px-1"></div>
         </div>
         <div class="min-w-0"><p class="text-[11px] font-bold text-slate-500 mb-1.5">카테고리별 변화 <span class="font-normal text-slate-400">· 많이 바뀐 순</span></p><div id="compareCats" class="space-y-1.5"></div></div>
@@ -406,7 +406,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v5.1</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v5.2</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -447,9 +447,12 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '5.1';
+    const APP_VERSION = '5.2';
     const releaseNotesData = [
-      { version: 'Pro v5.1', date: '2026.11.11 (최신)', badge: '지난달과 비교', isLatest: true, items: [
+      { version: 'Pro v5.2', date: '2026.11.11 (최신)', badge: '막대 눌러 이동', isLatest: true, items: [
+        '👆 지난달과 비교의 <b>6개월 막대를 누르면 그 달로 바로 이동</b> (위에서 달을 고르지 않아도 돼요)',
+        '📊 막대그래프는 다른 달을 봐도 <b>이번 달까지 6개월</b>을 그대로 보여주고, 보고 있는 달을 강조'
+      ]}, { version: 'Pro v5.1', date: '2026.11.11', badge: '지난달과 비교', isLatest: false, items: [
         '📈 <b>지난달과 비교</b>: 진행 중인 달은 <b>같은 기간(1일~오늘)</b>끼리 비교해서 공정하게',
         '🔺 카테고리별 증감을 많이 바뀐 순으로, 최근 6개월 지출 추이 막대그래프'
       ]}, { version: 'Pro v5.0', date: '2026.11.11', badge: '카드 대금 미리보기', isLatest: false, items: [
@@ -751,14 +754,17 @@
         + (cats.length > 8 ? `<p class="text-[10px] text-slate-400 px-1">외 ${cats.length - 8}개 카테고리</p>` : '')
         : `<p class="text-xs text-slate-400 text-center py-6">${base.total || cur.total ? '카테고리별 변화가 없어요.' : '비교할 지출 내역이 아직 없어요.'}</p>`;
       // 최근 6개월 (선택한 달까지)
-      const months = Array.from({ length: 6 }, (_, i) => addMonthsToYM(ym, i - 5)), totals = months.map(m => agg(m, null).total), top = Math.max(1, ...totals);
+      const endYm = ym > currentYearMonth ? ym : currentYearMonth;
+      const months = Array.from({ length: 6 }, (_, i) => addMonthsToYM(endYm, i - 5)), totals = months.map(m => agg(m, null).total), top = Math.max(1, ...totals);
       const done = totals.filter((v, i) => i < 5 && v > 0), avg = done.length ? Math.round(done.reduce((x, y) => x + y, 0) / done.length) : 0;
       document.getElementById('compareTrend').innerHTML = months.map((m, i) => {
         const v = totals[i], h = Math.max(v ? 4 : 0, Math.round(v / top * 100)), sel = m === ym, live = m === currentYearMonth;
-        return `<div class="flex-1 min-w-0 h-full flex flex-col justify-end items-center" title="${mo(m)}월 ${v.toLocaleString()}원${live ? ' (진행 중)' : ''}"><span class="text-[10px] font-bold ${sel ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500'} mb-0.5">${v ? man(v) : ''}</span><div class="w-full max-w-[38px] rounded-t-md ${sel ? 'bg-sky-500' : 'bg-sky-200 dark:bg-sky-900'} ${live ? 'opacity-80 bg-[repeating-linear-gradient(135deg,transparent,transparent_4px,rgba(255,255,255,.35)_4px,rgba(255,255,255,.35)_7px)]' : ''}" style="height:${h}%"></div><span class="text-[10px] mt-1 ${sel ? 'font-extrabold text-slate-800 dark:text-slate-100' : 'text-slate-400'}">${mo(m)}월</span></div>`;
+        return `<button type="button" onclick="goToMonth('${m}')" aria-label="${mo(m)}월 보기" aria-pressed="${sel}" class="flex-1 min-w-0 h-full flex flex-col justify-end items-center rounded-lg pt-1 ${sel ? 'bg-sky-50 dark:bg-slate-900' : 'hover:bg-slate-50 dark:hover:bg-slate-900/60'} focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400" title="${mo(m)}월 ${v.toLocaleString()}원${live ? ' (진행 중)' : ''} · 눌러서 이 달 보기"><span class="text-[10px] font-bold ${sel ? 'text-sky-700 dark:text-sky-300' : 'text-slate-500'} mb-0.5">${v ? man(v) : ''}</span><div class="w-full max-w-[38px] rounded-t-md ${sel ? 'bg-sky-500' : 'bg-sky-200 dark:bg-sky-900'} ${live ? 'opacity-80 bg-[repeating-linear-gradient(135deg,transparent,transparent_4px,rgba(255,255,255,.35)_4px,rgba(255,255,255,.35)_7px)]' : ''}" style="height:${h}%"></div><span class="text-[10px] mt-1 pb-0.5 ${sel ? 'font-extrabold text-slate-800 dark:text-slate-100' : 'text-slate-400'}">${mo(m)}월</span></button>`;
       }).join('');
       document.getElementById('compareTrend').title = avg ? `직전 5개월 평균 ${avg.toLocaleString()}원` : '';
     }
+
+    function goToMonth(m) { const f = document.getElementById('monthFilter'); if (f.value === m) return; f.value = m; f.dispatchEvent(new Event('change')); }
 
     // ===== 카드 대금 미리보기 =====
     // 결제월 P의 이용기간: 끝나는 달 = P - lag, 시작일 규칙은 실적 기간과 같음
