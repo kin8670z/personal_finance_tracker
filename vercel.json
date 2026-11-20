@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/personal_finance_tracker/:path*", "destination": "/:path*" },
     { "source": "/:path*/stocks.html", "destination": "/stocks.html" },
     { "source": "/:path*/api/stock", "destination": "/api/stock" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
