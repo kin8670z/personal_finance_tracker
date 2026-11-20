@@ -393,6 +393,8 @@
         // 오늘 값은 실시간 현재가로 (장중이면 오늘 줄이 없을 수도 있음)
         if (q && q.price != null && q.time && String(q.time).slice(0, 10) === td) {   // 시각 문자열이 한국 시간 기준
           if (series[series.length - 1][0] === td) series[series.length - 1] = [td, q.price]; else series.push([td, q.price]);
+          // 전날 종가는 시세의 '전일 대비' 기준(KRX 종가)에 맞춰서 위 요약의 오늘 손익과 같게
+          if (q.change != null && series.length > 1) series[series.length - 2] = [series[series.length - 2][0], q.price - q.change];
         }
         const trades = (w.trades && w.trades.length) ? sortedTrades(w) : (held(w) ? [{ date: '', type: 'buy', qty: w.qty, price: w.avg }] : []);
         let qty = 0, ti = 0;
