@@ -78,7 +78,7 @@ async function fxQuote() {
 async function naverDaily(kind, code, from, unit = 'day') {
   const path = kind === 'idx' ? 'index' : 'item';
   const j = await get(`https://api.stock.naver.com/chart/domestic/${path}/${code}/${unit}?startDateTime=${from}0000&endDateTime=${ymd()}2359`);
-  return (Array.isArray(j) ? j : []).map(p => [ts(p.localDate), p.closePrice]).filter(p => p[1] != null);
+  return (Array.isArray(j) ? j : []).map(p => [ts(p.localDate), p.closePrice, p.highPrice, p.lowPrice, p.openPrice, p.accumulatedTradingVolume]).filter(p => p[1] != null);
 }
 async function naverIntraday(kind, code) {
   const path = kind === 'idx' ? 'index' : 'item';
@@ -90,7 +90,7 @@ async function naverIntraday(kind, code) {
     const last = ymd(new Date(days[days.length - 1][0]));
     j = await get(`https://api.stock.naver.com/chart/domestic/${path}/${code}/minute?startDateTime=${last}0800&endDateTime=${last}2000`);
   }
-  return (Array.isArray(j) ? j : []).map(p => [ts(p.localDateTime), p.currentPrice]).filter(p => p[1] != null);
+  return (Array.isArray(j) ? j : []).map(p => [ts(p.localDateTime), p.currentPrice, p.highPrice, p.lowPrice, p.openPrice]).filter(p => p[1] != null);
 }
 const YRANGE = { '1d': ['1d', '5m'], '1m': ['1mo', '1d'], '3m': ['3mo', '1d'], '1y': ['1y', '1d'], '3y': ['5y', '1wk'] };
 async function yahoo(symbol, range) {
@@ -98,8 +98,8 @@ async function yahoo(symbol, range) {
   const j = await get(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?range=${r}&interval=${i}`, { 'User-Agent': UA });
   const res = j.chart && j.chart.result && j.chart.result[0];
   if (!res || !res.timestamp) return { points: [], prevClose: null };
-  const close = res.indicators.quote[0].close;
-  let points = res.timestamp.map((t, k) => [t * 1000, close[k]]).filter(p => p[1] != null);
+  const qt = res.indicators.quote[0];
+  let points = res.timestamp.map((t, k) => [t * 1000, qt.close[k], qt.high && qt.high[k], qt.low && qt.low[k], qt.open && qt.open[k], qt.volume && qt.volume[k]]).filter(p => p[1] != null);
   if (range === '3y') { const cut = Date.now() - 3 * 365 * 864e5; points = points.filter(p => p[0] >= cut); }
   return { points, prevClose: res.meta ? (res.meta.chartPreviousClose ?? res.meta.previousClose ?? null) : null };
 }
@@ -113,6 +113,19 @@ async function chart(kind, code, range) {
   if (range === '3y') { try { points = await naverDaily(kind, code, from, 'week'); } catch (e) { points = null; } }
   if (!points || !points.length) points = await naverDaily(kind, code, from);
   return { points, prevClose: null };
+}
+
+// 기간 통계: 시작가, 최고가·최저가(와 그 날짜), 평균 거래량
+function stats(points) {
+  if (!points.length) return null;
+  const v = (p, i) => (p[i] == null || isNaN(p[i]) ? p[1] : p[i]);
+  let hi = points[0], lo = points[0], volSum = 0, volN = 0;
+  for (const p of points) {
+    if (v(p, 2) > v(hi, 2)) hi = p;
+    if (v(p, 3) < v(lo, 3)) lo = p;
+    if (p[5] != null && !isNaN(p[5])) { volSum += p[5]; volN++; }
+  }
+  return { open: v(points[0], 4), high: v(hi, 2), highAt: hi[0], low: v(lo, 3), lowAt: lo[0], close: points[points.length - 1][1], avgVolume: volN ? Math.round(volSum / volN) : null };
 }
 
 // ---------- 검색 ----------
@@ -159,7 +172,7 @@ module.exports = async (req, res) => {
       const valid = (kind === 'kr' && CODE_RE.test(code)) || (kind === 'idx' && INDEX.includes(code)) || (kind === 'world' && WORLD[code]) || (kind === 'fx' && code === 'USD');
       if (!valid || !YRANGE[range]) return send(res, 400, { error: '잘못된 요청' });
       const r = await chart(kind, code, range);
-      return send(res, 200, { points: thin(r.points, range === '1d' ? 400 : 260), prevClose: r.prevClose }, range === '1d' ? 60 : 1800);
+      return send(res, 200, { points: thin(r.points, range === '1d' ? 400 : 260).map(p => [p[0], p[1]]), prevClose: r.prevClose, stats: stats(r.points) }, range === '1d' ? 60 : 1800);
     }
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);

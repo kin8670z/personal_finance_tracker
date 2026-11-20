@@ -334,14 +334,30 @@
           : `<div class="mt-2 space-y-2">${skel('55%', 32)}${skel('35%', 16)}</div>`;
       }
       document.getElementById('detailHead').innerHTML = html;
-      const meta = document.getElementById('detailMeta');
-      if (q && apiOk !== false && (k === 'kr' || k === 'idx' || k === 'world')) {
-        const cell = (l, v) => `<div class="bg-slate-50 rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-xs font-extrabold num text-slate-800 truncate">${v}</p></div>`;
+      renderMeta();
+    }
+    // 아래 4칸: 1일은 오늘 시세, 다른 기간은 그 기간의 시작가·최고가·최저가·평균 거래량
+    let periodStats = null;   // { target, range, stats }
+    function renderMeta() {
+      const t = target, k = kind(t), q = quotes[keyOf(t)], meta = document.getElementById('detailMeta');
+      if (apiOk === false) { meta.innerHTML = ''; return; }
+      const cell = (l, v, sub) => `<div class="bg-slate-50 rounded-lg px-2 py-1.5 text-center min-w-0"><p class="text-[10px] font-bold text-slate-400 truncate">${l}</p><p class="text-xs font-extrabold num text-slate-800 truncate">${v}</p>${sub ? `<p class="text-[9px] text-slate-400 num">${sub}</p>` : ''}</div>`;
+      const day = ms => { const d = new Date(ms); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}`; };
+      let html = '';
+      if (range === '1d') {
+        if (!q || k === 'fx') { meta.innerHTML = ''; return; }
         const dg = k === 'kr' ? 0 : (q.price >= 10000 ? 0 : 2);
-        let html = cell('시가', fmt(q.open, dg)) + cell('고가', `<span class="up">${fmt(q.high, dg)}</span>`) + cell('저가', `<span class="down">${fmt(q.low, dg)}</span>`);
+        html = cell('시가', fmt(q.open, dg)) + cell('고가', `<span class="up">${fmt(q.high, dg)}</span>`) + cell('저가', `<span class="down">${fmt(q.low, dg)}</span>`);
         if (k === 'kr') html += cell('거래량', shortVol(q.volume)); else if (k === 'idx' && q.value) html += cell('거래대금', esc(q.value));
-        meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
-      } else meta.innerHTML = '';
+      } else {
+        const hit = periodStats && periodStats.target === t && periodStats.range === range, ps = hit ? periodStats.stats : null;
+        if (hit && !ps) { meta.innerHTML = ''; return; }
+        if (!ps) { meta.className = 'grid grid-cols-4 gap-2 mt-3'; meta.innerHTML = [0, 1, 2, 3].map(() => `<div class="bg-slate-50 rounded-lg p-2">${skel('100%', 22)}</div>`).join(''); return; }
+        const dg = k === 'kr' ? 0 : (ps.high >= 10000 ? 0 : 2), lbl = RANGE_TEXT[range];
+        html = cell(`${lbl} 시작가`, fmt(ps.open, dg)) + cell(`${lbl} 최고가`, `<span class="up">${fmt(ps.high, dg)}</span>`, day(ps.highAt)) + cell(`${lbl} 최저가`, `<span class="down">${fmt(ps.low, dg)}</span>`, day(ps.lowAt));
+        if (k === 'kr' && ps.avgVolume != null) html += cell(range === '3y' ? '주 평균 거래량' : '일 평균 거래량', shortVol(ps.avgVolume));
+      }
+      meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
     }
     function renderAll(prev) { renderStatus(); renderSummary(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
 
@@ -373,6 +389,8 @@
       } catch (e) { data = { points: [] }; }
       if (my !== chartReq) return;   // 그사이 다른 종목·기간을 고름
       const pts = data.points || [], q = quotes[keyOf(t)];
+      periodStats = { target: t, range, stats: data.stats || null };
+      renderMeta();
       if (pts.length < 2) {
         if (chart) { chart.destroy(); chart = null; }
         box.innerHTML = '<p class="chart-fail" style="padding-top:6rem">차트 데이터가 아직 없어요</p>';
@@ -473,7 +491,7 @@
     });
 
     document.querySelectorAll('[data-market]').forEach(b => b.addEventListener('click', () => { market = b.dataset.market; save('argon_watch_market_v1', market); renderMarkets(); }));
-    document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v2', range); loadChart(); }));
+    document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v2', range); renderMeta(); loadChart(); }));
 
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
     function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
