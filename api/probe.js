@@ -21,6 +21,9 @@ const URLS = [
   'https://polling.finance.naver.com/api/realtime/domestic/stock/247540',
   'https://polling.finance.naver.com/api/realtime/worldstock/index/.SOX,.N225,.SSEC,.HSI,.INX',
   'https://query1.finance.yahoo.com/v8/finance/chart/%5ESOX?range=1d&interval=5m',
+  'https://ac.stock.naver.com/ac?q=%EC%B9%B4%EC%B9%B4%EC%98%A4&target=stock',
+  'https://api.stock.naver.com/chart/domestic/index/KOSPI/day?startDateTime=202610200000&endDateTime=202611202359',
+  'https://api.stock.naver.com/chart/domestic/item/005930/minute?startDateTime=202611190900&endDateTime=202611191530',
 ];
 module.exports = async (req, res) => {
   const q = new URL(req.url, 'http://x').searchParams;
