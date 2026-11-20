@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/:path*/stocks.html", "destination": "/stocks.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/:path*/api/stock", "destination": "/api/stock" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

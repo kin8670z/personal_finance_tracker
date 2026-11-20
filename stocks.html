@@ -10,6 +10,7 @@
     try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
   <style>
     html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
@@ -18,14 +19,42 @@
     .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
     input, select, button { font-size: 16px !important; }
     @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
     .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
     .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
     .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
     .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
     .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
     .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
-    .dark .text-slate-500, .dark .text-slate-600 { color: #94a3b8 !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
     .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
     /* 사이드 메뉴 */
     #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
     #sideNav.open { transform: translateX(0); }
@@ -35,11 +64,7 @@
     .nav-item.active { background-color: #eef2ff; color: #4338ca; }
     .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
     .dark .nav-item:not(.active) { color: #cbd5e1; }
-    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
-    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
-    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2.5rem .5rem; }
-    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
-    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop { transition: none; } }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
   </style>
 </head>
 <body class="text-slate-800">
@@ -52,174 +77,403 @@
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
 
-  <div class="w-full max-w-7xl mx-auto space-y-3.5 md:space-y-5">
-    <header class="card p-3.5 sm:p-4 md:px-6 flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2 min-w-0">
-        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-        <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">📈 오늘의 주식 현황</h1>
+  <div class="w-full max-w-7xl mx-auto space-y-3 md:space-y-4">
+    <!-- 헤더 + 오늘 요약 -->
+    <header id="hero" class="card hero-flat p-4 md:p-5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+          <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">오늘의 주식 현황</h1>
+        </div>
+        <button type="button" onclick="refreshAll(true)" aria-label="새로고침" id="refreshBtn" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 shrink-0">🔄</button>
       </div>
-      <div class="flex items-center gap-2 shrink-0"><span id="todayLabel" class="text-xs font-bold text-slate-500"></span><button type="button" onclick="refreshCharts()" aria-label="차트 새로고침" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">🔄</button></div>
+      <div class="flex items-center gap-1.5 mt-2 text-[11px] font-bold text-slate-500">
+        <span id="liveDot" class="hidden live-dot"></span><span id="statusLabel">불러오는 중…</span>
+      </div>
+      <div id="summary" class="mt-3"></div>
     </header>
 
-    <section class="card p-4 md:p-5">
-      <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-        <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수 <span id="updatedLabel" class="text-[11px] text-slate-400 font-semibold"></span></h2>
-        <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장">
-          <button type="button" data-market="kr" class="px-3 py-1.5 rounded-lg">국내</button>
-          <button type="button" data-market="world" class="px-3 py-1.5 rounded-lg">해외</button>
+    <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4 items-start">
+      <div class="lg:col-span-2 space-y-3 md:space-y-4">
+        <!-- 시장 지수 -->
+        <section class="card p-4">
+          <div class="flex justify-between items-center gap-2 mb-3">
+            <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2>
+            <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장">
+              <button type="button" data-market="kr" class="px-3 py-1.5 rounded-lg">국내</button>
+              <button type="button" data-market="world" class="px-3 py-1.5 rounded-lg">해외</button>
+            </div>
+          </div>
+          <div id="marketGrid" class="grid grid-cols-2 gap-2"></div>
+          <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">미국 지수는 한국 시간 밤~새벽에 열려서, 낮에는 어젯밤 마감 기준이에요.</p>
+        </section>
+
+        <!-- 관심 종목 -->
+        <section class="card p-4">
+          <div class="flex justify-between items-center gap-2 mb-1">
+            <h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 관심 종목 <span id="watchCount" class="text-xs text-indigo-600 font-bold"></span></h2>
+            <button type="button" id="editBtn" onclick="toggleEdit()" class="text-xs font-bold text-slate-500 px-2 py-1 rounded-lg hover:bg-slate-100">편집</button>
+          </div>
+          <div id="watchList" class="divide-y divide-slate-100"></div>
+          <form id="addForm" class="mt-3 relative" autocomplete="off">
+            <div class="flex gap-2">
+              <input id="addInput" placeholder="종목 이름·코드 검색 (예: 카카오)" maxlength="30" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white" aria-label="추가할 종목 검색" aria-autocomplete="list" aria-controls="suggest">
+              <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shrink-0">추가</button>
+            </div>
+            <ul id="suggest" role="listbox" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-64 overflow-auto text-sm"></ul>
+          </form>
+          <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
+        </section>
+      </div>
+
+      <!-- 상세 차트 -->
+      <section id="detailSection" class="card p-4 md:p-5 lg:col-span-3 lg:sticky lg:top-4">
+        <div id="detailHead"></div>
+        <div class="mt-3 mb-2">
+          <div class="seg grid grid-cols-5 bg-slate-100 rounded-xl p-0.5 text-xs font-bold whitespace-nowrap" role="group" aria-label="기간" id="rangeSeg">
+            <button type="button" data-range="1d" class="px-2.5 py-1.5 rounded-lg">1일</button>
+            <button type="button" data-range="1m" class="px-2.5 py-1.5 rounded-lg">1개월</button>
+            <button type="button" data-range="3m" class="px-2.5 py-1.5 rounded-lg">3개월</button>
+            <button type="button" data-range="1y" class="px-2.5 py-1.5 rounded-lg">1년</button>
+            <button type="button" data-range="3y" class="px-2.5 py-1.5 rounded-lg">3년</button>
+          </div>
+          <p id="periodChange" class="text-xs font-bold num text-right mt-1.5 min-h-[1rem]"></p>
         </div>
-      </div>
-      <div id="marketGrid" class="grid gap-3"></div>
-      <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">해외 지수는 가장 최근 장의 하루 흐름이에요 (미국 장은 한국 시간 밤~새벽).</p>
-    </section>
+        <div id="detailChartBox" class="relative h-[260px] md:h-[360px]"><canvas id="detailChart" aria-label="가격 차트"></canvas></div>
+        <div id="detailMeta" class="grid grid-cols-4 gap-2 mt-3"></div>
+        <a id="detailLink" href="#" target="_blank" rel="noopener" class="block text-center text-xs font-bold text-indigo-600 mt-3">네이버 증권에서 더 보기 ↗</a>
+      </section>
+    </div>
 
-    <section class="card p-4 md:p-5">
-      <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
-        <h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 관심 종목 <span id="watchCount" class="text-xs text-indigo-600 font-bold"></span></h2>
-        <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="기간">
-          <button type="button" data-range="day" class="px-3 py-1.5 rounded-lg">1일</button>
-          <button type="button" data-range="month3" class="px-3 py-1.5 rounded-lg">3개월</button>
-          <button type="button" data-range="year" class="px-3 py-1.5 rounded-lg">1년</button>
-          <button type="button" data-range="year3" class="px-3 py-1.5 rounded-lg">3년</button>
-        </div>
-      </div>
-      <div id="watchGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
-      <form id="addForm" class="mt-3 flex flex-col sm:flex-row gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
-        <input id="addName" placeholder="종목 이름 (예: 카카오)" maxlength="30" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 bg-white">
-        <input id="addCode" placeholder="종목코드 6자리 (예: 035720)" maxlength="20" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 bg-white">
-        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shrink-0">추가</button>
-      </form>
-      <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
-      <p class="text-[11px] text-slate-400 mt-1.5">국내 종목만 돼요. 종목코드는 네이버 증권에서 종목을 검색하면 이름 옆에 나와요.</p>
-    </section>
-
-    <section id="detailSection" class="card p-4 md:p-5">
-      <div class="flex justify-between items-center gap-2 mb-3">
-        <h2 class="text-sm md:text-base font-extrabold text-slate-900 truncate">🔍 <span id="detailTitle">상세 차트</span></h2>
-        <a id="detailLink" href="#" target="_blank" rel="noopener" class="text-xs font-bold text-indigo-600 shrink-0">네이버 증권에서 보기 ↗</a>
-      </div>
-      <div class="seg flex w-fit bg-slate-100 rounded-xl p-0.5 text-xs font-bold mb-2" role="group" aria-label="봉 종류" id="candleSeg">
-        <button type="button" data-candle="day" class="px-3 py-1.5 rounded-lg">일봉</button>
-        <button type="button" data-candle="week" class="px-3 py-1.5 rounded-lg">주봉</button>
-        <button type="button" data-candle="month" class="px-3 py-1.5 rounded-lg">월봉</button>
-      </div>
-      <div id="detailBox"></div>
-    </section>
-
-    <p class="text-[11px] text-slate-400 text-center px-2">차트는 네이버 증권 차트 이미지예요. 장중에는 1분마다 새로 불러오지만 <b>지연 시세</b>라 실제 거래 가격과 다를 수 있어요.</p>
+    <p class="text-[11px] text-slate-400 text-center px-2 leading-relaxed">시세는 네이버 증권·야후 파이낸스의 공개 데이터예요. 화면을 보고 있는 동안 30초마다 새로 불러오고,<br class="hidden sm:inline"> 실제 거래 가격과 조금 다를 수 있어요. 투자 판단은 증권사 앱에서 꼭 다시 확인하세요.</p>
   </div>
 
   <script>
     const WATCH_KEY = 'argon_watchlist_v1';
+    const API = './api/stock';
+    const IMG = 'https://ssl.pstatic.net/imgfinance/chart';
     const DEFAULT_WATCH = [
       { id: 1, name: '삼성전자', symbol: 'KRX:005930' },
       { id: 2, name: 'SK하이닉스', symbol: 'KRX:000660' }
     ];
-    const IMG = 'https://ssl.pstatic.net/imgfinance/chart';
-    const MARKETS = [
-      { name: '코스피 (오늘)', src: () => `${IMG}/main/KOSPI.png`, url: 'https://finance.naver.com/sise/sise_index.naver?code=KOSPI' },
-      { name: '코스닥 (오늘)', src: () => `${IMG}/main/KOSDAQ.png`, url: 'https://finance.naver.com/sise/sise_index.naver?code=KOSDAQ' },
-      { name: '원/달러 환율 (1개월)', src: () => `${IMG}/marketindex/area/month/FX_USDKRW.png`, url: 'https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW' }
-    ];
-    const WORLD = [
-      ['다우존스', 'DJI@DJI'], ['나스닥', 'NAS@IXIC'], ['S&P 500', 'SPI@SPX'], ['필라델피아 반도체', 'NAS@SOX'],
-      ['니케이 225', 'NII@NI225'], ['상해 종합', 'SHS@000001'], ['항셍', 'HSI@HSI']
-    ].map(([name, code]) => ({ name, src: () => `${IMG}/world/continent/${code}.png`, url: `https://finance.naver.com/world/sise.naver?symbol=${code}` }));
-    let market = load('argon_watch_market_v1', 'kr'); if (!['kr', 'world'].includes(market)) market = 'kr';
-    const RANGE_OLD = { '1D': 'day', '1M': 'month3', '12M': 'year' };   // v5.3 저장값 호환
-    let watch = load(WATCH_KEY, null) || DEFAULT_WATCH.slice();
-    let range = load('argon_watch_range_v1', 'day'); range = RANGE_OLD[range] || range;
-    if (!['day', 'month3', 'year', 'year3'].includes(range)) range = 'day';
-    let candle = load('argon_watch_candle_v1', 'day'); if (!['day', 'week', 'month'].includes(candle)) candle = 'day';
-    let detailSymbol = load('argon_watch_detail_v1', null) || (watch[0] && watch[0].symbol);
-    let stamp = Date.now();
+    // 화면에 쓰는 대상 표기: KRX:종목코드 / IDX:KOSPI / WLD:.DJI / FX:USD
+    const KR_MARKETS = [['IDX:KOSPI', '코스피'], ['IDX:KOSDAQ', '코스닥'], ['FX:USD', '원/달러']];
+    const WORLD_MARKETS = [['WLD:.DJI', '다우존스'], ['WLD:.IXIC', '나스닥'], ['WLD:.INX', 'S&P 500'], ['WLD:.SOX', '필라델피아 반도체'], ['WLD:.N225', '니케이 225'], ['WLD:.SSEC', '상해 종합'], ['WLD:.HSI', '항셍']];
+    const IMG_SRC = {
+      'IDX:KOSPI': `${IMG}/main/KOSPI.png`, 'IDX:KOSDAQ': `${IMG}/main/KOSDAQ.png`, 'FX:USD': `${IMG}/marketindex/area/month/FX_USDKRW.png`,
+      'WLD:.DJI': `${IMG}/world/continent/DJI@DJI.png`, 'WLD:.IXIC': `${IMG}/world/continent/NAS@IXIC.png`, 'WLD:.INX': `${IMG}/world/continent/SPI@SPX.png`,
+      'WLD:.SOX': `${IMG}/world/continent/NAS@SOX.png`, 'WLD:.N225': `${IMG}/world/continent/NII@NI225.png`, 'WLD:.SSEC': `${IMG}/world/continent/SHS@000001.png`, 'WLD:.HSI': `${IMG}/world/continent/HSI@HSI.png`
+    };
+    const NAVER_URL = {
+      'IDX:KOSPI': 'https://finance.naver.com/sise/sise_index.naver?code=KOSPI', 'IDX:KOSDAQ': 'https://finance.naver.com/sise/sise_index.naver?code=KOSDAQ',
+      'FX:USD': 'https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW',
+      'WLD:.DJI': 'DJI@DJI', 'WLD:.IXIC': 'NAS@IXIC', 'WLD:.INX': 'SPI@SPX', 'WLD:.SOX': 'NAS@SOX', 'WLD:.N225': 'NII@NI225', 'WLD:.SSEC': 'SHS@000001', 'WLD:.HSI': 'HSI@HSI'
+    };
+    const RANGES = ['1d', '1m', '3m', '1y', '3y'];
+    const RANGE_TEXT = { '1d': '오늘', '1m': '1개월', '3m': '3개월', '1y': '1년', '3y': '3년' };
 
     function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+    let watch = load(WATCH_KEY, null) || DEFAULT_WATCH.slice();
+    let market = load('argon_watch_market_v1', 'kr'); if (!['kr', 'world'].includes(market)) market = 'kr';
+    let range = load('argon_watch_range_v2', '1d'); if (!RANGES.includes(range)) range = '1d';
+    let target = load('argon_watch_detail_v1', null) || (watch[0] ? watch[0].symbol : 'IDX:KOSPI');
+    let quotes = {}, sparks = {}, apiOk = null, lastAt = 0, editing = false, chart = null, chartReq = 0, loading = false;
+
     const isDark = () => document.documentElement.classList.contains('dark');
-    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const krCode = sym => (/^KRX:(\d{6})$/.exec(sym) || [])[1];
-    const naverUrl = sym => krCode(sym) ? `https://finance.naver.com/item/main.naver?code=${krCode(sym)}` : `https://www.tradingview.com/symbols/${sym.replace(':', '-')}/`;
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const kind = t => t.startsWith('KRX:') ? 'kr' : t.startsWith('IDX:') ? 'idx' : t.startsWith('WLD:') ? 'world' : t.startsWith('FX:') ? 'fx' : null;
+    const codeOf = t => t.slice(t.indexOf(':') + 1);
+    const keyOf = t => `${kind(t)}:${codeOf(t)}`;
+    const isKrStock = t => /^KRX:[0-9A-Z]{6}$/.test(t);
+    const nameOf = t => { const w = watch.find(x => x.symbol === t); if (w) return w.name; const m = [...KR_MARKETS, ...WORLD_MARKETS].find(x => x[0] === t); return m ? m[1] : (quotes[keyOf(t)] || {}).name || codeOf(t); };
+    const naverUrl = t => kind(t) === 'kr' ? `https://finance.naver.com/item/main.naver?code=${codeOf(t)}` : kind(t) === 'world' ? `https://finance.naver.com/world/sise.naver?symbol=${NAVER_URL[t]}` : NAVER_URL[t] || 'https://finance.naver.com/';
+    const digits = t => kind(t) === 'kr' ? 0 : 2;
+    const fmt = (n, d = 0) => n == null || isNaN(n) ? '-' : Number(n).toLocaleString('ko-KR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const dirOf = n => n > 0 ? 'up' : n < 0 ? 'down' : 'flat';
+    const arrow = d => d === 'up' ? '▲' : d === 'down' ? '▼' : '';
+    const rateText = r => r == null ? '-' : `${r > 0 ? '+' : ''}${Number(r).toFixed(2)}%`;
+    const COLORS = { up: '#e11d48', down: '#2563eb', flat: '#64748b' };
+    const DARK_COLORS = { up: '#fb7185', down: '#60a5fa', flat: '#94a3b8' };
+    const color = d => (isDark() ? DARK_COLORS : COLORS)[d] || COLORS.flat;
+    function shortVol(n) { if (n == null) return '-'; if (n >= 1e8) return (n / 1e8).toFixed(1) + '억'; if (n >= 1e4) return Math.round(n / 1e4).toLocaleString() + '만'; return n.toLocaleString(); }
 
-    // 네이버 증권 차트 이미지 (stamp로 캐시 무시)
-    const img = (src, alt) => `<img class="chart-img" src="${src}?t=${stamp}" alt="${esc(alt)}" onerror="this.outerHTML='<p class=&quot;chart-fail&quot;>차트를 불러오지 못했어요</p>'">`;
-    const noChart = sym => `<p class="chart-fail">해외 종목은 차트를 지원하지 않아요.<br><a class="text-indigo-600 font-bold" target="_blank" rel="noopener" href="${naverUrl(sym)}">TradingView에서 보기 ↗</a></p>`;
+    // ---------- 미니 그래프 (SVG) ----------
+    function spark(t, h = 36) {
+      const s = sparks[keyOf(t)], q = quotes[keyOf(t)];
+      if (!s || !s.p || s.p.length < 2) return `<div style="height:${h}px"></div>`;
+      const pts = s.p, base = s.prev != null ? s.prev : (q && q.price != null && q.change != null ? q.price - q.change : pts[0]);
+      const lo = Math.min(...pts, base), hi = Math.max(...pts, base), span = (hi - lo) || 1;
+      const W = 100, H = 32, y = v => (H - 2) - ((v - lo) / span) * (H - 4);
+      const xy = pts.map((v, i) => `${(i / (pts.length - 1) * W).toFixed(2)},${y(v).toFixed(2)}`).join(' ');
+      const d = q ? q.dir : dirOf(pts[pts.length - 1] - base), c = color(d), gid = 'g' + Math.random().toString(36).slice(2, 8);
+      return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="width:100%;height:${h}px;display:block" aria-hidden="true">
+        <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${c}" stop-opacity=".28"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></linearGradient></defs>
+        <line x1="0" x2="${W}" y1="${y(base).toFixed(2)}" y2="${y(base).toFixed(2)}" stroke="${isDark() ? '#475569' : '#cbd5e1'}" stroke-width=".6" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>
+        <polygon points="0,${H} ${xy} ${W},${H}" fill="url(#${gid})"/>
+        <polyline points="${xy}" fill="none" stroke="${c}" stroke-width="1.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+      </svg>`;
+    }
+    const img = (src, alt) => `<img class="chart-img" src="${src}?t=${lastAt || Date.now()}" alt="${esc(alt)}" onerror="this.outerHTML='<p class=&quot;chart-fail&quot;>차트를 불러오지 못했어요</p>'">`;
+    const skel = (w, h) => `<span class="skel inline-block" style="width:${w};height:${h}px"></span>`;
 
-    function renderMarkets() {
-      const world = market === 'world', list = world ? WORLD : MARKETS, g = document.getElementById('marketGrid');
+    // ---------- 데이터 ----------
+    async function fetchQuotes() {
+      const kr = watch.filter(w => isKrStock(w.symbol)).map(w => codeOf(w.symbol));
+      const params = new URLSearchParams({ op: 'quotes', kr: kr.join(','), idx: 'KOSPI,KOSDAQ', world: WORLD_MARKETS.map(m => codeOf(m[0])).join(','), fx: '1', spark: '1' });
+      const r = await fetch(`${API}?${params}`, { cache: 'no-store' });
+      const ct = r.headers.get('content-type') || '';
+      if (!r.ok || !ct.includes('json')) throw new Error('quotes ' + r.status);
+      return r.json();
+    }
+    async function refreshAll(manual) {
+      if (loading) return; loading = true;
+      const btn = document.getElementById('refreshBtn'); btn.style.opacity = '.5';
+      const prev = quotes;
+      try {
+        const j = await fetchQuotes();
+        const next = {};
+        [['kr', j.kr], ['idx', j.idx], ['world', j.world], ['fx', j.fx]].forEach(([k, arr]) => (arr || []).forEach(q => { next[`${k}:${q.id}`] = q; }));
+        quotes = next; sparks = j.spark || {}; apiOk = true; lastAt = Date.now();
+        // 코드로만 추가된 종목은 이름 채우기
+        let renamed = false;
+        watch.forEach(w => { const q = quotes[keyOf(w.symbol)]; if (q && q.name && (w.name === codeOf(w.symbol))) { w.name = q.name; renamed = true; } });
+        if (renamed) save(WATCH_KEY, watch);
+      } catch (e) {
+        console.warn(e);
+        if (apiOk !== true) apiOk = false;   // 한 번도 못 받았으면 이미지 모드
+        lastAt = Date.now();
+      }
+      loading = false; btn.style.opacity = '';
+      renderAll(prev);
+      if (manual || range === '1d') loadChart();
+    }
+
+    // ---------- 그리기 ----------
+    function renderStatus() {
+      const k = quotes['idx:KOSPI'], open = k && k.status === 'OPEN';
+      const t = new Date(lastAt || Date.now()), hm = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+      document.getElementById('liveDot').classList.toggle('hidden', !open);
+      document.getElementById('statusLabel').textContent = apiOk === false ? '실시간 시세를 못 불러와서 차트 이미지로 보여줘요'
+        : apiOk === null ? '불러오는 중…' : `${open ? '국내 장 열림' : '국내 장 마감'} · ${hm} 기준`;
+    }
+    function renderSummary() {
+      const box = document.getElementById('summary'), hero = document.getElementById('hero');
+      const items = watch.map(w => quotes[keyOf(w.symbol)]).filter(q => q && q.rate != null);
+      if (apiOk === false || (!items.length && apiOk)) { box.innerHTML = ''; hero.className = 'card hero-flat p-4 md:p-5'; return; }
+      if (!items.length) { box.innerHTML = `<div class="space-y-2">${skel('60%', 26)}${skel('40%', 14)}</div>`; return; }
+      const up = items.filter(q => q.dir === 'up').length, down = items.filter(q => q.dir === 'down').length;
+      const avg = items.reduce((s, q) => s + q.rate, 0) / items.length, d = dirOf(Math.round(avg * 100));
+      const sorted = items.slice().sort((a, b) => b.rate - a.rate), best = sorted[0], worst = sorted[sorted.length - 1];
+      hero.className = `card hero-${d} p-4 md:p-5`;
+      const k = quotes['idx:KOSPI'];
+      box.innerHTML = `
+        <p class="text-xs font-bold text-slate-500">관심 종목 평균</p>
+        <p class="text-3xl md:text-4xl font-extrabold num ${d}">${arrow(d)} ${rateText(avg)}</p>
+        <div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">
+          <span class="px-2 py-1 rounded-full pill-up">상승 ${up}</span>
+          <span class="px-2 py-1 rounded-full pill-down">하락 ${down}</span>
+          ${items.length - up - down ? `<span class="px-2 py-1 rounded-full pill-flat">보합 ${items.length - up - down}</span>` : ''}
+          ${k ? `<span class="px-2 py-1 rounded-full bg-white/70 border border-slate-200 text-slate-600">코스피 <b class="${k.dir}">${rateText(k.rate)}</b></span>` : ''}
+        </div>
+        ${items.length > 1 ? `<p class="text-xs text-slate-500 mt-2">가장 좋은 종목 <b class="text-slate-800">${esc(best.name)}</b> <b class="${best.dir}">${rateText(best.rate)}</b> · 가장 약한 종목 <b class="text-slate-800">${esc(worst.name)}</b> <b class="${worst.dir}">${rateText(worst.rate)}</b></p>` : ''}`;
+    }
+    function renderMarkets(prev = {}) {
+      const world = market === 'world', list = world ? WORLD_MARKETS : KR_MARKETS, g = document.getElementById('marketGrid');
       document.querySelectorAll('[data-market]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.market === market)));
-      g.className = 'grid gap-3 ' + (world ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3');
       document.getElementById('worldNote').classList.toggle('hidden', !world);
-      g.innerHTML = list.map(m => `<a href="${m.url}" target="_blank" rel="noopener" class="block bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1 mb-1">${m.name}</p>${img(m.src(), m.name)}</a>`).join('');
-      const t = new Date(stamp);
-      document.getElementById('updatedLabel').textContent = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} 기준`;
+      g.className = 'grid gap-2 ' + (apiOk === false ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2');
+      g.innerHTML = list.map(([t, name]) => {
+        const q = quotes[keyOf(t)], sel = t === target ? ' sel' : '';
+        if (apiOk === false) return `<a href="${naverUrl(t)}" target="_blank" rel="noopener" class="block bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1 mb-1">${name}</p>${img(IMG_SRC[t], name)}</a>`;
+        if (!q) return `<div class="bg-slate-50 border border-slate-100 rounded-xl p-2.5 space-y-1.5">${skel('50%', 12)}${skel('70%', 18)}${skel('100%', 30)}</div>`;
+        const p = prev[keyOf(t)], flash = p && p.price !== q.price ? (q.price > p.price ? ' flash-up' : ' flash-down') : '';
+        return `<button type="button" onclick="selectTarget('${t}')" class="tile${sel}${flash} text-left bg-slate-50 border border-slate-100 rounded-xl p-2.5 min-w-0">
+          <div class="flex items-center justify-between gap-1"><p class="text-[11px] font-bold text-slate-500 truncate">${name}</p>${q.status === 'CLOSE' ? '<span class="text-[9px] font-bold text-slate-400 shrink-0">마감</span>' : ''}</div>
+          <p class="text-base font-extrabold num text-slate-900 leading-tight">${fmt(q.price, 2)}</p>
+          <p class="text-[11px] font-bold num ${q.dir}">${arrow(q.dir)} ${fmt(Math.abs(q.change), 2)} (${rateText(q.rate)})</p>
+          <div class="mt-1">${spark(t, 30)}</div>
+        </button>`;
+      }).join('');
     }
-
-    function renderWatch() {
-      const g = document.getElementById('watchGrid');
+    function renderWatch(prev = {}) {
+      const box = document.getElementById('watchList');
       document.getElementById('watchCount').textContent = `${watch.length}개`;
-      document.querySelectorAll('[data-range]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
-      if (!watch.length) { g.innerHTML = `<p class="md:col-span-2 text-xs text-slate-400 text-center py-6">관심 종목이 없어요. 아래에서 추가해 보세요.</p>`; return; }
-      g.innerHTML = watch.map(w => { const code = krCode(w.symbol); return `<div class="bg-slate-50 border ${w.symbol === detailSymbol ? 'border-indigo-300' : 'border-slate-100'} rounded-xl p-2">
-          <div class="flex items-center justify-between gap-2 px-1 mb-1">
-            <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)} <span class="text-[10px] text-slate-400 font-semibold">${esc(code || w.symbol)}</span></p>
-            <div class="flex items-center gap-1 shrink-0">
-              <button type="button" onclick="showDetail('${esc(w.symbol)}')" class="text-[11px] font-bold px-2 py-1 rounded-lg ${w.symbol === detailSymbol ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-indigo-600'}">크게 보기</button>
-              <button type="button" onclick="removeWatch(${w.id})" aria-label="${esc(w.name)} 삭제" class="text-slate-400 hover:text-rose-600 font-bold px-1.5">✕</button>
-            </div>
+      document.getElementById('editBtn').textContent = editing ? '완료' : '편집';
+      if (!watch.length) { box.innerHTML = `<p class="text-xs text-slate-400 text-center py-6">관심 종목이 없어요. 아래에서 추가해 보세요.</p>`; return; }
+      box.innerHTML = watch.map(w => {
+        const t = w.symbol, q = quotes[keyOf(t)], code = codeOf(t), sel = t === target;
+        const del = editing ? `<button type="button" onclick="event.stopPropagation();removeWatch(${w.id})" aria-label="${esc(w.name)} 삭제" class="w-8 h-8 shrink-0 rounded-full bg-rose-50 text-rose-600 font-bold">−</button>` : '';
+        if (!isKrStock(t)) return `<div class="flex items-center gap-2 py-3">${del}<div class="flex-1 min-w-0"><p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)}</p><p class="text-[11px] text-slate-400">해외 종목은 지원하지 않아요 · <a class="text-indigo-600 font-bold" target="_blank" rel="noopener" href="https://www.tradingview.com/symbols/${esc(t.replace(':', '-'))}/">TradingView ↗</a></p></div></div>`;
+        if (apiOk === false) return `<div class="py-3">${editing ? `<div class="flex items-center gap-2 mb-1">${del}<p class="text-sm font-extrabold">${esc(w.name)}</p></div>` : ''}<button type="button" onclick="selectTarget('${esc(t)}')" class="w-full text-left"><p class="text-sm font-extrabold text-slate-900 mb-1 ${editing ? 'hidden' : ''}">${esc(w.name)} <span class="text-[10px] text-slate-400">${esc(code)}</span></p>${img(`${IMG}/item/area/day/${code}.png`, w.name)}</button></div>`;
+        const p = prev[keyOf(t)], flash = q && p && p.price !== q.price ? (q.price > p.price ? ' flash-up' : ' flash-down') : '';
+        return `<div role="button" tabindex="0" onclick="selectTarget('${esc(t)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(t)}')" class="row${flash} flex items-center gap-2.5 py-3 px-1 -mx-1 rounded-lg cursor-pointer ${sel ? 'bg-indigo-50/60' : ''}">
+          ${del}
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)}</p>
+            <p class="text-[10px] text-slate-400 font-semibold">${esc(code)}${q && q.market ? ' · ' + esc(q.market) : ''}${q && q.status === 'CLOSE' ? ' · 마감' : ''}</p>
           </div>
-          ${code ? img(`${IMG}/item/area/${range}/${code}.png`, w.name + ' 차트') : noChart(w.symbol)}
-        </div>`; }).join('');
+          <div class="w-16 sm:w-24 shrink-0">${q ? spark(t, 30) : skel('100%', 30)}</div>
+          <div class="text-right shrink-0 min-w-[84px]">
+            ${q ? `<p class="text-sm font-extrabold num text-slate-900">${fmt(q.price)}</p><p class="text-[11px] font-bold num inline-block px-1.5 py-0.5 rounded-md pill-${q.dir}">${rateText(q.rate)}</p>` : `<div class="space-y-1 flex flex-col items-end">${skel('70px', 14)}${skel('50px', 14)}</div>`}
+          </div>
+        </div>`;
+      }).join('');
+    }
+    function renderDetailHead() {
+      const t = target, q = quotes[keyOf(t)], name = nameOf(t), k = kind(t);
+      document.getElementById('detailLink').href = naverUrl(t);
+      const sub = k === 'kr' ? codeOf(t) : k === 'fx' ? '1달러 = 원' : k === 'idx' ? '국내 지수' : '해외 지수';
+      let html = `<div class="flex items-start justify-between gap-2"><div class="min-w-0"><p class="text-xs font-bold text-slate-500">🔍 ${esc(sub)}${q && q.market && k === 'kr' ? ' · ' + esc(q.market) : ''}</p><h2 class="text-lg md:text-xl font-extrabold text-slate-900 truncate">${esc(name)}</h2></div>`;
+      if (k === 'kr' && !watch.some(w => w.symbol === t)) html += `<button type="button" onclick="addWatch('${esc(codeOf(t))}','${esc(name)}')" class="text-xs font-bold px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white shrink-0">⭐ 관심 추가</button>`;
+      html += '</div>';
+      if (apiOk !== false) {
+        html += q ? `<p class="text-3xl md:text-4xl font-extrabold num text-slate-900 mt-1">${fmt(q.price, digits(t))}<span class="text-base text-slate-400 font-bold ml-1">${k === 'kr' ? '원' : ''}</span></p>
+          <p class="text-sm font-bold num ${q.dir}">${arrow(q.dir)} ${fmt(Math.abs(q.change), digits(t))} (${rateText(q.rate)}) <span class="text-[11px] text-slate-400 font-semibold">${q.status === 'CLOSE' ? '마감 기준' : '전일 대비'}</span></p>`
+          : `<div class="mt-2 space-y-2">${skel('55%', 32)}${skel('35%', 16)}</div>`;
+      }
+      document.getElementById('detailHead').innerHTML = html;
+      const meta = document.getElementById('detailMeta');
+      if (q && apiOk !== false && (k === 'kr' || k === 'idx' || k === 'world')) {
+        const cell = (l, v) => `<div class="bg-slate-50 rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-xs font-extrabold num text-slate-800 truncate">${v}</p></div>`;
+        const dg = k === 'kr' ? 0 : (q.price >= 10000 ? 0 : 2);
+        let html = cell('시가', fmt(q.open, dg)) + cell('고가', `<span class="up">${fmt(q.high, dg)}</span>`) + cell('저가', `<span class="down">${fmt(q.low, dg)}</span>`);
+        if (k === 'kr') html += cell('거래량', shortVol(q.volume)); else if (k === 'idx' && q.value) html += cell('거래대금', esc(q.value));
+        meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
+      } else meta.innerHTML = '';
+    }
+    function renderAll(prev) { renderStatus(); renderSummary(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
+
+    // ---------- 상세 차트 (Chart.js) ----------
+    function timeLabel(ms) {
+      const d = new Date(ms);
+      if (range === '1d') {
+        if (kind(target) === 'world') return d.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      }
+      return range === '3y' || range === '1y' ? `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}` : `${d.getMonth() + 1}/${d.getDate()}`;
+    }
+    async function loadChart() {
+      document.querySelectorAll('[data-range]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
+      const box = document.getElementById('detailChartBox'), t = target, my = ++chartReq;
+      if (apiOk === false || typeof Chart === 'undefined') {
+        if (chart) { chart.destroy(); chart = null; }
+        document.getElementById('periodChange').textContent = '';
+        const src = kind(t) === 'kr' ? `${IMG}/item/candle/${range === '3y' ? 'month' : range === '1y' ? 'week' : 'day'}/${codeOf(t)}.png` : IMG_SRC[t];
+        box.style.height = 'auto'; box.innerHTML = src ? img(src, nameOf(t)) : '<p class="chart-fail">차트를 불러오지 못했어요</p>';
+        return;
+      }
+      if (!box.querySelector('canvas')) { box.style.height = ''; box.innerHTML = '<canvas id="detailChart" aria-label="가격 차트"></canvas>'; }
+      let data;
+      try {
+        const r = await fetch(`${API}?op=chart&kind=${kind(t)}&code=${encodeURIComponent(codeOf(t))}&range=${range}`);
+        if (!r.ok) throw new Error(r.status);
+        data = await r.json();
+      } catch (e) { data = { points: [] }; }
+      if (my !== chartReq) return;   // 그사이 다른 종목·기간을 고름
+      const pts = data.points || [], q = quotes[keyOf(t)];
+      if (pts.length < 2) {
+        if (chart) { chart.destroy(); chart = null; }
+        box.innerHTML = '<p class="chart-fail" style="padding-top:6rem">차트 데이터가 아직 없어요</p>';
+        document.getElementById('periodChange').textContent = '';
+        return;
+      }
+      let base = range === '1d' ? (data.prevClose ?? (q && q.price != null && q.change != null ? q.price - q.change : pts[0][1])) : pts[0][1];
+      const last = pts[pts.length - 1][1], ch = (last - base) / base * 100, d = dirOf(Math.round(ch * 100));
+      const pc = document.getElementById('periodChange');
+      pc.className = `text-xs font-bold num text-right mt-1.5 min-h-[1rem] ${d}`;
+      pc.textContent = range === '1d' ? '' : `${RANGE_TEXT[range]} 동안 ${arrow(d)} ${rateText(ch)}`;   // 1일은 위 등락률과 같아서 생략
+      const c = color(d), grid = isDark() ? 'rgba(148,163,184,.12)' : 'rgba(100,116,139,.12)', tick = isDark() ? '#94a3b8' : '#94a3b8';
+      const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d');
+      const grad = ctx.createLinearGradient(0, 0, 0, box.clientHeight || 300);
+      grad.addColorStop(0, c + '55'); grad.addColorStop(1, c + '00');
+      const labels = pts.map(p => timeLabel(p[0])), dg = digits(t);
+      const datasets = [{ data: pts.map(p => p[1]), borderColor: c, backgroundColor: grad, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: c, tension: .15 }];
+      if (range === '1d') datasets.push({ data: pts.map(() => base), borderColor: isDark() ? '#64748b' : '#94a3b8', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '전일 종가' });
+      if (chart) chart.destroy();
+      chart = new Chart(ctx, {
+        type: 'line', data: { labels, datasets },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { display: false }, tooltip: {
+            displayColors: false, backgroundColor: isDark() ? '#0f172a' : '#1e293b', padding: 8, titleFont: { weight: 'bold' },
+            filter: item => item.datasetIndex === 0,
+            callbacks: { label: it => { const v = it.parsed.y, r = (v - base) / base * 100; return `${fmt(v, dg)}  (${range === '1d' ? '전일 대비' : '기간 시작 대비'} ${rateText(r)})`; } }
+          } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: tick, maxTicksLimit: 5, maxRotation: 0, autoSkip: true, font: { size: 10 } } },
+            y: { position: 'right', grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 5, font: { size: 10 }, callback: v => fmt(v, dg >= 2 && Math.abs(v) < 100 ? 2 : 0) } }
+          }
+        }
+      });
     }
 
-    function renderDetail() {
-      const box = document.getElementById('detailBox');
-      document.querySelectorAll('[data-candle]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.candle === candle)));
-      if (!detailSymbol) { box.innerHTML = `<p class="chart-fail">관심 종목에서 <b>크게 보기</b>를 누르면 여기에 차트가 나와요.</p>`; document.getElementById('detailTitle').textContent = '상세 차트'; return; }
-      const w = watch.find(x => x.symbol === detailSymbol), code = krCode(detailSymbol);
-      document.getElementById('detailTitle').textContent = w ? `${w.name} 상세 차트` : `${detailSymbol} 상세 차트`;
-      const link = document.getElementById('detailLink');
-      link.href = naverUrl(detailSymbol); link.textContent = code ? '네이버 증권에서 보기 ↗' : 'TradingView에서 보기 ↗';
-      document.getElementById('candleSeg').classList.toggle('hidden', !code);
-      box.innerHTML = code ? img(`${IMG}/item/candle/${candle}/${code}.png`, (w ? w.name : code) + ' 캔들 차트') : noChart(detailSymbol);
+    // ---------- 동작 ----------
+    function selectTarget(t) {
+      target = t; save('argon_watch_detail_v1', t);
+      renderMarkets(); renderWatch(); renderDetailHead(); loadChart();
+      if (window.innerWidth < 1024) document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
     }
-    function refreshCharts() { stamp = Date.now(); renderMarkets(); renderWatch(); renderDetail(); }
-    // 장중(평일 09:00~15:40)이고 화면을 보고 있을 때만 1분마다 새로고침
-    setInterval(() => {
-      const t = new Date(), m = t.getHours() * 60 + t.getMinutes();
-      if (document.visibilityState === 'visible' && t.getDay() > 0 && t.getDay() < 6 && m >= 540 && m <= 940) refreshCharts();
-    }, 60000);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - stamp > 60000) refreshCharts(); });
-
-    function showDetail(sym) {
-      detailSymbol = sym; save('argon_watch_detail_v1', sym);
-      renderWatch(); renderDetail();
-      document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
-    }
+    function toggleEdit() { editing = !editing; renderWatch(); }
     function removeWatch(id) {
       const w = watch.find(x => x.id === id); if (!w) return;
       if (!confirm(`관심 종목에서 '${w.name}'을(를) 뺄까요?`)) return;
       watch = watch.filter(x => x.id !== id); save(WATCH_KEY, watch);
-      if (detailSymbol === w.symbol) { detailSymbol = watch[0] ? watch[0].symbol : null; save('argon_watch_detail_v1', detailSymbol); renderDetail(); }
-      renderWatch();
+      if (target === w.symbol) { target = watch[0] ? watch[0].symbol : 'IDX:KOSPI'; save('argon_watch_detail_v1', target); loadChart(); }
+      if (!watch.length) editing = false;
+      renderSummary(); renderWatch(); renderDetailHead();
     }
+    function addWatch(code, name) {
+      const msg = document.getElementById('addMsg'), symbol = 'KRX:' + code;
+      if (watch.some(w => w.symbol === symbol)) { msg.textContent = '이미 관심 종목에 있어요.'; msg.classList.remove('hidden'); return; }
+      watch.push({ id: Date.now(), name: name || code, symbol }); save(WATCH_KEY, watch);
+      msg.classList.add('hidden'); document.getElementById('addInput').value = ''; hideSuggest();
+      target = symbol; save('argon_watch_detail_v1', target);
+      renderWatch(); renderDetailHead(); refreshAll(true);
+    }
+
+    // 종목 검색 (이름 또는 코드)
+    let sugTimer = null, sugItems = [], sugIdx = -1;
+    const sugBox = document.getElementById('suggest'), addInput = document.getElementById('addInput');
+    function hideSuggest() { sugBox.classList.add('hidden'); sugItems = []; sugIdx = -1; addInput.setAttribute('aria-expanded', 'false'); }
+    function drawSuggest() {
+      if (!sugItems.length) { sugBox.innerHTML = '<li class="px-3 py-2.5 text-xs text-slate-400">검색 결과가 없어요</li>'; }
+      else sugBox.innerHTML = sugItems.map((s, i) => `<li role="option" aria-selected="${i === sugIdx}" data-i="${i}" class="px-3 py-2.5 flex justify-between gap-2 cursor-pointer ${i === sugIdx ? 'bg-indigo-50' : 'hover:bg-slate-50'}"><span class="font-bold text-slate-800 truncate">${esc(s.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${esc(s.code)} · ${esc(s.market)}</span></li>`).join('');
+      sugBox.classList.remove('hidden'); addInput.setAttribute('aria-expanded', 'true');
+    }
+    addInput.addEventListener('input', () => {
+      clearTimeout(sugTimer);
+      const q = addInput.value.trim();
+      if (!q || apiOk === false) return hideSuggest();
+      sugTimer = setTimeout(async () => {
+        try {
+          const r = await fetch(`${API}?op=search&q=${encodeURIComponent(q)}`); if (!r.ok) throw 0;
+          const j = await r.json(); if (addInput.value.trim() !== q) return;
+          sugItems = j.items || []; sugIdx = sugItems.length ? 0 : -1; drawSuggest();
+        } catch (e) { hideSuggest(); }
+      }, 220);
+    });
+    addInput.addEventListener('keydown', e => {
+      if (sugBox.classList.contains('hidden') || !sugItems.length) { if (e.key === 'Escape') hideSuggest(); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); sugIdx = (sugIdx + 1) % sugItems.length; drawSuggest(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sugIdx = (sugIdx - 1 + sugItems.length) % sugItems.length; drawSuggest(); }
+      else if (e.key === 'Escape') hideSuggest();
+    });
+    sugBox.addEventListener('mousedown', e => { const li = e.target.closest('[data-i]'); if (!li) return; e.preventDefault(); const s = sugItems[+li.dataset.i]; addWatch(s.code, s.name); });
+    addInput.addEventListener('blur', () => setTimeout(hideSuggest, 150));
     document.getElementById('addForm').addEventListener('submit', e => {
       e.preventDefault();
-      const msg = document.getElementById('addMsg'), name = document.getElementById('addName').value.trim();
-      let code = document.getElementById('addCode').value.trim().toUpperCase().replace(/\s+/g, '');
-      const say = t => { msg.textContent = t; msg.classList.remove('hidden'); };
-      let symbol = '';
-      code = code.replace(/^KRX:/, '');
-      if (/^\d{6}$/.test(code)) symbol = 'KRX:' + code;
-      else return say('종목코드 6자리 숫자로 넣어주세요. (예: 카카오 035720)');
-      if (watch.some(w => w.symbol === symbol)) return say('이미 관심 종목에 있어요.');
-      watch.push({ id: Date.now(), name: name || (krCode(symbol) || symbol), symbol }); save(WATCH_KEY, watch);
-      msg.classList.add('hidden'); e.target.reset(); renderWatch();
-      if (!detailSymbol) showDetail(symbol);
+      const msg = document.getElementById('addMsg'), v = addInput.value.trim().toUpperCase().replace(/^KRX:/, '');
+      if (sugItems.length && sugIdx >= 0) { const s = sugItems[sugIdx]; return addWatch(s.code, s.name); }
+      if (/^[0-9A-Z]{6}$/.test(v)) return addWatch(v, '');
+      msg.textContent = apiOk === false ? '종목코드 6자리로 넣어주세요. (예: 카카오 035720)' : '목록에서 종목을 골라주세요. 이름이나 6자리 코드로 검색돼요.';
+      msg.classList.remove('hidden');
     });
-    document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v1', range); renderWatch(); }));
+
     document.querySelectorAll('[data-market]').forEach(b => b.addEventListener('click', () => { market = b.dataset.market; save('argon_watch_market_v1', market); renderMarkets(); }));
-    document.querySelectorAll('[data-candle]').forEach(b => b.addEventListener('click', () => { candle = b.dataset.candle; save('argon_watch_candle_v1', candle); renderDetail(); }));
+    document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v2', range); loadChart(); }));
 
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
     function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
@@ -228,14 +482,17 @@
       const on = !isDark(); document.documentElement.classList.toggle('dark', on);
       try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
       document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
-      // 차트 이미지는 CSS 필터로 다크 모드 적용
+      renderAll(); loadChart();
     }
 
-    const d = new Date();
-    document.getElementById('todayLabel').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
+    // 화면을 보고 있을 때만 30초마다 새로고침
+    setInterval(() => { if (document.visibilityState === 'visible') refreshAll(false); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - lastAt > 20000) refreshAll(false); });
+
     document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
     if (load(WATCH_KEY, null) === null) save(WATCH_KEY, watch);
-    renderMarkets(); renderWatch(); renderDetail();
+    renderAll();
+    refreshAll(true);
   </script>
 </body>
 </html>
