@@ -62,8 +62,15 @@
     </header>
 
     <section class="card p-4 md:p-5">
-      <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2><span id="updatedLabel" class="text-[11px] text-slate-400"></span></div>
-      <div id="marketGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수 <span id="updatedLabel" class="text-[11px] text-slate-400 font-semibold"></span></h2>
+        <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장">
+          <button type="button" data-market="kr" class="px-3 py-1.5 rounded-lg">🇰🇷 국내</button>
+          <button type="button" data-market="world" class="px-3 py-1.5 rounded-lg">🌎 해외</button>
+        </div>
+      </div>
+      <div id="marketGrid" class="grid gap-3"></div>
+      <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">해외 지수는 가장 최근 장의 하루 흐름이에요 (미국 장은 한국 시간 밤~새벽).</p>
     </section>
 
     <section class="card p-4 md:p-5">
@@ -114,6 +121,11 @@
       { name: '코스닥 (오늘)', src: () => `${IMG}/main/KOSDAQ.png`, url: 'https://finance.naver.com/sise/sise_index.naver?code=KOSDAQ' },
       { name: '원/달러 환율 (1개월)', src: () => `${IMG}/marketindex/area/month/FX_USDKRW.png`, url: 'https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW' }
     ];
+    const WORLD = [
+      ['다우존스', 'DJI@DJI'], ['나스닥', 'NAS@IXIC'], ['S&P 500', 'SPI@SPX'], ['필라델피아 반도체', 'NAS@SOX'],
+      ['니케이 225', 'NII@NI225'], ['상해 종합', 'SHS@000001'], ['항셍', 'HSI@HSI']
+    ].map(([name, code]) => ({ name, src: () => `${IMG}/world/continent/${code}.png`, url: `https://finance.naver.com/world/sise.naver?symbol=${code}` }));
+    let market = load('argon_watch_market_v1', 'kr'); if (!['kr', 'world'].includes(market)) market = 'kr';
     const RANGE_OLD = { '1D': 'day', '1M': 'month3', '12M': 'year' };   // v5.3 저장값 호환
     let watch = load(WATCH_KEY, null) || DEFAULT_WATCH.slice();
     let range = load('argon_watch_range_v1', 'day'); range = RANGE_OLD[range] || range;
@@ -134,7 +146,11 @@
     const noChart = sym => `<p class="chart-fail">해외 종목은 차트를 지원하지 않아요.<br><a class="text-indigo-600 font-bold" target="_blank" rel="noopener" href="${naverUrl(sym)}">TradingView에서 보기 ↗</a></p>`;
 
     function renderMarkets() {
-      document.getElementById('marketGrid').innerHTML = MARKETS.map(m => `<a href="${m.url}" target="_blank" rel="noopener" class="block bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1 mb-1">${m.name}</p>${img(m.src(), m.name)}</a>`).join('');
+      const world = market === 'world', list = world ? WORLD : MARKETS, g = document.getElementById('marketGrid');
+      document.querySelectorAll('[data-market]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.market === market)));
+      g.className = 'grid gap-3 ' + (world ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1 sm:grid-cols-3');
+      document.getElementById('worldNote').classList.toggle('hidden', !world);
+      g.innerHTML = list.map(m => `<a href="${m.url}" target="_blank" rel="noopener" class="block bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1 mb-1">${m.name}</p>${img(m.src(), m.name)}</a>`).join('');
       const t = new Date(stamp);
       document.getElementById('updatedLabel').textContent = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} 기준`;
     }
@@ -202,6 +218,7 @@
       if (!detailSymbol) showDetail(symbol);
     });
     document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v1', range); renderWatch(); }));
+    document.querySelectorAll('[data-market]').forEach(b => b.addEventListener('click', () => { market = b.dataset.market; save('argon_watch_market_v1', market); renderMarkets(); }));
     document.querySelectorAll('[data-candle]').forEach(b => b.addEventListener('click', () => { candle = b.dataset.candle; save('argon_watch_candle_v1', candle); renderDetail(); }));
 
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
