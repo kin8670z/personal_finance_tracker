@@ -48,6 +48,7 @@
     .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
     .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
     .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
     .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
     .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
     .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
@@ -129,6 +130,7 @@
       <!-- 상세 차트 -->
       <section id="detailSection" class="card p-4 md:p-5 lg:col-span-3 lg:sticky lg:top-4">
         <div id="detailHead"></div>
+        <div id="holdBox"></div>
         <div class="mt-3 mb-2">
           <div class="seg grid grid-cols-5 bg-slate-100 rounded-xl p-0.5 text-xs font-bold whitespace-nowrap" role="group" aria-label="기간" id="rangeSeg">
             <button type="button" data-range="1d" class="px-2.5 py-1.5 rounded-lg">1일</button>
@@ -140,6 +142,7 @@
           <p id="periodChange" class="text-xs font-bold num text-right mt-1.5 min-h-[1rem]"></p>
         </div>
         <div id="detailChartBox" class="relative h-[260px] md:h-[360px]"><canvas id="detailChart" aria-label="가격 차트"></canvas></div>
+        <p id="avgNote" class="hidden text-[10px] text-amber-600 font-bold text-right mt-1">— 주황 점선: 내 평단가</p>
         <div id="detailMeta" class="grid grid-cols-4 gap-2 mt-3"></div>
         <a id="detailLink" href="#" target="_blank" rel="noopener" class="block text-center text-xs font-bold text-indigo-600 mt-3">네이버 증권에서 더 보기 ↗</a>
       </section>
@@ -197,6 +200,16 @@
     const COLORS = { up: '#e11d48', down: '#2563eb', flat: '#64748b' };
     const DARK_COLORS = { up: '#fb7185', down: '#60a5fa', flat: '#94a3b8' };
     const color = d => (isDark() ? DARK_COLORS : COLORS)[d] || COLORS.flat;
+    // 보유 종목: 관심 종목 항목에 qty(수량)·avg(평단가)를 함께 저장 (이 기기 브라우저에만 저장, 서버로 안 보냄)
+    const held = w => !!(w && w.qty > 0 && w.avg > 0);
+    function position(w) {
+      const q = quotes[keyOf(w.symbol)];
+      if (!held(w) || !q || q.price == null) return null;
+      const cost = w.qty * w.avg, value = w.qty * q.price, pl = value - cost;
+      return { cost, value, pl, rate: pl / cost * 100, today: q.change != null ? w.qty * q.change : 0, dir: dirOf(Math.round(pl)) };
+    }
+    const signed = n => `${n > 0 ? '+' : n < 0 ? '-' : ''}${fmt(Math.abs(Math.round(n)))}`;
+    const parseNum = v => { const n = Number(String(v || '').replace(/[,\s원주]/g, '')); return isFinite(n) ? n : NaN; };
     function shortVol(n) { if (n == null) return '-'; if (n >= 1e8) return (n / 1e8).toFixed(1) + '억'; if (n >= 1e4) return Math.round(n / 1e4).toLocaleString() + '만'; return n.toLocaleString(); }
 
     // ---------- 미니 그래프 (SVG) ----------
@@ -261,16 +274,35 @@
     function renderSummary() {
       const box = document.getElementById('summary'), hero = document.getElementById('hero');
       const items = watch.map(w => quotes[keyOf(w.symbol)]).filter(q => q && q.rate != null);
+      const holds = watch.filter(held), pos = holds.map(position).filter(Boolean);
       if (apiOk === false || (!items.length && apiOk)) { box.innerHTML = ''; hero.className = 'card hero-flat p-4 md:p-5'; return; }
       if (!items.length) { box.innerHTML = `<div class="space-y-2">${skel('60%', 26)}${skel('40%', 14)}</div>`; return; }
       const up = items.filter(q => q.dir === 'up').length, down = items.filter(q => q.dir === 'down').length;
       const avg = items.reduce((s, q) => s + q.rate, 0) / items.length, d = dirOf(Math.round(avg * 100));
       const sorted = items.slice().sort((a, b) => b.rate - a.rate), best = sorted[0], worst = sorted[sorted.length - 1];
-      hero.className = `card hero-${d} p-4 md:p-5`;
       const k = quotes['idx:KOSPI'];
-      box.innerHTML = `
+      let top;
+      if (pos.length) {
+        // 내 주식: 평가금액·평가손익·오늘 손익
+        const cost = pos.reduce((a, p) => a + p.cost, 0), value = pos.reduce((a, p) => a + p.value, 0), pl = value - cost, today = pos.reduce((a, p) => a + p.today, 0);
+        const pd = dirOf(Math.round(pl)), td = dirOf(Math.round(today)), tRate = value - today ? today / (value - today) * 100 : 0;
+        hero.className = `card hero-${pd} p-4 md:p-5`;
+        top = `
+        <p class="text-xs font-bold text-slate-500">내 주식 평가금액 <span class="text-slate-400 font-semibold">· ${pos.length}종목</span></p>
+        <p class="text-3xl md:text-4xl font-extrabold num text-slate-900">${fmt(Math.round(value))}<span class="text-base text-slate-400 font-bold ml-1">원</span></p>
+        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-sm font-bold num">
+          <span><span class="text-slate-500 text-xs">평가손익</span> <span class="${pd}">${signed(pl)}원 (${rateText(pl / cost * 100)})</span></span>
+          <span><span class="text-slate-500 text-xs">오늘</span> <span class="${td}">${signed(today)}원 (${rateText(tRate)})</span></span>
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">매입금액 ${fmt(Math.round(cost))}원 · 수수료·세금 제외</p>
+        <p class="text-xs font-bold text-slate-500 mt-3">관심 종목 평균 <span class="num ${d}">${arrow(d)} ${rateText(avg)}</span></p>`;
+      } else {
+        hero.className = `card hero-${d} p-4 md:p-5`;
+        top = `
         <p class="text-xs font-bold text-slate-500">관심 종목 평균</p>
-        <p class="text-3xl md:text-4xl font-extrabold num ${d}">${arrow(d)} ${rateText(avg)}</p>
+        <p class="text-3xl md:text-4xl font-extrabold num ${d}">${arrow(d)} ${rateText(avg)}</p>`;
+      }
+      box.innerHTML = top + `
         <div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">
           <span class="px-2 py-1 rounded-full pill-up">상승 ${up}</span>
           <span class="px-2 py-1 rounded-full pill-down">하락 ${down}</span>
@@ -313,6 +345,7 @@
           <div class="min-w-0 flex-1">
             <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)}</p>
             <p class="text-[10px] text-slate-400 font-semibold">${esc(code)}${q && q.market ? ' · ' + esc(q.market) : ''}${q && q.status === 'CLOSE' ? ' · 마감' : ''}</p>
+            ${held(w) ? (() => { const ps = position(w); return `<p class="text-[11px] font-bold num truncate"><span class="text-indigo-600">${fmt(w.qty)}주</span>${ps ? ` <span class="${ps.dir}">${signed(ps.pl)}원 (${rateText(ps.rate)})</span>` : ''}</p>`; })() : ''}
           </div>
           <div class="w-16 sm:w-24 shrink-0">${q ? spark(t, 30) : skel('100%', 30)}</div>
           <div class="text-right shrink-0 min-w-[84px]">
@@ -334,7 +367,67 @@
           : `<div class="mt-2 space-y-2">${skel('55%', 32)}${skel('35%', 16)}</div>`;
       }
       document.getElementById('detailHead').innerHTML = html;
+      renderHold();
       renderMeta();
+    }
+    let holdEditing = false;
+    function renderHold() {
+      const box = document.getElementById('holdBox'), t = target, w = watch.find(x => x.symbol === t);
+      if (!holdEditing) box.dataset.t = '';
+      if (!w || !isKrStock(t)) { box.innerHTML = ''; return; }
+      if (holdEditing) {
+        if (box.dataset.t === t && document.getElementById('holdForm')) return;   // 자동 갱신 때 입력 중인 값 유지
+        box.dataset.t = t;
+        box.innerHTML = `<form id="holdForm" class="mt-3 bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 space-y-2" autocomplete="off">
+            <p class="text-xs font-extrabold text-indigo-700">💼 내 보유 입력</p>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-[11px] font-bold text-slate-500">보유 수량 (주)<input id="holdQty" inputmode="numeric" value="${held(w) ? w.qty : ''}" placeholder="예: 10" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+              <label class="text-[11px] font-bold text-slate-500">평단가 (원)<input id="holdAvg" inputmode="decimal" value="${held(w) ? w.avg : ''}" placeholder="예: 180,000" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+            </div>
+            <p id="holdMsg" class="text-xs text-rose-600 hidden"></p>
+            <div class="flex gap-2">
+              <button type="submit" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg">저장</button>
+              ${held(w) ? `<button type="button" onclick="clearHold()" class="px-3 py-2 bg-white border border-slate-200 text-rose-600 font-bold rounded-lg">보유 삭제</button>` : ''}
+              <button type="button" onclick="holdEditing=false;renderHold()" class="px-3 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg">취소</button>
+            </div>
+            <p class="text-[10px] text-slate-400">입력한 값은 이 기기에만 저장되고, 가계부 백업 파일에 함께 들어가요.</p>
+          </form>`;
+        document.getElementById('holdForm').addEventListener('submit', saveHold);
+        document.getElementById('holdQty').focus();
+        return;
+      }
+      if (!held(w)) {
+        box.innerHTML = `<button type="button" onclick="editHold()" class="mt-3 w-full py-2.5 rounded-xl border border-dashed border-indigo-300 text-indigo-600 text-sm font-bold hover:bg-indigo-50">💼 보유 수량·평단가 입력하고 평가손익 보기</button>`;
+        return;
+      }
+      const ps = position(w), cell = (l, v, cls = 'text-slate-800') => `<div class="min-w-0"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-sm font-extrabold num truncate ${cls}">${v}</p></div>`;
+      box.innerHTML = `<div class="mt-3 bg-indigo-50/60 border border-indigo-100 rounded-xl p-3">
+          <div class="flex items-center justify-between mb-2"><p class="text-xs font-extrabold text-indigo-700">💼 내 보유</p><button type="button" onclick="editHold()" class="text-[11px] font-bold text-indigo-600 px-2 py-0.5 rounded-md hover:bg-indigo-100">수정</button></div>
+          ${ps ? `<div class="flex items-end justify-between gap-2 mb-2">
+              <div><p class="text-[10px] font-bold text-slate-400">평가손익</p><p class="text-xl font-extrabold num ${ps.dir}">${signed(ps.pl)}원</p></div>
+              <span class="text-sm font-extrabold num px-2 py-1 rounded-lg pill-${ps.dir}">${rateText(ps.rate)}</span>
+            </div>` : `<div class="mb-2">${skel('60%', 24)}</div>`}
+          <div class="grid grid-cols-3 gap-x-2 gap-y-2">
+            ${cell('보유 수량', `${fmt(w.qty)}주`)}${cell('평단가', `${fmt(w.avg)}원`)}${cell('오늘 손익', ps ? `${signed(ps.today)}원` : '-', ps ? dirOf(Math.round(ps.today)) : '')}
+            ${cell('매입금액', `${fmt(Math.round(w.qty * w.avg))}원`)}${cell('평가금액', ps ? `${fmt(Math.round(ps.value))}원` : '-')}${cell('현재가', ps ? `${fmt(quotes[keyOf(t)].price)}원` : '-')}
+          </div>
+        </div>`;
+    }
+    function editHold() { holdEditing = true; renderHold(); }
+    function saveHold(e) {
+      e.preventDefault();
+      const w = watch.find(x => x.symbol === target), msg = document.getElementById('holdMsg');
+      const qty = parseNum(document.getElementById('holdQty').value), avg = parseNum(document.getElementById('holdAvg').value);
+      if (!(qty > 0) || !Number.isInteger(qty)) { msg.textContent = '보유 수량은 1 이상의 정수로 넣어주세요.'; msg.classList.remove('hidden'); return; }
+      if (!(avg > 0)) { msg.textContent = '평단가를 0보다 큰 숫자로 넣어주세요.'; msg.classList.remove('hidden'); return; }
+      w.qty = qty; w.avg = avg; save(WATCH_KEY, watch);
+      holdEditing = false; renderSummary(); renderWatch(); renderHold(); loadChart();
+    }
+    function clearHold() {
+      const w = watch.find(x => x.symbol === target);
+      if (!w || !confirm(`'${w.name}' 보유 정보를 지울까요? (관심 종목은 그대로 남아요)`)) return;
+      delete w.qty; delete w.avg; save(WATCH_KEY, watch);
+      holdEditing = false; renderSummary(); renderWatch(); renderHold(); loadChart();
     }
     // 아래 4칸: 1일은 오늘 시세, 다른 기간은 그 기간의 시작가·최고가·최저가·평균 거래량
     let periodStats = null;   // { target, range, stats }
@@ -408,6 +501,9 @@
       grad.addColorStop(0, c + '55'); grad.addColorStop(1, c + '00');
       const labels = pts.map(p => timeLabel(p[0])), dg = digits(t);
       const datasets = [{ data: pts.map(p => p[1]), borderColor: c, backgroundColor: grad, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: c, tension: .15 }];
+      const hw = watch.find(x => x.symbol === t);
+      if (held(hw)) datasets.push({ data: pts.map(() => hw.avg), borderColor: '#f59e0b', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '내 평단가' });
+      document.getElementById('avgNote').classList.toggle('hidden', !held(hw));
       if (range === '1d') datasets.push({ data: pts.map(() => base), borderColor: isDark() ? '#64748b' : '#94a3b8', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '전일 종가' });
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
@@ -430,6 +526,7 @@
 
     // ---------- 동작 ----------
     function selectTarget(t) {
+      holdEditing = false;
       target = t; save('argon_watch_detail_v1', t);
       renderMarkets(); renderWatch(); renderDetailHead(); loadChart();
       if (window.innerWidth < 1024) document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
