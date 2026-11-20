@@ -342,7 +342,7 @@
       const t = target, k = kind(t), q = quotes[keyOf(t)], meta = document.getElementById('detailMeta');
       if (apiOk === false) { meta.innerHTML = ''; return; }
       const cell = (l, v, sub) => `<div class="bg-slate-50 rounded-lg px-2 py-1.5 text-center min-w-0"><p class="text-[10px] font-bold text-slate-400 truncate">${l}</p><p class="text-xs font-extrabold num text-slate-800 truncate">${v}</p>${sub ? `<p class="text-[9px] text-slate-400 num">${sub}</p>` : ''}</div>`;
-      const day = ms => { const d = new Date(ms); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}`; };
+      const day = ms => { const d = new Date(ms); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}${range === '3y' ? ' 주' : ''}`; };   // 3년은 주봉이라 그 주의 시작일
       let html = '';
       if (range === '1d') {
         if (!q || k === 'fx') { meta.innerHTML = ''; return; }
