@@ -109,7 +109,7 @@
         <section id="pfSection" class="card p-4 hidden">
           <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🍩 내 포트폴리오</h2><span id="pfTotal" class="text-xs font-bold text-slate-500 num"></span></div>
           <div class="flex items-center gap-4">
-            <div class="relative w-32 h-32 shrink-0"><canvas id="pfChart" aria-label="보유 종목 비중 도넛 차트"></canvas><div id="pfCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"></div></div>
+            <div class="relative w-28 h-28 shrink-0"><canvas id="pfChart" aria-label="보유 종목 비중 도넛 차트"></canvas><div id="pfCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"></div></div>
             <ul id="pfList" class="flex-1 min-w-0 space-y-1"></ul>
           </div>
         </section>
@@ -346,7 +346,7 @@
           ${items.length - up - down ? `<span class="px-2 py-1 rounded-full pill-flat">보합 ${items.length - up - down}</span>` : ''}
           ${k ? `<span class="px-2 py-1 rounded-full bg-white/70 border border-slate-200 text-slate-600">코스피 <b class="${k.dir}">${rateText(k.rate)}</b></span>` : ''}
         </div>
-        ${(() => { const al = watch.map(w => [w, alertOf(w)]).filter(x => x[1]); return al.length ? `<div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">${al.map(([w, a]) => `<button type="button" onclick="selectTarget('${esc(w.symbol)}')" class="px-2 py-1 rounded-full ${a.cls}">${a.text} · ${esc(w.name)}</button>`).join('')}</div>` : ''; })()}
+        ${(() => { const al = watch.map(w => [w, alertOf(w)]).filter(x => x[1]); return al.length ? `<div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">${al.map(([w, a]) => `<span role="button" tabindex="0" onclick="selectTarget('${esc(w.symbol)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(w.symbol)}')" class="px-2 py-1 rounded-full cursor-pointer ${a.cls}">${a.text} · ${esc(w.name)}</span>`).join('')}</div>` : ''; })()}
         ${items.length > 1 ? `<p class="text-xs text-slate-500 mt-2">가장 좋은 종목 <b class="text-slate-800">${esc(best.name)}</b> <b class="${best.dir}">${rateText(best.rate)}</b> · 가장 약한 종목 <b class="text-slate-800">${esc(worst.name)}</b> <b class="${worst.dir}">${rateText(worst.rate)}</b></p>` : ''}`;
     }
     let pfChart = null;
@@ -359,12 +359,12 @@
       document.getElementById('pfTotal').textContent = `${rows.length}종목 · ${fmt(Math.round(total))}원`;
       const top = rows[0];
       document.getElementById('pfCenter').innerHTML = `<p class="text-[10px] font-bold text-slate-400">최대 비중</p><p class="text-sm font-extrabold num text-slate-900">${(top.ps.value / total * 100).toFixed(0)}%</p>`;
-      document.getElementById('pfList').innerHTML = rows.map((r, i) => `<li><button type="button" onclick="selectTarget('${esc(r.w.symbol)}')" class="w-full flex items-center gap-2 text-left text-xs py-0.5">
+      document.getElementById('pfList').innerHTML = rows.map((r, i) => `<li><div role="button" tabindex="0" onclick="selectTarget('${esc(r.w.symbol)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(r.w.symbol)}')" class="w-full flex items-center gap-2 text-left text-xs py-1 cursor-pointer">
           <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${PF_COLORS[i % PF_COLORS.length]}"></span>
           <span class="font-bold text-slate-800 truncate flex-1">${esc(r.w.name)}</span>
           <span class="num font-extrabold text-slate-700 w-11 text-right">${(r.ps.value / total * 100).toFixed(1)}%</span>
           <span class="num font-bold w-14 text-right ${r.ps.dir}">${rateText(r.ps.rate)}</span>
-        </button></li>`).join('');
+        </div></li>`).join('');
       if (typeof Chart === 'undefined') return;
       const data = rows.map(r => r.ps.value), colors = rows.map((r, i) => PF_COLORS[i % PF_COLORS.length]);
       if (pfChart && pfChart.data.labels.join() === rows.map(r => r.w.name).join()) { pfChart.data.datasets[0].data = data; pfChart.data.datasets[0].borderColor = isDark() ? '#1e293b' : '#fff'; pfChart.update('none'); return; }
