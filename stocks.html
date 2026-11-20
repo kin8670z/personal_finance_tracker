@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <title>아르곤 주식 현황</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    .tv-box { position: relative; min-height: 140px; }
+    .tv-box .tradingview-widget-copyright { display: none; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop { transition: none; } }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">아르곤</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./stocks.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📈 <span>주식 현황</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+
+  <div class="w-full max-w-7xl mx-auto space-y-3.5 md:space-y-5">
+    <header class="card p-3.5 sm:p-4 md:px-6 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">📈 오늘의 주식 현황</h1>
+      </div>
+      <span id="todayLabel" class="text-xs font-bold text-slate-500 shrink-0"></span>
+    </header>
+
+    <section class="card p-4 md:p-5">
+      <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2><span class="text-[11px] text-slate-400">오늘 하루 흐름</span></div>
+      <div id="marketGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+    </section>
+
+    <section class="card p-4 md:p-5">
+      <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 관심 종목 <span id="watchCount" class="text-xs text-indigo-600 font-bold"></span></h2>
+        <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="기간">
+          <button type="button" data-range="1D" class="px-3 py-1.5 rounded-lg">1일</button>
+          <button type="button" data-range="1M" class="px-3 py-1.5 rounded-lg">1개월</button>
+          <button type="button" data-range="12M" class="px-3 py-1.5 rounded-lg">1년</button>
+        </div>
+      </div>
+      <div id="watchGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+      <form id="addForm" class="mt-3 flex flex-col sm:flex-row gap-2 bg-slate-50 border border-slate-200 rounded-xl p-3">
+        <input id="addName" placeholder="종목 이름 (예: 카카오)" maxlength="30" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 bg-white">
+        <input id="addCode" placeholder="종목코드 6자리 (예: 035720)" maxlength="20" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-3 py-2 bg-white">
+        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shrink-0">추가</button>
+      </form>
+      <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
+      <p class="text-[11px] text-slate-400 mt-1.5">해외 종목은 <b>NASDAQ:AAPL</b>처럼 거래소:심볼로 넣으면 돼요.</p>
+    </section>
+
+    <section id="detailSection" class="card p-4 md:p-5">
+      <div class="flex justify-between items-center gap-2 mb-3">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900 truncate">🔍 <span id="detailTitle">상세 차트</span></h2>
+        <a id="detailLink" href="#" target="_blank" rel="noopener" class="text-xs font-bold text-indigo-600 shrink-0">네이버 증권에서 보기 ↗</a>
+      </div>
+      <div id="detailBox" class="tv-box h-[420px] md:h-[520px] rounded-xl overflow-hidden"></div>
+    </section>
+
+    <p class="text-[11px] text-slate-400 text-center px-2">차트와 시세는 TradingView 위젯으로 보여주는 <b>지연 시세</b>예요. 실제 거래 가격과 다를 수 있어요.</p>
+  </div>
+
+  <script>
+    const WATCH_KEY = 'argon_watchlist_v1';
+    const DEFAULT_WATCH = [
+      { id: 1, name: '삼성전자', symbol: 'KRX:005930' },
+      { id: 2, name: 'SK하이닉스', symbol: 'KRX:000660' }
+    ];
+    const MARKETS = [
+      { name: '코스피', symbol: 'KRX:KOSPI' },
+      { name: '코스닥', symbol: 'KRX:KOSDAQ' },
+      { name: '원/달러 환율', symbol: 'FX_IDC:USDKRW' }
+    ];
+    let watch = load(WATCH_KEY, null) || DEFAULT_WATCH.slice();
+    let range = load('argon_watch_range_v1', '1D');
+    let detailSymbol = load('argon_watch_detail_v1', null) || (watch[0] && watch[0].symbol);
+
+    function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const krCode = sym => (/^KRX:(\d{6})$/.exec(sym) || [])[1];
+    const naverUrl = sym => krCode(sym) ? `https://finance.naver.com/item/main.naver?code=${krCode(sym)}` : `https://www.tradingview.com/symbols/${sym.replace(':', '-')}/`;
+
+    // TradingView 위젯: 컨테이너 + 설정을 담은 script 태그를 넣으면 iframe으로 그려짐
+    function mountWidget(el, kind, config) {
+      el.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'tradingview-widget-container';
+      wrap.style.height = '100%'; wrap.style.width = '100%';
+      const inner = document.createElement('div');
+      inner.className = 'tradingview-widget-container__widget';
+      inner.style.height = '100%'; inner.style.width = '100%';
+      const s = document.createElement('script');
+      s.type = 'text/javascript'; s.async = true;
+      s.src = `https://s3.tradingview.com/external-embedding/embed-widget-${kind}.js`;
+      s.textContent = JSON.stringify(config);
+      wrap.appendChild(inner); wrap.appendChild(s);
+      el.appendChild(wrap);
+    }
+    const mini = (el, symbol, dateRange) => mountWidget(el, 'mini-symbol-overview', {
+      symbol, width: '100%', height: '100%', locale: 'kr', dateRange, colorTheme: isDark() ? 'dark' : 'light',
+      isTransparent: true, autosize: true, largeChartUrl: '', chartOnly: false, noTimeScale: false
+    });
+
+    function renderMarkets() {
+      const g = document.getElementById('marketGrid');
+      g.innerHTML = MARKETS.map((m, i) => `<div class="bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1">${m.name}</p><div class="tv-box h-[150px]" id="mk${i}"></div></div>`).join('');
+      MARKETS.forEach((m, i) => mini(document.getElementById('mk' + i), m.symbol, '1D'));
+    }
+
+    function renderWatch() {
+      const g = document.getElementById('watchGrid');
+      document.getElementById('watchCount').textContent = `${watch.length}개`;
+      document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
+      if (!watch.length) { g.innerHTML = `<p class="md:col-span-2 text-xs text-slate-400 text-center py-6">관심 종목이 없어요. 아래에서 추가해 보세요.</p>`; return; }
+      g.innerHTML = watch.map(w => `<div class="bg-slate-50 border ${w.symbol === detailSymbol ? 'border-indigo-300' : 'border-slate-100'} rounded-xl p-2">
+          <div class="flex items-center justify-between gap-2 px-1 mb-1">
+            <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)} <span class="text-[10px] text-slate-400 font-semibold">${esc(krCode(w.symbol) || w.symbol)}</span></p>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" onclick="showDetail('${esc(w.symbol)}')" class="text-[11px] font-bold px-2 py-1 rounded-lg ${w.symbol === detailSymbol ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-indigo-600'}">크게 보기</button>
+              <button type="button" onclick="removeWatch(${w.id})" aria-label="${esc(w.name)} 삭제" class="text-slate-400 hover:text-rose-600 font-bold px-1.5">✕</button>
+            </div>
+          </div>
+          <div class="tv-box h-[170px]" id="w${w.id}"></div>
+        </div>`).join('');
+      watch.forEach(w => mini(document.getElementById('w' + w.id), w.symbol, range));
+    }
+
+    function renderDetail() {
+      const box = document.getElementById('detailBox');
+      if (!detailSymbol) { box.innerHTML = `<p class="text-xs text-slate-400 text-center pt-16">관심 종목에서 <b>크게 보기</b>를 누르면 여기에 차트가 나와요.</p>`; document.getElementById('detailTitle').textContent = '상세 차트'; return; }
+      const w = watch.find(x => x.symbol === detailSymbol);
+      document.getElementById('detailTitle').textContent = w ? `${w.name} 상세 차트` : `${detailSymbol} 상세 차트`;
+      const link = document.getElementById('detailLink');
+      link.href = naverUrl(detailSymbol); link.textContent = krCode(detailSymbol) ? '네이버 증권에서 보기 ↗' : 'TradingView에서 보기 ↗';
+      mountWidget(box, 'advanced-chart', {
+        autosize: true, symbol: detailSymbol, interval: 'D', timezone: 'Asia/Seoul', theme: isDark() ? 'dark' : 'light',
+        style: '1', locale: 'kr', allow_symbol_change: false, hide_side_toolbar: true, withdateranges: true,
+        calendar: false, support_host: 'https://www.tradingview.com'
+      });
+    }
+
+    function showDetail(sym) {
+      detailSymbol = sym; save('argon_watch_detail_v1', sym);
+      renderWatch(); renderDetail();
+      document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }
+    function removeWatch(id) {
+      const w = watch.find(x => x.id === id); if (!w) return;
+      if (!confirm(`관심 종목에서 '${w.name}'을(를) 뺄까요?`)) return;
+      watch = watch.filter(x => x.id !== id); save(WATCH_KEY, watch);
+      if (detailSymbol === w.symbol) { detailSymbol = watch[0] ? watch[0].symbol : null; save('argon_watch_detail_v1', detailSymbol); renderDetail(); }
+      renderWatch();
+    }
+    document.getElementById('addForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = document.getElementById('addMsg'), name = document.getElementById('addName').value.trim();
+      let code = document.getElementById('addCode').value.trim().toUpperCase().replace(/\s+/g, '');
+      const say = t => { msg.textContent = t; msg.classList.remove('hidden'); };
+      let symbol = '';
+      if (/^\d{6}$/.test(code)) symbol = 'KRX:' + code;
+      else if (/^[A-Z_]+:[A-Z0-9._-]+$/.test(code)) symbol = code;
+      else return say('종목코드 6자리(예: 035720) 또는 NASDAQ:AAPL 형식으로 넣어주세요.');
+      if (watch.some(w => w.symbol === symbol)) return say('이미 관심 종목에 있어요.');
+      watch.push({ id: Date.now(), name: name || (krCode(symbol) || symbol), symbol }); save(WATCH_KEY, watch);
+      msg.classList.add('hidden'); e.target.reset(); renderWatch();
+      if (!detailSymbol) showDetail(symbol);
+    });
+    document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v1', range); renderWatch(); }));
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+      renderMarkets(); renderWatch(); renderDetail();   // 위젯 테마 다시 적용
+    }
+
+    const d = new Date();
+    document.getElementById('todayLabel').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 (${'일월화수목금토'[d.getDay()]})`;
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    if (load(WATCH_KEY, null) === null) save(WATCH_KEY, watch);
+    renderMarkets(); renderWatch(); renderDetail();
+  </script>
+</body>
+</html>
