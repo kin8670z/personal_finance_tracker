@@ -35,8 +35,9 @@
     .nav-item.active { background-color: #eef2ff; color: #4338ca; }
     .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
     .dark .nav-item:not(.active) { color: #cbd5e1; }
-    .tv-box { position: relative; min-height: 140px; }
-    .tv-box .tradingview-widget-copyright { display: none; }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2.5rem .5rem; }
     .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
     @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop { transition: none; } }
   </style>
@@ -57,11 +58,11 @@
         <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
         <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">📈 오늘의 주식 현황</h1>
       </div>
-      <span id="todayLabel" class="text-xs font-bold text-slate-500 shrink-0"></span>
+      <div class="flex items-center gap-2 shrink-0"><span id="todayLabel" class="text-xs font-bold text-slate-500"></span><button type="button" onclick="refreshCharts()" aria-label="차트 새로고침" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700">🔄</button></div>
     </header>
 
     <section class="card p-4 md:p-5">
-      <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2><span class="text-[11px] text-slate-400">오늘 하루 흐름</span></div>
+      <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2><span id="updatedLabel" class="text-[11px] text-slate-400"></span></div>
       <div id="marketGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
     </section>
 
@@ -69,9 +70,10 @@
       <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
         <h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 관심 종목 <span id="watchCount" class="text-xs text-indigo-600 font-bold"></span></h2>
         <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="기간">
-          <button type="button" data-range="1D" class="px-3 py-1.5 rounded-lg">1일</button>
-          <button type="button" data-range="1M" class="px-3 py-1.5 rounded-lg">1개월</button>
-          <button type="button" data-range="12M" class="px-3 py-1.5 rounded-lg">1년</button>
+          <button type="button" data-range="day" class="px-3 py-1.5 rounded-lg">1일</button>
+          <button type="button" data-range="month3" class="px-3 py-1.5 rounded-lg">3개월</button>
+          <button type="button" data-range="year" class="px-3 py-1.5 rounded-lg">1년</button>
+          <button type="button" data-range="year3" class="px-3 py-1.5 rounded-lg">3년</button>
         </div>
       </div>
       <div id="watchGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
@@ -81,7 +83,7 @@
         <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg shrink-0">추가</button>
       </form>
       <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
-      <p class="text-[11px] text-slate-400 mt-1.5">해외 종목은 <b>NASDAQ:AAPL</b>처럼 거래소:심볼로 넣으면 돼요.</p>
+      <p class="text-[11px] text-slate-400 mt-1.5">국내 종목만 돼요. 종목코드는 네이버 증권에서 종목을 검색하면 이름 옆에 나와요.</p>
     </section>
 
     <section id="detailSection" class="card p-4 md:p-5">
@@ -89,10 +91,15 @@
         <h2 class="text-sm md:text-base font-extrabold text-slate-900 truncate">🔍 <span id="detailTitle">상세 차트</span></h2>
         <a id="detailLink" href="#" target="_blank" rel="noopener" class="text-xs font-bold text-indigo-600 shrink-0">네이버 증권에서 보기 ↗</a>
       </div>
-      <div id="detailBox" class="tv-box h-[420px] md:h-[520px] rounded-xl overflow-hidden"></div>
+      <div class="seg flex w-fit bg-slate-100 rounded-xl p-0.5 text-xs font-bold mb-2" role="group" aria-label="봉 종류" id="candleSeg">
+        <button type="button" data-candle="day" class="px-3 py-1.5 rounded-lg">일봉</button>
+        <button type="button" data-candle="week" class="px-3 py-1.5 rounded-lg">주봉</button>
+        <button type="button" data-candle="month" class="px-3 py-1.5 rounded-lg">월봉</button>
+      </div>
+      <div id="detailBox"></div>
     </section>
 
-    <p class="text-[11px] text-slate-400 text-center px-2">차트와 시세는 TradingView 위젯으로 보여주는 <b>지연 시세</b>예요. 실제 거래 가격과 다를 수 있어요.</p>
+    <p class="text-[11px] text-slate-400 text-center px-2">차트는 네이버 증권 차트 이미지예요. 장중에는 1분마다 새로 불러오지만 <b>지연 시세</b>라 실제 거래 가격과 다를 수 있어요.</p>
   </div>
 
   <script>
@@ -101,14 +108,19 @@
       { id: 1, name: '삼성전자', symbol: 'KRX:005930' },
       { id: 2, name: 'SK하이닉스', symbol: 'KRX:000660' }
     ];
+    const IMG = 'https://ssl.pstatic.net/imgfinance/chart';
     const MARKETS = [
-      { name: '코스피', symbol: 'KRX:KOSPI' },
-      { name: '코스닥', symbol: 'KRX:KOSDAQ' },
-      { name: '원/달러 환율', symbol: 'FX_IDC:USDKRW' }
+      { name: '코스피 (오늘)', src: () => `${IMG}/main/KOSPI.png`, url: 'https://finance.naver.com/sise/sise_index.naver?code=KOSPI' },
+      { name: '코스닥 (오늘)', src: () => `${IMG}/main/KOSDAQ.png`, url: 'https://finance.naver.com/sise/sise_index.naver?code=KOSDAQ' },
+      { name: '원/달러 환율 (1개월)', src: () => `${IMG}/marketindex/area/month/FX_USDKRW.png`, url: 'https://finance.naver.com/marketindex/exchangeDetail.naver?marketindexCd=FX_USDKRW' }
     ];
+    const RANGE_OLD = { '1D': 'day', '1M': 'month3', '12M': 'year' };   // v5.3 저장값 호환
     let watch = load(WATCH_KEY, null) || DEFAULT_WATCH.slice();
-    let range = load('argon_watch_range_v1', '1D');
+    let range = load('argon_watch_range_v1', 'day'); range = RANGE_OLD[range] || range;
+    if (!['day', 'month3', 'year', 'year3'].includes(range)) range = 'day';
+    let candle = load('argon_watch_candle_v1', 'day'); if (!['day', 'week', 'month'].includes(candle)) candle = 'day';
     let detailSymbol = load('argon_watch_detail_v1', null) || (watch[0] && watch[0].symbol);
+    let stamp = Date.now();
 
     function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -117,64 +129,51 @@
     const krCode = sym => (/^KRX:(\d{6})$/.exec(sym) || [])[1];
     const naverUrl = sym => krCode(sym) ? `https://finance.naver.com/item/main.naver?code=${krCode(sym)}` : `https://www.tradingview.com/symbols/${sym.replace(':', '-')}/`;
 
-    // TradingView 위젯: 컨테이너 + 설정을 담은 script 태그를 넣으면 iframe으로 그려짐
-    function mountWidget(el, kind, config) {
-      el.innerHTML = '';
-      const wrap = document.createElement('div');
-      wrap.className = 'tradingview-widget-container';
-      wrap.style.height = '100%'; wrap.style.width = '100%';
-      const inner = document.createElement('div');
-      inner.className = 'tradingview-widget-container__widget';
-      inner.style.height = '100%'; inner.style.width = '100%';
-      const s = document.createElement('script');
-      s.type = 'text/javascript'; s.async = true;
-      s.src = `https://s3.tradingview.com/external-embedding/embed-widget-${kind}.js`;
-      s.textContent = JSON.stringify(config);
-      wrap.appendChild(inner); wrap.appendChild(s);
-      el.appendChild(wrap);
-    }
-    const mini = (el, symbol, dateRange) => mountWidget(el, 'mini-symbol-overview', {
-      symbol, width: '100%', height: '100%', locale: 'kr', dateRange, colorTheme: isDark() ? 'dark' : 'light',
-      isTransparent: true, autosize: true, largeChartUrl: '', chartOnly: false, noTimeScale: false
-    });
+    // 네이버 증권 차트 이미지 (stamp로 캐시 무시)
+    const img = (src, alt) => `<img class="chart-img" src="${src}?t=${stamp}" alt="${esc(alt)}" onerror="this.outerHTML='<p class=&quot;chart-fail&quot;>차트를 불러오지 못했어요</p>'">`;
+    const noChart = sym => `<p class="chart-fail">해외 종목은 차트를 지원하지 않아요.<br><a class="text-indigo-600 font-bold" target="_blank" rel="noopener" href="${naverUrl(sym)}">TradingView에서 보기 ↗</a></p>`;
 
     function renderMarkets() {
-      const g = document.getElementById('marketGrid');
-      g.innerHTML = MARKETS.map((m, i) => `<div class="bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1">${m.name}</p><div class="tv-box h-[150px]" id="mk${i}"></div></div>`).join('');
-      MARKETS.forEach((m, i) => mini(document.getElementById('mk' + i), m.symbol, '1D'));
+      document.getElementById('marketGrid').innerHTML = MARKETS.map(m => `<a href="${m.url}" target="_blank" rel="noopener" class="block bg-slate-50 border border-slate-100 rounded-xl p-2"><p class="text-xs font-bold text-slate-600 px-1 mb-1">${m.name}</p>${img(m.src(), m.name)}</a>`).join('');
+      const t = new Date(stamp);
+      document.getElementById('updatedLabel').textContent = `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')} 기준`;
     }
 
     function renderWatch() {
       const g = document.getElementById('watchGrid');
       document.getElementById('watchCount').textContent = `${watch.length}개`;
-      document.querySelectorAll('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
+      document.querySelectorAll('[data-range]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.range === range)));
       if (!watch.length) { g.innerHTML = `<p class="md:col-span-2 text-xs text-slate-400 text-center py-6">관심 종목이 없어요. 아래에서 추가해 보세요.</p>`; return; }
-      g.innerHTML = watch.map(w => `<div class="bg-slate-50 border ${w.symbol === detailSymbol ? 'border-indigo-300' : 'border-slate-100'} rounded-xl p-2">
+      g.innerHTML = watch.map(w => { const code = krCode(w.symbol); return `<div class="bg-slate-50 border ${w.symbol === detailSymbol ? 'border-indigo-300' : 'border-slate-100'} rounded-xl p-2">
           <div class="flex items-center justify-between gap-2 px-1 mb-1">
-            <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)} <span class="text-[10px] text-slate-400 font-semibold">${esc(krCode(w.symbol) || w.symbol)}</span></p>
+            <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)} <span class="text-[10px] text-slate-400 font-semibold">${esc(code || w.symbol)}</span></p>
             <div class="flex items-center gap-1 shrink-0">
               <button type="button" onclick="showDetail('${esc(w.symbol)}')" class="text-[11px] font-bold px-2 py-1 rounded-lg ${w.symbol === detailSymbol ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-indigo-600'}">크게 보기</button>
               <button type="button" onclick="removeWatch(${w.id})" aria-label="${esc(w.name)} 삭제" class="text-slate-400 hover:text-rose-600 font-bold px-1.5">✕</button>
             </div>
           </div>
-          <div class="tv-box h-[170px]" id="w${w.id}"></div>
-        </div>`).join('');
-      watch.forEach(w => mini(document.getElementById('w' + w.id), w.symbol, range));
+          ${code ? img(`${IMG}/item/area/${range}/${code}.png`, w.name + ' 차트') : noChart(w.symbol)}
+        </div>`; }).join('');
     }
 
     function renderDetail() {
       const box = document.getElementById('detailBox');
-      if (!detailSymbol) { box.innerHTML = `<p class="text-xs text-slate-400 text-center pt-16">관심 종목에서 <b>크게 보기</b>를 누르면 여기에 차트가 나와요.</p>`; document.getElementById('detailTitle').textContent = '상세 차트'; return; }
-      const w = watch.find(x => x.symbol === detailSymbol);
+      document.querySelectorAll('[data-candle]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.candle === candle)));
+      if (!detailSymbol) { box.innerHTML = `<p class="chart-fail">관심 종목에서 <b>크게 보기</b>를 누르면 여기에 차트가 나와요.</p>`; document.getElementById('detailTitle').textContent = '상세 차트'; return; }
+      const w = watch.find(x => x.symbol === detailSymbol), code = krCode(detailSymbol);
       document.getElementById('detailTitle').textContent = w ? `${w.name} 상세 차트` : `${detailSymbol} 상세 차트`;
       const link = document.getElementById('detailLink');
-      link.href = naverUrl(detailSymbol); link.textContent = krCode(detailSymbol) ? '네이버 증권에서 보기 ↗' : 'TradingView에서 보기 ↗';
-      mountWidget(box, 'advanced-chart', {
-        autosize: true, symbol: detailSymbol, interval: 'D', timezone: 'Asia/Seoul', theme: isDark() ? 'dark' : 'light',
-        style: '1', locale: 'kr', allow_symbol_change: false, hide_side_toolbar: true, withdateranges: true,
-        calendar: false, support_host: 'https://www.tradingview.com'
-      });
+      link.href = naverUrl(detailSymbol); link.textContent = code ? '네이버 증권에서 보기 ↗' : 'TradingView에서 보기 ↗';
+      document.getElementById('candleSeg').classList.toggle('hidden', !code);
+      box.innerHTML = code ? img(`${IMG}/item/candle/${candle}/${code}.png`, (w ? w.name : code) + ' 캔들 차트') : noChart(detailSymbol);
     }
+    function refreshCharts() { stamp = Date.now(); renderMarkets(); renderWatch(); renderDetail(); }
+    // 장중(평일 09:00~15:40)이고 화면을 보고 있을 때만 1분마다 새로고침
+    setInterval(() => {
+      const t = new Date(), m = t.getHours() * 60 + t.getMinutes();
+      if (document.visibilityState === 'visible' && t.getDay() > 0 && t.getDay() < 6 && m >= 540 && m <= 940) refreshCharts();
+    }, 60000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - stamp > 60000) refreshCharts(); });
 
     function showDetail(sym) {
       detailSymbol = sym; save('argon_watch_detail_v1', sym);
@@ -194,15 +193,16 @@
       let code = document.getElementById('addCode').value.trim().toUpperCase().replace(/\s+/g, '');
       const say = t => { msg.textContent = t; msg.classList.remove('hidden'); };
       let symbol = '';
+      code = code.replace(/^KRX:/, '');
       if (/^\d{6}$/.test(code)) symbol = 'KRX:' + code;
-      else if (/^[A-Z_]+:[A-Z0-9._-]+$/.test(code)) symbol = code;
-      else return say('종목코드 6자리(예: 035720) 또는 NASDAQ:AAPL 형식으로 넣어주세요.');
+      else return say('종목코드 6자리 숫자로 넣어주세요. (예: 카카오 035720)');
       if (watch.some(w => w.symbol === symbol)) return say('이미 관심 종목에 있어요.');
       watch.push({ id: Date.now(), name: name || (krCode(symbol) || symbol), symbol }); save(WATCH_KEY, watch);
       msg.classList.add('hidden'); e.target.reset(); renderWatch();
       if (!detailSymbol) showDetail(symbol);
     });
-    document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v1', range); renderWatch(); }));
+    document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { range = b.dataset.range; save('argon_watch_range_v1', range); renderWatch(); }));
+    document.querySelectorAll('[data-candle]').forEach(b => b.addEventListener('click', () => { candle = b.dataset.candle; save('argon_watch_candle_v1', candle); renderDetail(); }));
 
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
     function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
@@ -211,7 +211,7 @@
       const on = !isDark(); document.documentElement.classList.toggle('dark', on);
       try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
       document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
-      renderMarkets(); renderWatch(); renderDetail();   // 위젯 테마 다시 적용
+      // 차트 이미지는 CSS 필터로 다크 모드 적용
     }
 
     const d = new Date();
