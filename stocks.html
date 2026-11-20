@@ -105,6 +105,14 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4 items-start">
       <div class="lg:col-span-2 space-y-3 md:space-y-4">
+        <!-- 내 포트폴리오 (보유 종목이 있을 때만) -->
+        <section id="pfSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🍩 내 포트폴리오</h2><span id="pfTotal" class="text-xs font-bold text-slate-500 num"></span></div>
+          <div class="flex items-center gap-4">
+            <div class="relative w-28 h-28 shrink-0"><canvas id="pfChart" aria-label="보유 종목 비중 도넛 차트"></canvas><div id="pfCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"></div></div>
+            <ul id="pfList" class="flex-1 min-w-0 space-y-1"></ul>
+          </div>
+        </section>
         <!-- 시장 지수 -->
         <section class="card p-4">
           <div class="flex justify-between items-center gap-2 mb-3">
@@ -140,6 +148,7 @@
       <section id="detailSection" class="card p-4 md:p-5 lg:col-span-3 lg:sticky lg:top-4">
         <div id="detailHead"></div>
         <div id="holdBox"></div>
+        <div id="alertBox"></div>
         <div class="mt-3 mb-2">
           <div class="seg grid grid-cols-5 bg-slate-100 rounded-xl p-0.5 text-xs font-bold whitespace-nowrap" role="group" aria-label="기간" id="rangeSeg">
             <button type="button" data-range="1d" class="px-2.5 py-1.5 rounded-lg">1일</button>
@@ -151,7 +160,7 @@
           <p id="periodChange" class="text-xs font-bold num text-right mt-1.5 min-h-[1rem]"></p>
         </div>
         <div id="detailChartBox" class="relative h-[260px] md:h-[360px]"><canvas id="detailChart" aria-label="가격 차트"></canvas></div>
-        <p id="avgNote" class="hidden text-[10px] text-amber-600 font-bold text-right mt-1">— 주황 점선: 내 평단가</p>
+        <p id="lineNote" class="hidden text-[10px] font-bold text-right mt-1"></p>
         <div id="detailMeta" class="grid grid-cols-4 gap-2 mt-3"></div>
         <a id="detailLink" href="#" target="_blank" rel="noopener" class="block text-center text-xs font-bold text-indigo-600 mt-3">네이버 증권에서 더 보기 ↗</a>
       </section>
@@ -217,6 +226,22 @@
       const cost = w.qty * w.avg, value = w.qty * q.price, pl = value - cost;
       return { cost, value, pl, rate: pl / cost * 100, today: q.change != null ? w.qty * q.change : 0, dir: dirOf(Math.round(pl)) };
     }
+    // 목표가·손절가: 5% 이내면 '근접', 넘으면 '도달'
+    const NEAR = 5;
+    function alertOf(w) {
+      const q = w && quotes[keyOf(w.symbol)];
+      if (!q || q.price == null) return null;
+      if (w.target > 0) {
+        if (q.price >= w.target) return { kind: 'target', hit: true, text: '🎯 목표가 도달', cls: 'bg-rose-600 text-white' };
+        if ((w.target - q.price) / q.price * 100 <= NEAR) return { kind: 'target', hit: false, text: '🎯 목표가 근접', cls: 'pill-up' };
+      }
+      if (w.stop > 0) {
+        if (q.price <= w.stop) return { kind: 'stop', hit: true, text: '⚠️ 손절가 도달', cls: 'bg-blue-600 text-white' };
+        if ((q.price - w.stop) / q.price * 100 <= NEAR) return { kind: 'stop', hit: false, text: '⚠️ 손절가 근접', cls: 'pill-down' };
+      }
+      return null;
+    }
+    const PF_COLORS = ['#4f46e5', '#e11d48', '#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#84cc16', '#64748b'];
     const signed = n => `${n > 0 ? '+' : n < 0 ? '-' : ''}${fmt(Math.abs(Math.round(n)))}`;
     const parseNum = v => { const n = Number(String(v || '').replace(/[,\s원주]/g, '')); return isFinite(n) ? n : NaN; };
     function shortVol(n) { if (n == null) return '-'; if (n >= 1e8) return (n / 1e8).toFixed(1) + '억'; if (n >= 1e4) return Math.round(n / 1e4).toLocaleString() + '만'; return n.toLocaleString(); }
@@ -280,7 +305,8 @@
       document.getElementById('statusLabel').textContent = apiOk === false ? '실시간 시세를 못 불러와서 차트 이미지로 보여줘요'
         : apiOk === null ? '불러오는 중…' : `${open ? '국내 장 열림' : '국내 장 마감'} · ${hm} 기준`;
     }
-    function renderSummary() {
+    function renderSummary() { renderSummaryBox(); renderPortfolio(); }
+    function renderSummaryBox() {
       const box = document.getElementById('summary'), hero = document.getElementById('hero');
       const items = watch.map(w => quotes[keyOf(w.symbol)]).filter(q => q && q.rate != null);
       const holds = watch.filter(held), pos = holds.map(position).filter(Boolean);
@@ -320,7 +346,35 @@
           ${items.length - up - down ? `<span class="px-2 py-1 rounded-full pill-flat">보합 ${items.length - up - down}</span>` : ''}
           ${k ? `<span class="px-2 py-1 rounded-full bg-white/70 border border-slate-200 text-slate-600">코스피 <b class="${k.dir}">${rateText(k.rate)}</b></span>` : ''}
         </div>
+        ${(() => { const al = watch.map(w => [w, alertOf(w)]).filter(x => x[1]); return al.length ? `<div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">${al.map(([w, a]) => `<span role="button" tabindex="0" onclick="selectTarget('${esc(w.symbol)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(w.symbol)}')" class="px-2 py-1 rounded-full cursor-pointer ${a.cls}">${a.text} · ${esc(w.name)}</span>`).join('')}</div>` : ''; })()}
         ${items.length > 1 ? `<p class="text-xs text-slate-500 mt-2">가장 좋은 종목 <b class="text-slate-800">${esc(best.name)}</b> <b class="${best.dir}">${rateText(best.rate)}</b> · 가장 약한 종목 <b class="text-slate-800">${esc(worst.name)}</b> <b class="${worst.dir}">${rateText(worst.rate)}</b></p>` : ''}`;
+    }
+    let pfChart = null;
+    function renderPortfolio() {
+      const sec = document.getElementById('pfSection');
+      const rows = watch.filter(held).map(w => ({ w, ps: position(w) })).filter(r => r.ps).sort((a, b) => b.ps.value - a.ps.value);
+      if (!rows.length || apiOk === false) { sec.classList.add('hidden'); if (pfChart) { pfChart.destroy(); pfChart = null; } return; }
+      sec.classList.remove('hidden');
+      const total = rows.reduce((a, r) => a + r.ps.value, 0);
+      document.getElementById('pfTotal').textContent = `${rows.length}종목 · ${fmt(Math.round(total))}원`;
+      const top = rows[0];
+      document.getElementById('pfCenter').innerHTML = `<p class="text-[10px] font-bold text-slate-400">최대 비중</p><p class="text-sm font-extrabold num text-slate-900">${(top.ps.value / total * 100).toFixed(0)}%</p>`;
+      document.getElementById('pfList').innerHTML = rows.map((r, i) => `<li><div role="button" tabindex="0" onclick="selectTarget('${esc(r.w.symbol)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(r.w.symbol)}')" class="w-full flex items-center gap-2 text-left text-xs py-1 cursor-pointer">
+          <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${PF_COLORS[i % PF_COLORS.length]}"></span>
+          <span class="font-bold text-slate-800 truncate flex-1">${esc(r.w.name)}</span>
+          <span class="num font-extrabold text-slate-700 w-11 text-right">${(r.ps.value / total * 100).toFixed(1)}%</span>
+          <span class="num font-bold w-14 text-right ${r.ps.dir}">${rateText(r.ps.rate)}</span>
+        </div></li>`).join('');
+      if (typeof Chart === 'undefined') return;
+      const data = rows.map(r => r.ps.value), colors = rows.map((r, i) => PF_COLORS[i % PF_COLORS.length]);
+      if (pfChart && pfChart.data.labels.join() === rows.map(r => r.w.name).join()) { pfChart.data.datasets[0].data = data; pfChart.data.datasets[0].borderColor = isDark() ? '#1e293b' : '#fff'; pfChart.update('none'); return; }
+      if (pfChart) pfChart.destroy();
+      pfChart = new Chart(document.getElementById('pfChart'), {
+        type: 'doughnut',
+        data: { labels: rows.map(r => r.w.name), datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: isDark() ? '#1e293b' : '#fff' }] },
+        options: { cutout: '70%', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ${c.label} ${fmt(Math.round(c.parsed))}원 (${(c.parsed / total * 100).toFixed(1)}%)` } } },
+          onClick: (e, els) => { if (els.length) selectTarget(rows[els[0].index].w.symbol); } }
+      });
     }
     function renderMarkets(prev = {}) {
       const world = market === 'world', list = world ? WORLD_MARKETS : KR_MARKETS, g = document.getElementById('marketGrid');
@@ -356,6 +410,7 @@
           <div class="min-w-0 flex-1">
             <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)}</p>
             <p class="text-[10px] text-slate-400 font-semibold">${esc(code)}${q && q.market ? ' · ' + esc(q.market) : ''}${q && q.status === 'CLOSE' ? ' · 마감' : ''}</p>
+            ${(() => { const a = alertOf(w); return a ? `<span class="inline-block mt-0.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${a.cls}">${a.text}</span>` : ''; })()}
             ${held(w) ? (() => { const ps = position(w); return `<p class="text-[11px] font-bold num truncate"><span class="text-indigo-600">${fmt(w.qty)}주</span>${ps ? ` <span class="${ps.dir}">${signed(ps.pl)}원 (${rateText(ps.rate)})</span>` : ''}</p>`; })() : ''}
           </div>
           <div class="w-16 sm:w-24 shrink-0">${q ? spark(t, 30) : skel('100%', 30)}</div>
@@ -379,6 +434,7 @@
       }
       document.getElementById('detailHead').innerHTML = html;
       renderHold();
+      renderAlertBox();
       renderMeta();
     }
     // ===== 매매 기록 =====
@@ -466,6 +522,54 @@
       box.innerHTML = html;
       const f = document.getElementById('tradeForm');
       if (f) { f.addEventListener('submit', saveTrade); if (tradeForm !== 'edit') document.getElementById('trQty').focus(); else f.scrollIntoView({ block: 'nearest' }); }
+    }
+    let alertEditing = false;
+    function renderAlertBox() {
+      const box = document.getElementById('alertBox'), t = target, w = watch.find(x => x.symbol === t);
+      if (!w || !isKrStock(t)) { box.innerHTML = ''; return; }
+      if (alertEditing) {
+        if (box.dataset.t === t && document.getElementById('alertForm')) return;   // 자동 갱신 때 입력 값 유지
+        box.dataset.t = t;
+        const q = quotes[keyOf(t)];
+        box.innerHTML = `<form id="alertForm" class="mt-2 bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2" autocomplete="off">
+            <p class="text-xs font-extrabold text-slate-700">🎯 목표가 · 손절가 ${q ? `<span class="text-[10px] text-slate-400 font-semibold">현재가 ${fmt(q.price)}원</span>` : ''}</p>
+            <div class="grid grid-cols-2 gap-2">
+              <label class="text-[11px] font-bold text-slate-500">목표가 (원)<input id="alTarget" inputmode="decimal" value="${w.target || ''}" placeholder="비워두면 없음" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+              <label class="text-[11px] font-bold text-slate-500">손절가 (원)<input id="alStop" inputmode="decimal" value="${w.stop || ''}" placeholder="비워두면 없음" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+            </div>
+            <p id="alMsg" class="text-xs text-rose-600 hidden"></p>
+            <div class="flex gap-2"><button type="submit" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg">저장</button><button type="button" onclick="alertEditing=false;renderAlertBox()" class="px-3 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg">취소</button></div>
+            <p class="text-[10px] text-slate-400">현재가가 목표가·손절가의 ${NEAR}% 안으로 들어오면 '근접', 넘으면 '도달' 배지가 떠요. 이 화면을 보고 있을 때만 알려줘요.</p>
+          </form>`;
+        document.getElementById('alertForm').addEventListener('submit', saveAlert);
+        document.getElementById('alTarget').focus();
+        return;
+      }
+      box.dataset.t = '';
+      const q = quotes[keyOf(t)], a = alertOf(w);
+      const gap = v => q && q.price ? ` <span class="text-slate-400 font-semibold">(${rateText((v - q.price) / q.price * 100)})</span>` : '';
+      if (!w.target && !w.stop) { box.innerHTML = `<button type="button" onclick="alertEditing=true;renderAlertBox()" class="mt-2 w-full py-2 rounded-xl border border-dashed border-slate-300 text-slate-500 text-xs font-bold hover:bg-slate-50">🎯 목표가·손절가 정하기</button>`; return; }
+      box.innerHTML = `<div class="mt-2 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs">
+          <div class="flex-1 min-w-0 space-y-0.5 num">
+            ${w.target ? `<p class="font-bold text-slate-700">🎯 목표 <span class="up">${fmt(w.target)}원</span>${gap(w.target)}</p>` : ''}
+            ${w.stop ? `<p class="font-bold text-slate-700">⚠️ 손절 <span class="down">${fmt(w.stop)}원</span>${gap(w.stop)}</p>` : ''}
+          </div>
+          ${a ? `<span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shrink-0 ${a.cls}">${a.text}</span>` : ''}
+          <button type="button" onclick="alertEditing=true;renderAlertBox()" class="text-[11px] font-bold text-indigo-600 px-2 py-0.5 rounded-md hover:bg-indigo-50 shrink-0">수정</button>
+        </div>`;
+    }
+    function saveAlert(e) {
+      e.preventDefault();
+      const w = watch.find(x => x.symbol === target), msg = document.getElementById('alMsg'), say = m => { msg.textContent = m; msg.classList.remove('hidden'); };
+      const rawT = document.getElementById('alTarget').value.trim(), rawS = document.getElementById('alStop').value.trim();
+      const tv = rawT ? parseNum(rawT) : 0, sv = rawS ? parseNum(rawS) : 0;
+      if (rawT && !(tv > 0)) return say('목표가는 0보다 큰 숫자로 넣어주세요.');
+      if (rawS && !(sv > 0)) return say('손절가는 0보다 큰 숫자로 넣어주세요.');
+      if (tv && sv && sv >= tv) return say('손절가는 목표가보다 낮아야 해요.');
+      if (tv) w.target = tv; else delete w.target;
+      if (sv) w.stop = sv; else delete w.stop;
+      save(WATCH_KEY, watch); alertEditing = false;
+      renderSummary(); renderWatch(); renderAlertBox(); loadChart();
     }
     // 매수·매도 입력 폼 (tr이 있으면 그 기록 수정)
     function tradeFormHtml(w, q, tr) {
@@ -605,8 +709,11 @@
       const labels = pts.map(p => timeLabel(p[0])), dg = digits(t);
       const datasets = [{ data: pts.map(p => p[1]), borderColor: c, backgroundColor: grad, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: c, tension: .15 }];
       const hw = watch.find(x => x.symbol === t);
-      if (held(hw)) datasets.push({ data: pts.map(() => hw.avg), borderColor: '#f59e0b', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '내 평단가' });
-      document.getElementById('avgNote').classList.toggle('hidden', !held(hw));
+      const notes = [];
+      if (held(hw)) { datasets.push({ data: pts.map(() => hw.avg), borderColor: '#f59e0b', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '내 평단가' }); notes.push('<span style="color:#f59e0b">— 평단가</span>'); }
+      if (hw && hw.target > 0) { datasets.push({ data: pts.map(() => hw.target), borderColor: '#10b981', borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '목표가' }); notes.push('<span style="color:#10b981">— 목표가</span>'); }
+      if (hw && hw.stop > 0) { datasets.push({ data: pts.map(() => hw.stop), borderColor: '#8b5cf6', borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '손절가' }); notes.push('<span style="color:#8b5cf6">— 손절가</span>'); }
+      const ln = document.getElementById('lineNote'); ln.innerHTML = notes.join(' · '); ln.classList.toggle('hidden', !notes.length);
       if (range === '1d') datasets.push({ data: pts.map(() => base), borderColor: isDark() ? '#64748b' : '#94a3b8', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '전일 종가' });
       if (chart) chart.destroy();
       chart = new Chart(ctx, {
@@ -629,7 +736,7 @@
 
     // ---------- 동작 ----------
     function selectTarget(t) {
-      tradeForm = null; showTrades = false; editTradeId = null;
+      tradeForm = null; showTrades = false; editTradeId = null; alertEditing = false;
       target = t; save('argon_watch_detail_v1', t);
       renderMarkets(); renderWatch(); renderDetailHead(); loadChart();
       if (window.innerWidth < 1024) document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
