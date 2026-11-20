@@ -130,7 +130,7 @@
     const naverUrl = sym => krCode(sym) ? `https://finance.naver.com/item/main.naver?code=${krCode(sym)}` : `https://www.tradingview.com/symbols/${sym.replace(':', '-')}/`;
 
     // 네이버 증권 차트 이미지 (stamp로 캐시 무시)
-    const img = (src, alt) => `<img class="chart-img" src="${src}?t=${stamp}" alt="${esc(alt)}" loading="lazy" onerror="this.outerHTML='<p class=&quot;chart-fail&quot;>차트를 불러오지 못했어요</p>'">`;
+    const img = (src, alt) => `<img class="chart-img" src="${src}?t=${stamp}" alt="${esc(alt)}" onerror="this.outerHTML='<p class=&quot;chart-fail&quot;>차트를 불러오지 못했어요</p>'">`;
     const noChart = sym => `<p class="chart-fail">해외 종목은 차트를 지원하지 않아요.<br><a class="text-indigo-600 font-bold" target="_blank" rel="noopener" href="${naverUrl(sym)}">TradingView에서 보기 ↗</a></p>`;
 
     function renderMarkets() {
