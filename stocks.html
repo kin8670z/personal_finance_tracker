@@ -116,7 +116,7 @@
           <div id="watchList" class="divide-y divide-slate-100"></div>
           <form id="addForm" class="mt-3 relative" autocomplete="off">
             <div class="flex gap-2">
-              <input id="addInput" placeholder="종목 이름이나 코드로 추가 (예: 카카오)" maxlength="30" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white" aria-label="추가할 종목 검색" aria-autocomplete="list" aria-controls="suggest">
+              <input id="addInput" placeholder="종목 이름·코드 검색 (예: 카카오)" maxlength="30" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white" aria-label="추가할 종목 검색" aria-autocomplete="list" aria-controls="suggest">
               <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shrink-0">추가</button>
             </div>
             <ul id="suggest" role="listbox" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-64 overflow-auto text-sm"></ul>
@@ -128,15 +128,15 @@
       <!-- 상세 차트 -->
       <section id="detailSection" class="card p-4 md:p-5 lg:col-span-3 lg:sticky lg:top-4">
         <div id="detailHead"></div>
-        <div class="flex items-center justify-between gap-2 mt-3 mb-2">
-          <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="기간" id="rangeSeg">
+        <div class="mt-3 mb-2">
+          <div class="seg grid grid-cols-5 bg-slate-100 rounded-xl p-0.5 text-xs font-bold whitespace-nowrap" role="group" aria-label="기간" id="rangeSeg">
             <button type="button" data-range="1d" class="px-2.5 py-1.5 rounded-lg">1일</button>
             <button type="button" data-range="1m" class="px-2.5 py-1.5 rounded-lg">1개월</button>
             <button type="button" data-range="3m" class="px-2.5 py-1.5 rounded-lg">3개월</button>
             <button type="button" data-range="1y" class="px-2.5 py-1.5 rounded-lg">1년</button>
             <button type="button" data-range="3y" class="px-2.5 py-1.5 rounded-lg">3년</button>
           </div>
-          <span id="periodChange" class="text-xs font-bold num"></span>
+          <p id="periodChange" class="text-xs font-bold num text-right mt-1.5 min-h-[1rem]"></p>
         </div>
         <div id="detailChartBox" class="relative h-[260px] md:h-[360px]"><canvas id="detailChart" aria-label="가격 차트"></canvas></div>
         <div id="detailMeta" class="grid grid-cols-4 gap-2 mt-3"></div>
@@ -378,7 +378,8 @@
       let base = range === '1d' ? (data.prevClose ?? (q && q.price != null && q.change != null ? q.price - q.change : pts[0][1])) : pts[0][1];
       const last = pts[pts.length - 1][1], ch = (last - base) / base * 100, d = dirOf(Math.round(ch * 100));
       const pc = document.getElementById('periodChange');
-      pc.className = `text-xs font-bold num ${d}`; pc.textContent = `${RANGE_TEXT[range]} ${arrow(d)} ${rateText(ch)}`;
+      pc.className = `text-xs font-bold num text-right mt-1.5 min-h-[1rem] ${d}`;
+      pc.textContent = range === '1d' ? '' : `${RANGE_TEXT[range]} 동안 ${arrow(d)} ${rateText(ch)}`;   // 1일은 위 등락률과 같아서 생략
       const c = color(d), grid = isDark() ? 'rgba(148,163,184,.12)' : 'rgba(100,116,139,.12)', tick = isDark() ? '#94a3b8' : '#94a3b8';
       const canvas = box.querySelector('canvas'), ctx = canvas.getContext('2d');
       const grad = ctx.createLinearGradient(0, 0, 0, box.clientHeight || 300);
