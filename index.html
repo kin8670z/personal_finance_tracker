@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
-  <title>아르곤 자산관리 Pro v6.7</title>
+  <title>아르곤 자산관리 Pro v6.8</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -64,6 +64,7 @@
     <a href="./" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📒 <span>가계부</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
   </nav>
   <div class="w-full max-w-7xl mx-auto space-y-3.5 md:space-y-5">
     <header class="card p-3.5 sm:p-4 md:px-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2.5 relative z-30 !overflow-visible">
@@ -71,7 +72,7 @@
         <div class="flex items-center gap-2 min-w-0">
           <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v6.7</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v6.8</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 자산관리</h1>
         </div>
@@ -102,7 +103,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v6.7</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v6.8</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -432,7 +433,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v6.7</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v6.8</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -473,9 +474,15 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '6.7';
+    const APP_VERSION = '6.8';
     const releaseNotesData = [
-      { version: 'Pro v6.7', date: '2026.11.20 (최신)', badge: '기기 동기화', isLatest: true, items: [
+      { version: 'Pro v6.8', date: '2026.11.20 (최신)', badge: '🍀 로또', isLatest: true, items: [
+        '🍀 새 메뉴 <b>로또 번호</b>: 최신 당첨번호, 다음 추첨까지 남은 시간',
+        '🎲 번호 뽑기 4가지: 균형형 · 핫 번호 · 콜드 번호 · 완전 랜덤 (지난 1등 조합은 자동 제외)',
+        '📊 최근 50회·100회·전체 번호별 출현 통계, 많이 나온 번호·오래 안 나온 번호',
+        '⭐ 뽑은 번호를 저장하면 추첨 뒤 <b>자동으로 등수 확인</b> (재미로만! 당첨 확률은 어떤 번호든 같아요)',
+      ] },
+      { version: 'Pro v6.7', date: '2026.11.20', badge: '기기 동기화', isLatest: false, items: [
         '☁️ <b>폰 ↔ PC 동기화</b>: ☰ 메뉴 → 기기 동기화에서 켜면 가계부·주식·자산이 모든 기기에서 같아져요',
         '🔒 이 기기에서 <b>비밀번호로 암호화</b>해서 올려요. 서버도 내용을 볼 수 없어요',
         '🔄 고치면 자동으로 올리고, 앱을 열면 최신으로 받아요. 두 기기에서 동시에 고치면 나중 것을 저장하고 알려줘요',

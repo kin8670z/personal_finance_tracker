@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>로또 번호 · 아르곤 자산관리</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .ball { width: 2.25rem; height: 2.25rem; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: .95rem; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,.25); box-shadow: inset -3px -3px 6px rgba(0,0,0,.15), inset 3px 3px 6px rgba(255,255,255,.35); flex-shrink: 0; font-variant-numeric: tabular-nums; }
+    .ball.sm { width: 1.85rem; height: 1.85rem; font-size: .8rem; }
+    .ball.b1 { background: #fbc400; } .ball.b2 { background: #69c8f2; } .ball.b3 { background: #ff7272; } .ball.b4 { background: #aaaaaa; } .ball.b5 { background: #b0d840; }
+    .ball.miss { background: #e2e8f0; color: #94a3b8; text-shadow: none; box-shadow: none; }
+    .dark .ball.miss { background: #334155; color: #64748b; }
+    .pop { animation: pop .35s cubic-bezier(.2,1.4,.5,1) both; }
+    @keyframes pop { 0% { transform: scale(0) rotate(-90deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .pop { animation: none; } }
+    .chip[aria-pressed="true"] { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💎 아르곤 자산관리</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🍀 <span>로또 번호</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-5xl mx-auto space-y-3 md:space-y-4">
+    <!-- 최신 회차 -->
+    <header class="card p-4 md:p-5">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+          <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">🍀 로또 번호</h1>
+        </div>
+        <span id="nextDraw" class="text-[11px] font-bold text-slate-500 text-right"></span>
+      </div>
+      <div id="latest" class="mt-3"></div>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+      <div class="space-y-3 md:space-y-4">
+        <!-- 번호 뽑기 -->
+        <section class="card p-4">
+          <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🎲 번호 뽑기</h2>
+          <div class="flex flex-wrap gap-1.5 mb-2" role="group" aria-label="뽑는 방식" id="modes"></div>
+          <p id="modeDesc" class="text-[11px] text-slate-500 mb-3 min-h-[2rem]"></p>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="draw(5)" class="py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">5게임 뽑기</button>
+            <button type="button" onclick="draw(1)" class="py-2.5 bg-white border border-slate-200 text-slate-700 font-bold rounded-xl">1게임만</button>
+          </div>
+          <div id="picks" class="mt-3 space-y-2"></div>
+        </section>
+        <!-- 내 번호 -->
+        <section class="card p-4">
+          <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 내 번호</h2><span id="mineCount" class="text-xs font-bold text-slate-400"></span></div>
+          <div id="mine"></div>
+        </section>
+      </div>
+
+      <!-- 통계 -->
+      <section class="card p-4">
+        <div class="flex justify-between items-center gap-2 mb-3">
+          <h2 class="text-sm md:text-base font-extrabold text-slate-900">📊 번호 통계</h2>
+          <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="기간" id="winSeg">
+            <button type="button" data-win="50" class="px-2.5 py-1.5 rounded-lg">50회</button>
+            <button type="button" data-win="100" class="px-2.5 py-1.5 rounded-lg">100회</button>
+            <button type="button" data-win="0" class="px-2.5 py-1.5 rounded-lg">전체</button>
+          </div>
+        </div>
+        <div class="relative h-44"><canvas id="freqChart" aria-label="번호별 당첨 횟수"></canvas></div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+          <div><p class="text-xs font-bold text-slate-500 mb-1.5">🔥 많이 나온 번호</p><div id="hot" class="flex flex-wrap gap-1"></div></div>
+          <div><p class="text-xs font-bold text-slate-500 mb-1.5">🧊 오래 안 나온 번호</p><div id="cold" class="flex flex-wrap gap-1"></div></div>
+        </div>
+        <div id="facts" class="grid grid-cols-3 gap-2 mt-3"></div>
+      </section>
+    </div>
+
+    <p class="text-[11px] text-slate-400 text-center px-3 leading-relaxed">🎈 재미로만 보세요. 로또는 매 회 완전히 무작위라 어떤 번호든 1등 확률은 똑같이 <b>8,145,060분의 1</b>이에요.<br>통계는 지난 결과일 뿐 다음 결과를 알려주지 않아요. 당첨번호는 동행복권 공개 자료예요.</p>
+  </div>
+
+  <script>
+    const MINE_KEY = 'argon_lotto_v1';
+    const MODES = {
+      balance: { label: '⚖️ 균형형', desc: '홀짝 2~4개, 낮은 번호(1~22) 2~4개, 합계 100~175, 연속 번호는 1쌍까지. 지난 당첨 조합들이 흔히 보인 모양으로 맞춰요.' },
+      hot:     { label: '🔥 핫 번호', desc: '고른 기간에 자주 나온 번호일수록 더 잘 뽑혀요.' },
+      cold:    { label: '🧊 콜드 번호', desc: '오래 안 나온 번호일수록 더 잘 뽑혀요. ("이제 나올 때 됐다" 전략)' },
+      random:  { label: '🎲 완전 랜덤', desc: '아무 조건 없이 1~45에서 6개. 사실 수학적으로는 다른 방식과 확률이 똑같아요.' }
+    };
+    function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const cls = n => n <= 10 ? 'b1' : n <= 20 ? 'b2' : n <= 30 ? 'b3' : n <= 40 ? 'b4' : 'b5';
+    const COLOR = { b1: '#fbc400', b2: '#69c8f2', b3: '#ff7272', b4: '#aaaaaa', b5: '#b0d840' };
+    const ball = (n, extra = '', delay) => `<span class="ball ${cls(n)} ${extra}"${delay != null ? ` style="animation-delay:${delay}ms"` : ''}>${n}</span>`;
+    const won = n => n == null ? '-' : n >= 1e8 ? `${(n / 1e8).toFixed(1).replace(/\.0$/, '')}억원` : `${Math.round(n / 1e4).toLocaleString()}만원`;
+
+    let draws = [], latest = null, mode = load('argon_lotto_mode', 'balance'), win = load('argon_lotto_win', 100), picks = [], chart = null, pastSet = new Set();
+    if (!MODES[mode]) mode = 'balance';
+    if (![50, 100, 0].includes(win)) win = 100;
+    let mine = load(MINE_KEY, []);   // [{ id, nums, target(회차), savedAt, mode }]
+
+    // ---------- 무작위 (암호학적 난수) ----------
+    const rnd = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+    function weightedPick(weights) {   // weights[1..45] → 6개 비복원 추출
+      const pool = []; for (let n = 1; n <= 45; n++) pool.push([n, Math.max(weights[n], 1e-9)]);
+      const out = [];
+      while (out.length < 6) {
+        const total = pool.reduce((a, p) => a + p[1], 0); let r = rnd() * total, i = 0;
+        while (r > pool[i][1] && i < pool.length - 1) { r -= pool[i][1]; i++; }
+        out.push(pool[i][0]); pool.splice(i, 1);
+      }
+      return out.sort((a, b) => a - b);
+    }
+    const consecutive = s => s.filter((n, i) => i && n - s[i - 1] === 1).length;
+    const balanced = s => { const odd = s.filter(n => n % 2).length, low = s.filter(n => n <= 22).length, sum = s.reduce((a, b) => a + b, 0); return odd >= 2 && odd <= 4 && low >= 2 && low <= 4 && sum >= 100 && sum <= 175 && consecutive(s) <= 1; };
+    function generate() {
+      const st = stats(), w = Array(46).fill(1);
+      if (mode === 'hot') for (let n = 1; n <= 45; n++) w[n] = Math.pow(st.freq[n] + 1, 1.6);
+      if (mode === 'cold') for (let n = 1; n <= 45; n++) w[n] = Math.pow(st.gap[n] + 1, 1.2);
+      for (let tries = 0; tries < 2000; tries++) {
+        const s = weightedPick(w);
+        if (pastSet.has(s.join(','))) continue;                       // 지난 1등 조합은 빼기
+        if (picks.some(p => p.nums.join() === s.join())) continue;
+        if (mode === 'balance' && !balanced(s)) continue;
+        return s;
+      }
+      return weightedPick(Array(46).fill(1));
+    }
+
+    // ---------- 통계 ----------
+    function stats() {
+      const list = win ? draws.slice(-win) : draws, freq = Array(46).fill(0), gap = Array(46).fill(draws.length), lastSeen = Array(46).fill(null);
+      list.forEach(d => d.slice(2, 8).forEach(n => freq[n]++));
+      for (let i = draws.length - 1; i >= 0; i--) draws[i].slice(2, 8).forEach(n => { if (lastSeen[n] == null) { lastSeen[n] = draws[i][0]; gap[n] = draws.length - 1 - i; } });
+      const sums = list.map(d => d.slice(2, 8).reduce((a, b) => a + b, 0)), odds = list.map(d => d.slice(2, 8).filter(n => n % 2).length);
+      return { list, freq, gap, avgSum: sums.reduce((a, b) => a + b, 0) / (sums.length || 1), oddMode: mostCommon(odds), consecShare: list.filter(d => consecutive(d.slice(2, 8)) > 0).length / (list.length || 1) };
+    }
+    function mostCommon(arr) { const c = {}; arr.forEach(x => c[x] = (c[x] || 0) + 1); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0]; }
+    function rankOf(nums, d) {
+      const win6 = d.slice(2, 8), m = nums.filter(n => win6.includes(n)).length, bonus = nums.includes(d[8]);
+      return m === 6 ? 1 : m === 5 && bonus ? 2 : m === 5 ? 3 : m === 4 ? 4 : m === 3 ? 5 : 0;
+    }
+
+    // ---------- 그리기 ----------
+    function renderLatest() {
+      const box = document.getElementById('latest');
+      if (!latest) { box.innerHTML = draws.length === 0 ? `<div class="skel" style="height:64px"></div>` : ''; return; }
+      box.innerHTML = `<p class="text-xs font-bold text-slate-500">${latest.no}회 당첨번호 <span class="text-slate-400 font-semibold">· ${latest.date.replace(/-/g, '.')}</span></p>
+        <div class="flex items-center gap-1.5 mt-2 flex-wrap">${latest.nums.map((n, i) => ball(n, 'pop', i * 80)).join('')}<span class="text-slate-400 font-extrabold mx-0.5">+</span>${ball(latest.bonus, 'pop', 560)}</div>
+        ${latest.prize1 ? `<p class="text-xs text-slate-500 mt-2">1등 <b class="text-slate-800">${latest.winners1}명</b> · 1인당 <b class="text-slate-800">${won(latest.prize1)}</b></p>` : ''}`;
+      // 다음 추첨: 매주 토요일 20:35 (한국 시간)
+      const now = new Date(), kst = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
+      const next = new Date(kst); next.setHours(20, 35, 0, 0); next.setDate(kst.getDate() + ((6 - kst.getDay() + 7) % 7));
+      if (next <= kst) next.setDate(next.getDate() + 7);
+      const h = Math.floor((next - kst) / 36e5), d = Math.floor(h / 24);
+      document.getElementById('nextDraw').innerHTML = `다음 추첨 ${latest.no + 1}회<br>${d ? `${d}일 ${h % 24}시간` : `${h}시간 ${Math.floor((next - kst) / 6e4) % 60}분`} 남음`;
+    }
+    function renderModes() {
+      document.getElementById('modes').innerHTML = Object.entries(MODES).map(([k, m]) => `<button type="button" data-mode="${k}" aria-pressed="${k === mode}" class="chip text-xs font-bold px-2.5 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600">${m.label}</button>`).join('');
+      document.getElementById('modeDesc').textContent = MODES[mode].desc;
+      document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mode = b.dataset.mode; save('argon_lotto_mode', mode); renderModes(); });
+    }
+    function tags(s) {
+      const odd = s.filter(n => n % 2).length, sum = s.reduce((a, b) => a + b, 0), c = consecutive(s);
+      return `홀${odd}:짝${6 - odd} · 합 ${sum}${c ? ` · 연속 ${c}쌍` : ''}`;
+    }
+    function renderPicks(animate) {
+      const box = document.getElementById('picks');
+      if (!picks.length) { box.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">방식을 고르고 뽑기를 눌러보세요 🍀</p>`; return; }
+      const target = latest ? latest.no + 1 : null;
+      box.innerHTML = picks.map((p, i) => `<div class="bg-slate-50 border border-slate-100 rounded-xl p-2.5">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[11px] font-extrabold text-slate-400 w-4">${'ABCDE'[i] || i + 1}</span>
+            <div class="flex gap-1 flex-1 justify-center">${p.nums.map((n, j) => ball(n, 'sm' + (animate ? ' pop' : ''), animate ? i * 120 + j * 60 : null)).join('')}</div>
+            <button type="button" onclick="saveMine(${i})" aria-label="이 번호 저장" class="text-lg px-1 ${p.saved ? 'text-amber-400' : 'text-slate-300 hover:text-amber-400'}">${p.saved ? '★' : '☆'}</button>
+          </div>
+          <p class="text-[10px] text-slate-400 text-center mt-1 num">${tags(p.nums)}</p>
+        </div>`).join('') + (picks.some(p => !p.saved) && target ? `<button type="button" onclick="saveAll()" class="w-full text-xs font-bold text-indigo-600 py-1.5">★ 전부 ${target}회 내 번호로 저장</button>` : '');
+    }
+    function renderMine() {
+      const box = document.getElementById('mine');
+      document.getElementById('mineCount').textContent = mine.length ? `${mine.length}게임` : '';
+      if (!mine.length) { box.innerHTML = `<p class="text-xs text-slate-400">뽑은 번호에서 ☆를 누르면 여기 저장돼요. 추첨이 끝나면 자동으로 맞춰봐요.</p>`; return; }
+      const byDraw = {}; draws.forEach(d => byDraw[d[0]] = d);
+      const groups = {}; mine.forEach(m => (groups[m.target] = groups[m.target] || []).push(m));
+      const RANK = ['낙첨', '🥇 1등', '🥈 2등', '🥉 3등', '4등 (5만원)', '5등 (5천원)'];
+      box.innerHTML = Object.keys(groups).sort((a, b) => b - a).map(t => {
+        const d = byDraw[t], list = groups[t];
+        const head = d ? `<span class="text-slate-500">${t}회 결과</span>` : `<span class="text-indigo-600">${t}회 · 추첨 전</span>`;
+        return `<div class="mt-2 first:mt-0"><div class="flex justify-between items-center text-[11px] font-bold mb-1">${head}${d ? `<span class="flex gap-0.5 items-center">${d.slice(2, 8).map(n => ball(n, 'sm')).join('')}<span class="text-slate-400">+</span>${ball(d[8], 'sm')}</span>` : ''}</div>
+          ${list.map(m => { const r = d ? rankOf(m.nums, d) : null; return `<div class="flex items-center gap-1.5 py-1.5 border-t border-slate-100">
+              <div class="flex gap-1 flex-1">${m.nums.map(n => ball(n, 'sm' + (d && !d.slice(2, 8).includes(n) && n !== d[8] ? ' miss' : ''))).join('')}</div>
+              ${r != null ? `<span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shrink-0 ${r ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}">${RANK[r]}</span>` : ''}
+              <button type="button" onclick="removeMine(${m.id})" aria-label="삭제" class="text-slate-300 hover:text-rose-500 font-bold px-1 shrink-0">✕</button>
+            </div>`; }).join('')}</div>`;
+      }).join('');
+    }
+    function renderStats() {
+      document.querySelectorAll('[data-win]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.win === win)));
+      if (!draws.length) return;
+      const st = stats(), nums = Array.from({ length: 45 }, (_, i) => i + 1);
+      const hot = nums.slice().sort((a, b) => st.freq[b] - st.freq[a] || a - b).slice(0, 6);
+      const cold = nums.slice().sort((a, b) => st.gap[b] - st.gap[a] || a - b).slice(0, 6);
+      document.getElementById('hot').innerHTML = hot.map(n => `<span class="flex flex-col items-center">${ball(n, 'sm')}<span class="text-[9px] text-slate-400 num mt-0.5">${st.freq[n]}회</span></span>`).join('');
+      document.getElementById('cold').innerHTML = cold.map(n => `<span class="flex flex-col items-center">${ball(n, 'sm')}<span class="text-[9px] text-slate-400 num mt-0.5">${st.gap[n]}주째</span></span>`).join('');
+      const cell = (l, v) => `<div class="bg-slate-50 rounded-lg px-2 py-2 text-center"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-sm font-extrabold num text-slate-800">${v}</p></div>`;
+      document.getElementById('facts').innerHTML = cell('평균 합계', Math.round(st.avgSum)) + cell('가장 흔한 홀짝', `홀${st.oddMode}:짝${6 - st.oddMode}`) + cell('연속번호 포함', `${Math.round(st.consecShare * 100)}%`);
+      if (typeof Chart === 'undefined') return;
+      const data = nums.map(n => st.freq[n]), colors = nums.map(n => COLOR[cls(n)]);
+      if (chart) { chart.data.datasets[0].data = data; chart.update(); return; }
+      chart = new Chart(document.getElementById('freqChart'), {
+        type: 'bar', data: { labels: nums, datasets: [{ data, backgroundColor: colors, borderRadius: 3 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: c => `${c[0].label}번`, label: c => `${c.parsed.y}회 나옴` } } },
+          scales: { x: { grid: { display: false }, ticks: { autoSkip: false, font: { size: 8 }, color: '#94a3b8', callback: (v, i) => (i + 1) % 5 === 0 || i === 0 ? i + 1 : '' } }, y: { grid: { color: isDark() ? 'rgba(148,163,184,.12)' : 'rgba(100,116,139,.12)' }, ticks: { font: { size: 9 }, color: '#94a3b8', maxTicksLimit: 4 } } } }
+      });
+    }
+
+    // ---------- 동작 ----------
+    function draw(n) {
+      picks = [];
+      for (let i = 0; i < n; i++) picks.push({ nums: generate(), saved: false });
+      renderPicks(true);
+    }
+    function saveMine(i) {
+      const p = picks[i]; if (!p || p.saved || !latest) return;
+      mine.push({ id: Math.max(Date.now(), ...mine.map(m => m.id + 1)), nums: p.nums, target: latest.no + 1, savedAt: new Date().toISOString(), mode });
+      p.saved = true; save(MINE_KEY, mine); renderPicks(false); renderMine();
+    }
+    function saveAll() { picks.forEach((p, i) => { if (!p.saved) saveMine(i); }); }
+    function removeMine(id) { mine = mine.filter(m => m.id !== id); save(MINE_KEY, mine); renderMine(); }
+    document.querySelectorAll('[data-win]').forEach(b => b.addEventListener('click', () => { win = +b.dataset.win; save('argon_lotto_win', win); renderStats(); }));
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+      if (chart) { chart.destroy(); chart = null; } renderStats();
+    }
+
+    async function loadDraws() {
+      try {
+        const r = await fetch('./api/lotto');
+        if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) throw 0;
+        const j = await r.json(); draws = j.draws || []; latest = j.latest;
+        pastSet = new Set(draws.map(d => d.slice(2, 8).join(',')));
+      } catch (e) {
+        document.getElementById('latest').innerHTML = `<p class="text-sm text-slate-500">당첨번호를 불러오지 못했어요. 그래도 🎲 완전 랜덤 뽑기는 돼요.</p>`;
+        draws = []; mode = 'random';
+      }
+      renderLatest(); renderModes(); renderStats(); renderMine(); renderPicks(false);
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    renderModes(); renderPicks(false); renderMine(); renderLatest();
+    loadDraws();
+  </script>
+</body>
+</html>
