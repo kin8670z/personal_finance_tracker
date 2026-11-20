@@ -1,7 +1,7 @@
 {
   "name": "아르곤 스마트 가계부 Pro",
   "short_name": "아르곤 가계부",
-  "description": "가계부와 오늘의 주식 현황",
+  "description": "가계부·주식 현황·내 자산",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -11,12 +11,55 @@
   "background_color": "#f1f5f9",
   "theme_color": "#4f46e5",
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "가계부", "url": "./", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "주식 현황", "url": "./stocks.html", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    {
+      "name": "가계부",
+      "url": "./",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "주식 현황",
+      "url": "./stocks.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "내 자산",
+      "url": "./assets.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
   ]
 }
