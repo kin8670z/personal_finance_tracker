@@ -12,6 +12,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
   <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
   <title>내 자산 · 아르곤 자산관리</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
@@ -208,9 +209,10 @@
     // 이번 달 값을 기록 (지난달 이전은 고정)
     function snapshot() {
       if (!accounts.length && !stock.count) return;
-      const t = totals(), snaps = load(SNAP_KEY, {});
-      snaps[ym()] = { net: Math.round(t.net), assets: Math.round(t.assets), debt: Math.round(t.debt), stock: Math.round(t.stockV), at: new Date().toISOString() };
-      save(SNAP_KEY, snaps);
+      const t = totals(), snaps = load(SNAP_KEY, {}), cur = snaps[ym()];
+      const next = { net: Math.round(t.net), assets: Math.round(t.assets), debt: Math.round(t.debt), stock: Math.round(t.stockV) };
+      // 값이 같으면 저장 안 함 (동기화가 괜히 올라가지 않게)
+      if (!cur || cur.net !== next.net || cur.assets !== next.assets || cur.debt !== next.debt || cur.stock !== next.stock) { snaps[ym()] = { ...next, at: new Date().toISOString() }; save(SNAP_KEY, snaps); }
       renderTrend();
     }
 
