@@ -1,6 +1,6 @@
 {
-  "name": "아르곤 스마트 가계부 Pro",
-  "short_name": "아르곤 가계부",
+  "name": "아르곤 자산관리 Pro",
+  "short_name": "아르곤 자산관리",
   "description": "가계부·주식 현황·내 자산",
   "id": "./",
   "start_url": "./",
