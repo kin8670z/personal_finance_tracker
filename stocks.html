@@ -336,7 +336,10 @@
       const meta = document.getElementById('detailMeta');
       if (q && apiOk !== false && (k === 'kr' || k === 'idx' || k === 'world')) {
         const cell = (l, v) => `<div class="bg-slate-50 rounded-lg px-2 py-1.5 text-center"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-xs font-extrabold num text-slate-800 truncate">${v}</p></div>`;
-        meta.innerHTML = cell('시가', fmt(q.open, digits(t))) + cell('고가', `<span class="up">${fmt(q.high, digits(t))}</span>`) + cell('저가', `<span class="down">${fmt(q.low, digits(t))}</span>`) + cell(k === 'kr' ? '거래량' : '거래대금', k === 'kr' ? shortVol(q.volume) : esc(q.value || '-'));
+        const dg = k === 'kr' ? 0 : (q.price >= 10000 ? 0 : 2);
+        let html = cell('시가', fmt(q.open, dg)) + cell('고가', `<span class="up">${fmt(q.high, dg)}</span>`) + cell('저가', `<span class="down">${fmt(q.low, dg)}</span>`);
+        if (k === 'kr') html += cell('거래량', shortVol(q.volume)); else if (k === 'idx' && q.value) html += cell('거래대금', esc(q.value));
+        meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
       } else meta.innerHTML = '';
     }
     function renderAll(prev) { renderStatus(); renderSummary(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
@@ -396,11 +399,11 @@
           plugins: { legend: { display: false }, tooltip: {
             displayColors: false, backgroundColor: isDark() ? '#0f172a' : '#1e293b', padding: 8, titleFont: { weight: 'bold' },
             filter: item => item.datasetIndex === 0,
-            callbacks: { label: it => { const v = it.parsed.y, r = (v - base) / base * 100; return `${fmt(v, dg)}  (${rateText(r)})`; } }
+            callbacks: { label: it => { const v = it.parsed.y, r = (v - base) / base * 100; return `${fmt(v, dg)}  (${range === '1d' ? '전일 대비' : '기간 시작 대비'} ${rateText(r)})`; } }
           } },
           scales: {
             x: { grid: { display: false }, ticks: { color: tick, maxTicksLimit: 5, maxRotation: 0, autoSkip: true, font: { size: 10 } } },
-            y: { position: 'right', grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 5, font: { size: 10 }, callback: v => fmt(v, dg >= 2 && Math.abs(v) < 10000 ? 2 : 0) } }
+            y: { position: 'right', grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 5, font: { size: 10 }, callback: v => fmt(v, dg >= 2 && Math.abs(v) < 100 ? 2 : 0) } }
           }
         }
       });
