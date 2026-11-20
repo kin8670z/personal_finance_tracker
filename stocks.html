@@ -113,6 +113,18 @@
             <ul id="pfList" class="flex-1 min-w-0 space-y-1"></ul>
           </div>
         </section>
+        <!-- 손익 캘린더 (보유·매매 기록이 있을 때만) -->
+        <section id="calSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-sm md:text-base font-extrabold text-slate-900">📅 손익 캘린더</h2>
+            <div class="flex items-center gap-1 text-xs font-bold">
+              <button type="button" id="calPrev" onclick="calMove(-1)" aria-label="이전 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">‹</button>
+              <span id="calTitle" class="w-20 text-center text-slate-700"></span>
+              <button type="button" id="calNext" onclick="calMove(1)" aria-label="다음 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">›</button>
+            </div>
+          </div>
+          <div id="calBody"></div>
+        </section>
         <!-- 시장 지수 -->
         <section class="card p-4">
           <div class="flex justify-between items-center gap-2 mb-3">
@@ -348,6 +360,103 @@
         </div>
         ${(() => { const al = watch.map(w => [w, alertOf(w)]).filter(x => x[1]); return al.length ? `<div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">${al.map(([w, a]) => `<span role="button" tabindex="0" onclick="selectTarget('${esc(w.symbol)}')" onkeydown="if(event.key==='Enter')selectTarget('${esc(w.symbol)}')" class="px-2 py-1 rounded-full cursor-pointer ${a.cls}">${a.text} · ${esc(w.name)}</span>`).join('')}</div>` : ''; })()}
         ${items.length > 1 ? `<p class="text-xs text-slate-500 mt-2">가장 좋은 종목 <b class="text-slate-800">${esc(best.name)}</b> <b class="${best.dir}">${rateText(best.rate)}</b> · 가장 약한 종목 <b class="text-slate-800">${esc(worst.name)}</b> <b class="${worst.dir}">${rateText(worst.rate)}</b></p>` : ''}`;
+    }
+    // ===== 손익 캘린더 =====
+    // 날짜별 평가손익 = 전날까지 들고 있던 수량 × (그날 종가 − 전날 종가)
+    //                 + 그날 산 수량 × (종가 − 산 가격) + 그날 판 수량 × (판 가격 − 전날 종가)
+    // 종가는 일봉(1년), 오늘은 실시간 현재가. 매매 기록이 없는 '기존 보유'는 처음부터 들고 있던 걸로 봐요.
+    const kstDate = ms => new Date(ms + 9 * 3600e3).toISOString().slice(0, 10);
+    let closes = {}, closesLoading = false, calMonth = null, calPick = null;
+    const calSymbols = () => watch.filter(w => isKrStock(w.symbol) && (held(w) || (w.trades || []).length)).map(w => w.symbol);
+    async function loadCloses() {
+      const need = calSymbols().filter(s => !closes[s]);
+      if (!need.length || closesLoading || apiOk === false) return;
+      closesLoading = true;
+      await Promise.all(need.map(async s => {
+        try {
+          const r = await fetch(`${API}?op=chart&kind=kr&code=${codeOf(s)}&range=1y`);
+          if (!r.ok) throw 0;
+          const j = await r.json();
+          closes[s] = (j.points || []).map(p => [kstDate(p[0]), p[1]]);
+        } catch (e) { closes[s] = []; }
+      }));
+      closesLoading = false;
+      renderCalendar();
+    }
+    function dailyPL() {
+      const out = {};   // 'YYYY-MM-DD' → { pl, items: [{name, pl}] }
+      const td = today();
+      calSymbols().forEach(sym => {
+        const w = watch.find(x => x.symbol === sym), q = quotes[keyOf(sym)];
+        let series = (closes[sym] || []).slice();
+        if (!series.length) return;
+        // 오늘 값은 실시간 현재가로 (장중이면 오늘 줄이 없을 수도 있음)
+        if (q && q.price != null && q.time && String(q.time).slice(0, 10) === td) {   // 시각 문자열이 한국 시간 기준
+          if (series[series.length - 1][0] === td) series[series.length - 1] = [td, q.price]; else series.push([td, q.price]);
+          // 전날 종가는 시세의 '전일 대비' 기준(KRX 종가)에 맞춰서 위 요약의 오늘 손익과 같게
+          if (q.change != null && series.length > 1) series[series.length - 2] = [series[series.length - 2][0], q.price - q.change];
+        }
+        const trades = (w.trades && w.trades.length) ? sortedTrades(w) : (held(w) ? [{ date: '', type: 'buy', qty: w.qty, price: w.avg }] : []);
+        let qty = 0, ti = 0;
+        // 차트 시작 전 기록(날짜 없는 기존 보유 포함)은 시작 수량으로
+        while (ti < trades.length && (trades[ti].date || '') < series[0][0]) { qty += trades[ti].type === 'buy' ? trades[ti].qty : -trades[ti].qty; ti++; }
+        for (let i = 1; i < series.length; i++) {
+          const [d, close] = series[i], prev = series[i - 1][1];
+          // 전날~오늘 사이(휴장일 포함)의 기록도 오늘 것으로 처리
+          let pl = qty * (close - prev);
+          while (ti < trades.length && trades[ti].date <= d) {
+            const t = trades[ti];
+            if (t.date > series[i - 1][0]) {
+              if (t.type === 'buy') { pl += t.qty * (close - t.price); qty += t.qty; }
+              else { pl += t.qty * (t.price - prev) - t.qty * (close - prev); qty -= t.qty; }
+            } else { qty += t.type === 'buy' ? t.qty : -t.qty; }
+            ti++;
+          }
+          if (Math.abs(pl) < 0.5 && qty === 0) continue;
+          (out[d] = out[d] || { pl: 0, items: [] }).pl += pl;
+          out[d].items.push({ name: w.name, pl });
+        }
+      });
+      return out;
+    }
+    function renderCalendar() {
+      const sec = document.getElementById('calSection');
+      if (!calSymbols().length || apiOk === false) { sec.classList.add('hidden'); return; }
+      sec.classList.remove('hidden');
+      if (!calSymbols().every(s => closes[s])) { document.getElementById('calBody').innerHTML = `<div class="py-6">${skel('100%', 160)}</div>`; loadCloses(); return; }
+      const data = dailyPL(), td = today();
+      if (!calMonth) calMonth = td.slice(0, 7);
+      const [y, m] = calMonth.split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate();
+      const keys = Object.keys(data).filter(k => k.startsWith(calMonth)), monthPL = keys.reduce((a, k) => a + data[k].pl, 0);
+      const win = keys.filter(k => data[k].pl > 0.5).length, lose = keys.filter(k => data[k].pl < -0.5).length;
+      const maxAbs = Math.max(1, ...keys.map(k => Math.abs(data[k].pl)));
+      const minMonth = Object.keys(data).sort()[0]?.slice(0, 7) || calMonth;
+      document.getElementById('calTitle').textContent = `${y}년 ${m}월`;
+      document.getElementById('calPrev').disabled = calMonth <= minMonth;
+      document.getElementById('calNext').disabled = calMonth >= td.slice(0, 7);
+      const md = dirOf(Math.round(monthPL));
+      let html = `<div class="flex items-center justify-between text-xs font-bold mb-2"><span class="num ${md}">이번 달 ${signed(monthPL)}원</span><span class="text-slate-500"><span class="up">▲ ${win}일</span> · <span class="down">▼ ${lose}일</span></span></div>`;
+      html += `<div class="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">${['일', '월', '화', '수', '목', '금', '토'].map((d, i) => `<span class="${i === 0 ? 'text-rose-400' : i === 6 ? 'text-blue-400' : ''}">${d}</span>`).join('')}</div><div class="grid grid-cols-7 gap-1">`;
+      for (let i = 0; i < first.getDay(); i++) html += '<div></div>';
+      const compact = n => { const a = Math.abs(n); return (n > 0 ? '+' : n < 0 ? '-' : '') + (a >= 1e8 ? (a / 1e8).toFixed(1) + '억' : a >= 1e4 ? (a / 1e4).toFixed(a >= 1e6 ? 0 : 1) + '만' : Math.round(a).toLocaleString()); };
+      for (let d = 1; d <= days; d++) {
+        const key = `${calMonth}-${String(d).padStart(2, '0')}`, v = data[key], isToday = key === td, pick = key === calPick;
+        let style = '', cls = 'text-slate-400';
+        if (v) { const a = Math.min(1, Math.abs(v.pl) / maxAbs), base = v.pl >= 0 ? '225,29,72' : '37,99,235'; style = `background:rgba(${base},${(0.08 + a * 0.32).toFixed(2)})`; cls = v.pl >= 0 ? 'up' : 'down'; }
+        html += `<div ${v ? `role="button" tabindex="0" onclick="calPick='${key}';renderCalendar()" onkeydown="if(event.key==='Enter'){calPick='${key}';renderCalendar()}"` : ''} class="rounded-lg py-1 min-h-[44px] flex flex-col items-center justify-start ${v ? 'cursor-pointer' : ''} ${isToday ? 'ring-1 ring-indigo-400' : ''} ${pick ? 'ring-2 ring-indigo-600' : ''}" style="${style}">
+            <span class="text-[10px] font-bold ${isToday ? 'text-indigo-600' : 'text-slate-500'}">${d}</span>
+            ${v ? `<span class="text-[9px] sm:text-[10px] font-extrabold num leading-tight ${cls}">${compact(v.pl)}</span>` : ''}
+          </div>`;
+      }
+      html += '</div>';
+      const p = calPick && data[calPick];
+      if (p) html += `<div class="mt-2 bg-slate-50 rounded-xl px-3 py-2 text-xs"><div class="flex justify-between font-extrabold"><span class="text-slate-700">${+calPick.slice(5, 7)}월 ${+calPick.slice(8)}일${calPick === td ? ' (오늘)' : ''}</span><span class="num ${dirOf(Math.round(p.pl))}">${signed(p.pl)}원</span></div>${p.items.sort((a, b) => b.pl - a.pl).map(it => `<div class="flex justify-between text-slate-500 mt-0.5"><span class="truncate">${esc(it.name)}</span><span class="num ${dirOf(Math.round(it.pl))}">${signed(it.pl)}원</span></div>`).join('')}</div>`;
+      else html += `<p class="text-[10px] text-slate-400 mt-2">날짜를 누르면 종목별 손익이 나와요. 매매 기록이 있으면 1년 전까지 거슬러 계산해요.</p>`;
+      document.getElementById('calBody').innerHTML = html;
+    }
+    function calMove(step) {
+      const [y, m] = calMonth.split('-').map(Number), d = new Date(y, m - 1 + step, 1);
+      calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; calPick = null; renderCalendar();
     }
     let pfChart = null;
     function renderPortfolio() {
@@ -596,7 +705,7 @@
     function openTrade(type) { tradeForm = type; editTradeId = null; renderHold(); }
     function openEditTrade(id) { tradeForm = 'edit'; editTradeId = id; showTrades = true; renderHold(); }
     function closeTrade() { tradeForm = null; editTradeId = null; renderHold(); }
-    function afterTradeChange() { save(WATCH_KEY, watch); renderSummary(); renderWatch(); renderHold(); loadChart(); }
+    function afterTradeChange() { save(WATCH_KEY, watch); renderSummary(); renderCalendar(); renderWatch(); renderHold(); loadChart(); }
     function saveTrade(e) {
       e.preventDefault();
       const w = watch.find(x => x.symbol === target), msg = document.getElementById('trMsg');
@@ -659,7 +768,7 @@
       }
       meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
     }
-    function renderAll(prev) { renderStatus(); renderSummary(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
+    function renderAll(prev) { renderStatus(); renderSummary(); renderCalendar(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
 
     // ---------- 상세 차트 (Chart.js) ----------
     function timeLabel(ms) {
