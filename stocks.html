@@ -412,12 +412,13 @@
       w.trades = held(w) ? [{ id: 1, date: '', type: 'buy', qty: w.qty, price: w.avg, init: true }] : [];
     }
 
-    let tradeForm = null, showTrades = false;   // tradeForm: 'buy' | 'sell' | null
+    let tradeForm = null, showTrades = false, editTradeId = null;   // tradeForm: 'buy' | 'sell' | 'edit' | null
     function renderHold() {
       const box = document.getElementById('holdBox'), t = target, w = watch.find(x => x.symbol === t);
       if (!w || !isKrStock(t)) { box.innerHTML = ''; box.dataset.t = ''; return; }
-      if (tradeForm && box.dataset.t === `${t}|${tradeForm}` && document.getElementById('tradeForm')) return;   // 자동 갱신 때 입력 중인 값 유지
-      box.dataset.t = tradeForm ? `${t}|${tradeForm}` : '';
+      const formKey = `${t}|${tradeForm}|${editTradeId}`;
+      if (tradeForm && box.dataset.t === formKey && document.getElementById('tradeForm')) return;   // 자동 갱신 때 입력 중인 값 유지
+      box.dataset.t = tradeForm ? formKey : '';
       const q = quotes[keyOf(t)], ps = position(w), hasTrades = (w.trades || []).length > 0 || held(w);
       const cell = (l, v, cls = 'text-slate-800') => `<div class="min-w-0"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-sm font-extrabold num truncate ${cls}">${v}</p></div>`;
       let html = '';
@@ -443,56 +444,75 @@
       } else if (hasTrades) html += `<p class="text-xs text-slate-500 mb-1">지금은 보유하고 있지 않아요 (전량 매도).</p>`;
       if (w.realized) html += `<div class="flex justify-between items-center mt-2 pt-2 border-t border-indigo-100 text-xs font-bold"><span class="text-slate-500">실현손익 (매도로 확정된 손익)</span><span class="num ${dirOf(w.realized)}">${signed(w.realized)}원</span></div>`;
 
-      if (tradeForm) {
-        const sell = tradeForm === 'sell';
-        html += `<form id="tradeForm" class="mt-3 pt-3 border-t border-indigo-100 space-y-2" autocomplete="off">
-            <p class="text-xs font-extrabold ${sell ? 'down' : 'up'}">${sell ? '－ 매도 기록' : '＋ 매수 기록'}</p>
-            <div class="grid grid-cols-3 gap-2">
-              <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">날짜<input id="trDate" type="date" value="${today()}" max="${today()}" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-2 bg-white"></label>
-              <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">${sell ? '판' : '산'} 수량 (주)<input id="trQty" inputmode="numeric" placeholder="${sell && held(w) ? `최대 ${w.qty}` : '예: 10'}" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
-              <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">${sell ? '판' : '산'} 가격 (원)<input id="trPrice" inputmode="decimal" value="${q && q.price ? q.price : ''}" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
-            </div>
-            <p id="trMsg" class="text-xs text-rose-600 hidden"></p>
-            <div class="flex gap-2">
-              <button type="submit" class="flex-1 py-2 ${sell ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'} text-white font-bold rounded-lg">${sell ? '매도' : '매수'} 기록 저장</button>
-              <button type="button" onclick="closeTrade()" class="px-3 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg">취소</button>
-            </div>
-          </form>`;
-      }
+      if (tradeForm === 'buy' || tradeForm === 'sell') html += `<div class="mt-3 pt-3 border-t border-indigo-100">${tradeFormHtml(w, q, null)}</div>`;
 
       const { rows } = recalc(w);
       if (rows.length) {
         html += `<button type="button" onclick="showTrades=!showTrades;renderHold()" class="mt-3 w-full flex justify-between items-center text-xs font-bold text-slate-500" aria-expanded="${showTrades}"><span>📒 매매 기록 ${rows.length}건</span><span>${showTrades ? '접기 ▲' : '보기 ▼'}</span></button>`;
         if (showTrades) {
-          html += `<ul class="mt-2 divide-y divide-indigo-100 text-xs">${rows.slice().reverse().map(r => `
-            <li class="py-2 flex items-center gap-2">
+          html += `<p class="text-[10px] text-slate-400 mt-1">기록을 누르면 수정할 수 있어요</p>`;
+          html += `<ul class="mt-1 divide-y divide-indigo-100 text-xs">${rows.slice().reverse().map(r => tradeForm === 'edit' && editTradeId === r.id ? `<li class="py-2">${tradeFormHtml(w, q, r)}</li>` : `
+            <li role="button" tabindex="0" onclick="openEditTrade(${r.id})" onkeydown="if(event.key==='Enter')openEditTrade(${r.id})" class="row py-2 px-1 -mx-1 rounded-lg flex items-center gap-2 cursor-pointer" aria-label="이 기록 수정">
               <span class="w-10 shrink-0 text-center font-extrabold rounded-md py-0.5 ${r.type === 'buy' ? 'pill-up' : 'pill-down'}">${r.type === 'buy' ? '매수' : '매도'}</span>
               <div class="flex-1 min-w-0">
                 <p class="font-bold text-slate-800 num truncate">${fmt(r.qty)}주 × ${fmt(r.price)}원 = ${fmt(Math.round(r.qty * r.price))}원</p>
                 <p class="text-[10px] text-slate-400 num">${r.init ? '기존 보유 (날짜 없음)' : esc(r.date)} · 이후 ${fmt(r.after)}주${r.pl != null ? ` · 실현 <b class="${dirOf(Math.round(r.pl))}">${signed(r.pl)}원</b>` : ''}</p>
               </div>
-              <button type="button" onclick="removeTrade(${r.id})" aria-label="이 기록 삭제" class="text-slate-400 hover:text-rose-600 font-bold px-1.5">✕</button>
+              <button type="button" onclick="event.stopPropagation();removeTrade(${r.id})" aria-label="이 기록 삭제" class="text-slate-400 hover:text-rose-600 font-bold px-1.5">✕</button>
             </li>`).join('')}</ul>`;
         }
       }
       html += `<p class="text-[10px] text-slate-400 mt-2">이동평균법 · 수수료·세금 제외 · 이 기기에만 저장돼요 (가계부 백업에 포함)</p></div>`;
       box.innerHTML = html;
       const f = document.getElementById('tradeForm');
-      if (f) { f.addEventListener('submit', saveTrade); document.getElementById('trQty').focus(); }
+      if (f) { f.addEventListener('submit', saveTrade); if (tradeForm !== 'edit') document.getElementById('trQty').focus(); else f.scrollIntoView({ block: 'nearest' }); }
     }
-    function openTrade(type) { tradeForm = type; renderHold(); }
-    function closeTrade() { tradeForm = null; renderHold(); }
+    // 매수·매도 입력 폼 (tr이 있으면 그 기록 수정)
+    function tradeFormHtml(w, q, tr) {
+      const edit = !!tr, type = edit ? tr.type : tradeForm, sell = type === 'sell';
+      const date = edit ? (tr.date || '') : today(), qty = edit ? tr.qty : '', price = edit ? tr.price : (q && q.price ? q.price : '');
+      return `<form id="tradeForm" class="space-y-2 ${edit ? 'bg-white/80 border border-indigo-200 rounded-xl p-2.5' : ''}" autocomplete="off">
+          <div class="flex items-center justify-between gap-2">
+            <p class="text-xs font-extrabold ${edit ? 'text-indigo-700' : sell ? 'down' : 'up'}">${edit ? '✏️ 기록 수정' : sell ? '－ 매도 기록' : '＋ 매수 기록'}</p>
+            ${edit ? `<select id="trType" class="border border-slate-200 rounded-lg px-2 py-1 bg-white font-bold" aria-label="매수/매도"><option value="buy" ${!sell ? 'selected' : ''}>매수</option><option value="sell" ${sell ? 'selected' : ''}>매도</option></select>` : ''}
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">날짜${edit && tr.init ? ' (비워두면 기존 보유)' : ''}<input id="trDate" type="date" value="${date}" max="${today()}" class="mt-1 w-full border border-slate-200 rounded-lg px-2 py-2 bg-white"></label>
+            <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">수량 (주)<input id="trQty" inputmode="numeric" value="${qty}" placeholder="${!edit && sell && held(w) ? `최대 ${w.qty}` : '예: 10'}" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+            <label class="text-[11px] font-bold text-slate-500 col-span-3 sm:col-span-1">가격 (원)<input id="trPrice" inputmode="decimal" value="${price}" class="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white num"></label>
+          </div>
+          <p id="trMsg" class="text-xs text-rose-600 hidden"></p>
+          <div class="flex gap-2">
+            <button type="submit" class="flex-1 py-2 ${edit ? 'bg-indigo-600 hover:bg-indigo-700' : sell ? 'bg-blue-600 hover:bg-blue-700' : 'bg-rose-600 hover:bg-rose-700'} text-white font-bold rounded-lg">${edit ? '수정 저장' : `${sell ? '매도' : '매수'} 기록 저장`}</button>
+            ${edit ? `<button type="button" onclick="removeTrade(${tr.id})" class="px-3 py-2 bg-white border border-slate-200 text-rose-600 font-bold rounded-lg">삭제</button>` : ''}
+            <button type="button" onclick="closeTrade()" class="px-3 py-2 bg-white border border-slate-200 text-slate-600 font-bold rounded-lg">취소</button>
+          </div>
+        </form>`;
+    }
+    function openTrade(type) { tradeForm = type; editTradeId = null; renderHold(); }
+    function openEditTrade(id) { tradeForm = 'edit'; editTradeId = id; showTrades = true; renderHold(); }
+    function closeTrade() { tradeForm = null; editTradeId = null; renderHold(); }
     function afterTradeChange() { save(WATCH_KEY, watch); renderSummary(); renderWatch(); renderHold(); loadChart(); }
     function saveTrade(e) {
       e.preventDefault();
       const w = watch.find(x => x.symbol === target), msg = document.getElementById('trMsg');
       const say = m => { msg.textContent = m; msg.classList.remove('hidden'); };
       const date = document.getElementById('trDate').value, qty = parseNum(document.getElementById('trQty').value), price = parseNum(document.getElementById('trPrice').value);
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return say('날짜를 골라주세요.');
+      ensureTrades(w);
+      const editing = tradeForm === 'edit' ? w.trades.find(x => x.id === editTradeId) : null;
+      if (!(editing && editing.init && !date) && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return say('날짜를 골라주세요.');
       if (date > today()) return say('미래 날짜는 넣을 수 없어요.');
       if (!(qty > 0) || !Number.isInteger(qty)) return say('수량은 1 이상의 정수로 넣어주세요.');
       if (!(price > 0)) return say('가격을 0보다 큰 숫자로 넣어주세요.');
-      ensureTrades(w);
+      if (editing) {
+        const before = { ...editing };
+        Object.assign(editing, { date, type: document.getElementById('trType').value === 'sell' ? 'sell' : 'buy', qty, price });
+        if (date) delete editing.init;
+        const { bad } = recalc(w);
+        if (bad) { Object.keys(editing).forEach(k => delete editing[k]); Object.assign(editing, before); recalc(w); return say(`이렇게 고치면 ${bad.date || '기존 보유'} 기준 보유 수량보다 많이 팔게 돼요.`); }
+        tradeForm = null; editTradeId = null;
+        return afterTradeChange();
+      }
       const t = { id: Math.max(0, ...w.trades.map(x => x.id)) + 1, date, type: tradeForm, qty, price };
       w.trades.push(t);
       const { bad } = recalc(w);
@@ -509,6 +529,7 @@
       w.trades = w.trades.filter(x => x.id !== id);
       if (recalc(w).bad) { w.trades = keep; recalc(w); alert('이 매수 기록을 지우면 뒤의 매도 수량이 보유보다 많아져서 지울 수 없어요. 매도 기록을 먼저 지워주세요.'); return; }
       if (!w.trades.length) { delete w.trades; delete w.qty; delete w.avg; delete w.realized; }
+      if (editTradeId === id) { tradeForm = null; editTradeId = null; }
       afterTradeChange();
     }
     // 아래 4칸: 1일은 오늘 시세, 다른 기간은 그 기간의 시작가·최고가·최저가·평균 거래량
@@ -608,7 +629,7 @@
 
     // ---------- 동작 ----------
     function selectTarget(t) {
-      tradeForm = null; showTrades = false;
+      tradeForm = null; showTrades = false; editTradeId = null;
       target = t; save('argon_watch_detail_v1', t);
       renderMarkets(); renderWatch(); renderDetailHead(); loadChart();
       if (window.innerWidth < 1024) document.getElementById('detailSection').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
