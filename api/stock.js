@@ -1,8 +1,8 @@
 // 주식 현황 페이지용 공개 시세 프록시 (Vercel 서버 함수)
 // 브라우저에서 바로 부르면 CORS에 막히는 네이버 증권·야후 파이낸스 공개 시세를 대신 받아서
 // 필요한 값만 정리해 돌려준다. 계좌·키 같은 개인 정보는 전혀 쓰지 않는다.
-//   /api/stock?op=quotes&kr=005930,000660&idx=KOSPI,KOSDAQ&world=.DJI,.IXIC&fx=1&spark=1
-//   /api/stock?op=chart&kind=kr|idx|world|fx&code=005930&range=1d|1m|3m|1y|3y
+//   /api/stock?op=quotes&kr=005930,000660&us=AAPL.O,NVDA.O&idx=KOSPI,KOSDAQ&world=.DJI,.IXIC&fx=1&spark=1
+//   /api/stock?op=chart&kind=kr|us|idx|world|fx&code=005930&range=1d|1m|3m|1y|3y
 //   /api/stock?op=search&q=카카오
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
@@ -12,6 +12,10 @@ const NAVER = { 'User-Agent': UA, Referer: 'https://m.stock.naver.com/' };
 const WORLD = { '.DJI': '^DJI', '.IXIC': '^IXIC', '.INX': '^GSPC', '.SOX': '^SOX', '.N225': '^N225', '.SSEC': '000001.SS', '.HSI': '^HSI' };
 const INDEX = ['KOSPI', 'KOSDAQ', 'KPI200'];
 const CODE_RE = /^[0-9A-Z]{6}$/;
+// 미국 종목: 네이버 로이터 코드 (AAPL.O, KO, BRKb …)
+const US_RE = /^[A-Za-z0-9]{1,10}(\.[A-Z]{1,2})?$/;
+// 로이터 코드 → 야후 심볼: AAPL.O → AAPL, BRKb → BRK-B
+function yahooOf(code) { const m = /^([A-Z0-9]+?)([a-z])?(\.[A-Z]+)?$/.exec(code); return m ? m[1] + (m[2] ? '-' + m[2].toUpperCase() : '') : code; }
 
 async function get(url, headers = NAVER, type = 'json') {
   const r = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
@@ -66,6 +70,11 @@ async function worldQuotes(codes) {
   const j = await get(`https://polling.finance.naver.com/api/realtime/worldstock/index/${codes.join(',')}`);
   return (j.datas || []).map(d => fromPolling(d, d.reutersCode, d.indexName));
 }
+async function usQuotes(codes) {
+  if (!codes.length) return [];
+  const j = await get(`https://polling.finance.naver.com/api/realtime/worldstock/stock/${codes.map(encodeURIComponent).join(',')}`);
+  return (j.datas || []).map(d => ({ ...fromPolling(d, d.reutersCode, d.stockName), currency: 'USD', symbol: d.symbolCode || null }));
+}
 async function fxQuote() {
   const j = await get('https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_USDKRW');
   const r = j.result || {}, t = r.fluctuationsType && r.fluctuationsType.name;
@@ -106,6 +115,7 @@ async function yahoo(symbol, range) {
 const FROM = { '1m': 31, '3m': 92, '1y': 366, '3y': 3 * 366 };
 async function chart(kind, code, range) {
   if (kind === 'world') return yahoo(WORLD[code], range);
+  if (kind === 'us') return yahoo(yahooOf(code), range);
   if (kind === 'fx') return yahoo('KRW=X', range);
   if (range === '1d') return { points: await naverIntraday(kind, code), prevClose: null };
   const from = ymd(new Date(Date.now() - FROM[range] * 864e5));
@@ -131,8 +141,10 @@ function stats(points) {
 // ---------- 검색 ----------
 async function search(q) {
   const j = await get(`https://ac.stock.naver.com/ac?q=${encodeURIComponent(q)}&target=stock`);
-  return (j.items || []).filter(it => it.nationCode === 'KOR' && CODE_RE.test(String(it.code)))
-    .slice(0, 8).map(it => ({ code: it.code, name: it.name, market: it.typeName || it.typeCode || '' }));
+  return (j.items || []).filter(it => (it.nationCode === 'KOR' && CODE_RE.test(String(it.code))) || (it.nationCode === 'USA' && US_RE.test(String(it.reutersCode || ''))))
+    .slice(0, 10).map(it => it.nationCode === 'USA'
+      ? { code: it.reutersCode, name: it.name, market: it.typeName || it.typeCode || '', nation: 'USA', ticker: it.code }
+      : { code: it.code, name: it.name, market: it.typeName || it.typeCode || '', nation: 'KOR' });
 }
 
 function send(res, status, body, maxAge) {
@@ -149,27 +161,28 @@ module.exports = async (req, res) => {
     if (op === 'quotes') {
       const kr = list(q.get('kr'), c => CODE_RE.test(c)), idx = list(q.get('idx'), c => INDEX.includes(c));
       const world = String(q.get('world') || '').split(',').map(s => s.trim()).filter(c => WORLD[c]).slice(0, 10);
+      const us = String(q.get('us') || '').split(',').map(s => s.trim()).filter(c => US_RE.test(c)).slice(0, 30);
       const wantFx = q.get('fx') === '1', wantSpark = q.get('spark') === '1';
       const settle = p => p.then(v => v, e => { console.error(e.message); return null; });
-      const [a, b, c, d] = await Promise.all([settle(krQuotes(kr)), settle(idxQuotes(idx)), settle(worldQuotes(world)), wantFx ? settle(fxQuote()) : []]);
-      const out = { kr: a, idx: b, world: c, fx: d, at: new Date().toISOString() };
+      const [a, b, c, d, e] = await Promise.all([settle(krQuotes(kr)), settle(idxQuotes(idx)), settle(worldQuotes(world)), wantFx ? settle(fxQuote()) : [], settle(usQuotes(us))]);
+      const out = { kr: a, idx: b, world: c, fx: d, us: e, at: new Date().toISOString() };
       if (wantSpark) {
         const jobs = [
-          ...kr.map(code => ['kr', code]), ...idx.map(code => ['idx', code]),
+          ...kr.map(code => ['kr', code]), ...us.map(code => ['us', code]), ...idx.map(code => ['idx', code]),
           ...world.map(code => ['world', code]), ...(wantFx ? [['fx', 'USD']] : [])
         ];
         const sp = await Promise.all(jobs.map(([k, code]) => settle(chart(k, code, '1d'))));
         out.spark = {};
         jobs.forEach(([k, code], i) => { if (sp[i]) out.spark[`${k}:${code}`] = { p: thin(sp[i].points, 80).map(p => p[1]), prev: sp[i].prevClose }; });
       }
-      if (!a && !b && !c && !(d && d.length)) return send(res, 502, { error: '시세를 불러오지 못했어요' });
+      if (!a && !b && !c && !e && !(d && d.length)) return send(res, 502, { error: '시세를 불러오지 못했어요' });
       return send(res, 200, out, 20);
     }
     if (op === 'chart') {
       const kind = q.get('kind'), range = q.get('range') || '1d';
       let code = String(q.get('code') || '');
-      if (kind !== 'world') code = code.toUpperCase();
-      const valid = (kind === 'kr' && CODE_RE.test(code)) || (kind === 'idx' && INDEX.includes(code)) || (kind === 'world' && WORLD[code]) || (kind === 'fx' && code === 'USD');
+      if (kind !== 'world' && kind !== 'us') code = code.toUpperCase();
+      const valid = (kind === 'us' && US_RE.test(code)) || (kind === 'kr' && CODE_RE.test(code)) || (kind === 'idx' && INDEX.includes(code)) || (kind === 'world' && WORLD[code]) || (kind === 'fx' && code === 'USD');
       if (!valid || !YRANGE[range]) return send(res, 400, { error: '잘못된 요청' });
       const r = await chart(kind, code, range);
       return send(res, 200, { points: thin(r.points, range === '1d' ? 400 : 260).map(p => [p[0], p[1]]), prevClose: r.prevClose, stats: stats(r.points) }, range === '1d' ? 60 : 1800);

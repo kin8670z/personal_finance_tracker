@@ -7,7 +7,7 @@
   const API = './api/sync';
   const STATE_KEY = 'argon_sync_v1', LOCAL_BACKUP = 'argon_sync_localbackup';
   // 기기마다 다르게 두는 화면 설정은 동기화하지 않음
-  const SKIP = new Set([STATE_KEY, LOCAL_BACKUP, 'argon_seen_version', 'argon_dark_mode', 'argon_watch_market_v1', 'argon_watch_range_v1', 'argon_watch_range_v2', 'argon_watch_detail_v1', 'argon_watch_candle_v1']);
+  const SKIP = new Set([STATE_KEY, LOCAL_BACKUP, 'argon_seen_version', 'argon_dark_mode', 'argon_watch_market_v1', 'argon_watch_range_v1', 'argon_watch_range_v2', 'argon_watch_detail_v1', 'argon_watch_candle_v1', 'argon_fx_usd', 'argon_lotto_mode', 'argon_lotto_win']);
   const ITER = 310000, B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
   const enc = new TextEncoder(), dec = new TextDecoder(), subtle = window.crypto && crypto.subtle;
   const rawSet = Storage.prototype.setItem, rawRemove = Storage.prototype.removeItem;
