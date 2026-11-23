@@ -217,18 +217,43 @@
     }
 
     // ---------- 그리기 ----------
-    function renderLatest() {
+    // 맨 위: 고른 회차 당첨번호 (기본은 최신, ‹ › 또는 목록으로 지난 회차)
+    let viewNo = null, openGroups = new Set();
+    const RANK = ['낙첨', '🥇 1등', '🥈 2등', '🥉 3등', '4등 (5만원)', '5등 (5천원)'];
+    const drawOf = no => draws.find(d => d[0] === no);
+    function renderLatest(animate = true) {
       const box = document.getElementById('latest');
       if (!latest) { box.innerHTML = draws.length === 0 ? `<div class="skel" style="height:64px"></div>` : ''; return; }
-      box.innerHTML = `<p class="text-xs font-bold text-slate-500">${latest.no}회 당첨번호 <span class="text-slate-400 font-semibold">· ${latest.date.replace(/-/g, '.')}</span></p>
-        <div class="flex items-center gap-1.5 mt-2 flex-wrap">${latest.nums.map((n, i) => ball(n, 'pop', i * 80)).join('')}<span class="text-slate-400 font-extrabold mx-0.5">+</span>${ball(latest.bonus, 'pop', 560)}</div>
-        ${latest.prize1 ? `<p class="text-xs text-slate-500 mt-2">1등 <b class="text-slate-800">${latest.winners1}명</b> · 1인당 <b class="text-slate-800">${won(latest.prize1)}</b></p>` : ''}`;
+      const no = viewNo || latest.no, d = drawOf(no) || [latest.no, latest.date, ...latest.nums, latest.bonus, latest.prize1, latest.winners1];
+      const isLatest = no === latest.no, first = draws.length ? draws[0][0] : no;
+      const prize = d[9] != null ? d[9] : (isLatest ? latest.prize1 : null), winners = d[10] != null ? d[10] : (isLatest ? latest.winners1 : null);
+      const opts = draws.slice().reverse().map(x => `<option value="${x[0]}" ${x[0] === no ? 'selected' : ''}>${x[0]}회 (${x[1].replace(/-/g, '.')})</option>`).join('');
+      const myList = mine.filter(m => m.target === no), best = myList.length ? Math.min(...myList.map(m => rankOf(m.nums, d)).map(r => r || 9)) : null;
+      box.innerHTML = `<div class="flex items-center gap-1.5">
+          <button type="button" onclick="viewDraw(${no - 1})" ${no <= first ? 'disabled' : ''} aria-label="이전 회차" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold disabled:opacity-30">‹</button>
+          <select id="drawSel" aria-label="회차 고르기" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2 py-1.5 bg-white font-bold text-slate-700">${opts}</select>
+          <button type="button" onclick="viewDraw(${no + 1})" ${isLatest ? 'disabled' : ''} aria-label="다음 회차" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold disabled:opacity-30">›</button>
+        </div>
+        <div class="flex items-center justify-between mt-2"><p class="text-xs font-bold text-slate-500">${no}회 당첨번호 <span class="text-slate-400 font-semibold">· ${d[1].replace(/-/g, '.')}</span></p>${isLatest ? '<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-50 text-indigo-600">최신</span>' : `<button type="button" onclick="viewDraw(${latest.no})" class="text-[11px] font-bold text-indigo-600">최신 회차로 ↻</button>`}</div>
+        <div class="flex items-center gap-1.5 mt-2 flex-wrap">${d.slice(2, 8).map((n, i) => ball(n, animate ? 'pop' : '', animate ? i * 80 : null)).join('')}<span class="text-slate-400 font-extrabold mx-0.5">+</span>${ball(d[8], animate ? 'pop' : '', animate ? 560 : null)}</div>
+        ${prize ? `<p class="text-xs text-slate-500 mt-2">1등 <b class="text-slate-800">${winners}명</b> · 1인당 <b class="text-slate-800">${won(prize)}</b></p>` : ''}
+        ${myList.length ? `<button type="button" onclick="openGroup(${no})" class="mt-2 text-[11px] font-bold px-2 py-1 rounded-full ${best <= 5 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}">⭐ 내 번호 ${myList.length}게임 · ${best <= 5 ? RANK[best] : '모두 낙첨'} ›</button>` : ''}`;
+      document.getElementById('drawSel').onchange = e => viewDraw(+e.target.value);
       // 다음 추첨: 매주 토요일 20:35 (한국 시간)
       const now = new Date(), kst = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
       const next = new Date(kst); next.setHours(20, 35, 0, 0); next.setDate(kst.getDate() + ((6 - kst.getDay() + 7) % 7));
       if (next <= kst) next.setDate(next.getDate() + 7);
-      const h = Math.floor((next - kst) / 36e5), d = Math.floor(h / 24);
-      document.getElementById('nextDraw').innerHTML = `다음 추첨 ${latest.no + 1}회<br>${d ? `${d}일 ${h % 24}시간` : `${h}시간 ${Math.floor((next - kst) / 6e4) % 60}분`} 남음`;
+      const h = Math.floor((next - kst) / 36e5), dd = Math.floor(h / 24);
+      document.getElementById('nextDraw').innerHTML = `다음 추첨 ${latest.no + 1}회<br>${dd ? `${dd}일 ${h % 24}시간` : `${h}시간 ${Math.floor((next - kst) / 6e4) % 60}분`} 남음`;
+    }
+    function viewDraw(no) {
+      if (!latest || !draws.length) return;
+      no = Math.max(draws[0][0], Math.min(latest.no, no));
+      viewNo = no === latest.no ? null : no; renderLatest(true);
+    }
+    function openGroup(no) {
+      openGroups.add(String(no)); renderMine();
+      const el = document.querySelector(`[data-group="${no}"]`); if (el) el.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
     }
     function renderModes() {
       document.getElementById('modes').innerHTML = Object.entries(MODES).map(([k, m]) => `<button type="button" data-mode="${k}" aria-pressed="${k === mode}" class="chip text-xs font-bold px-2.5 py-1.5 rounded-full border border-slate-200 bg-white text-slate-600">${m.label}</button>`).join('');
@@ -252,24 +277,31 @@
           <p class="text-[10px] text-slate-400 text-center mt-1 num">${tags(p.nums)}</p>
         </div>`).join('') + (picks.some(p => !p.saved) && target ? `<button type="button" onclick="saveAll()" class="w-full text-xs font-bold text-indigo-600 py-1.5">★ 전부 ${target}회 내 번호로 저장</button>` : '');
     }
+    // 내 번호: 회차별로 접어두고, 누르면 그 회차에 고른 번호를 펼침
     function renderMine() {
       const box = document.getElementById('mine');
       document.getElementById('mineCount').textContent = mine.length ? `${mine.length}게임` : '';
       if (!mine.length) { box.innerHTML = `<p class="text-xs text-slate-400">뽑은 번호에서 ☆를 누르면 여기 저장돼요. 추첨이 끝나면 자동으로 맞춰봐요.</p>`; return; }
       const byDraw = {}; draws.forEach(d => byDraw[d[0]] = d);
       const groups = {}; mine.forEach(m => (groups[m.target] = groups[m.target] || []).push(m));
-      const RANK = ['낙첨', '🥇 1등', '🥈 2등', '🥉 3등', '4등 (5만원)', '5등 (5천원)'];
-      box.innerHTML = Object.keys(groups).sort((a, b) => b - a).map(t => {
-        const d = byDraw[t], list = groups[t];
-        const head = d ? `<span class="text-slate-500">${t}회 결과</span>` : `<span class="text-indigo-600">${t}회 · 추첨 전</span>`;
-        return `<div class="mt-2 first:mt-0"><div class="flex justify-between items-center text-[11px] font-bold mb-1">${head}${d ? `<span class="flex gap-0.5 items-center">${d.slice(2, 8).map(n => ball(n, 'sm')).join('')}<span class="text-slate-400">+</span>${ball(d[8], 'sm')}</span>` : ''}</div>
-          ${list.map(m => { const r = d ? rankOf(m.nums, d) : null; return `<div class="flex items-center gap-1.5 py-1.5 border-t border-slate-100">
+      box.innerHTML = `<div class="divide-y divide-slate-100">` + Object.keys(groups).sort((a, b) => b - a).map(t => {
+        const d = byDraw[t], list = groups[t], open = openGroups.has(t);
+        const ranks = d ? list.map(m => rankOf(m.nums, d)) : [], best = ranks.filter(Boolean).sort()[0];
+        const sub = d ? `${list.length}게임 · ${best ? RANK[best] : '모두 낙첨'}` : `${list.length}게임 · 추첨 전`;
+        return `<div data-group="${t}">
+          <button type="button" onclick="toggleGroup('${t}')" aria-expanded="${open}" class="w-full flex items-center justify-between gap-2 py-2.5 text-left">
+            <span class="min-w-0"><span class="block text-xs font-extrabold ${d ? 'text-slate-700' : 'text-indigo-600'}">${t}회${d ? ' 결과' : ''} <span class="text-slate-400">${open ? '▴' : '▾'}</span></span><span class="block text-[10px] font-bold ${best ? 'text-amber-600' : 'text-slate-400'}">${sub}</span></span>
+            ${d ? `<span class="flex gap-0.5 items-center shrink-0">${d.slice(2, 8).map(n => ball(n, 'sm')).join('')}<span class="text-slate-400 text-xs font-bold">+</span>${ball(d[8], 'sm')}</span>` : `<span class="text-[11px] font-bold text-slate-400 shrink-0">토요일 20:35 추첨</span>`}
+          </button>
+          ${open ? `<div class="pb-2">${list.map((m, i) => { const r = d ? ranks[i] : null; return `<div class="flex items-center gap-1.5 py-1.5 border-t border-slate-100">
               <div class="flex gap-1 flex-1">${m.nums.map(n => ball(n, 'sm' + (d && !d.slice(2, 8).includes(n) && n !== d[8] ? ' miss' : ''))).join('')}</div>
               ${r != null ? `<span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md shrink-0 ${r ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}">${RANK[r]}</span>` : ''}
               <button type="button" onclick="removeMine(${m.id})" aria-label="삭제" class="text-slate-300 hover:text-rose-500 font-bold px-1 shrink-0">✕</button>
-            </div>`; }).join('')}</div>`;
-      }).join('');
+            </div>`; }).join('')}</div>` : ''}
+        </div>`;
+      }).join('') + `</div>`;
     }
+    function toggleGroup(t) { if (openGroups.has(t)) openGroups.delete(t); else openGroups.add(t); renderMine(); }
     function renderStats() {
       document.querySelectorAll('[data-win]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.win === win)));
       if (!draws.length) return;
@@ -299,10 +331,10 @@
     function saveMine(i) {
       const p = picks[i]; if (!p || p.saved || !latest) return;
       mine.push({ id: Math.max(Date.now(), ...mine.map(m => m.id + 1)), nums: p.nums, target: latest.no + 1, savedAt: new Date().toISOString(), mode });
-      p.saved = true; save(MINE_KEY, mine); renderPicks(false); renderMine();
+      p.saved = true; openGroups.add(String(latest.no + 1)); save(MINE_KEY, mine); renderPicks(false); renderMine();
     }
     function saveAll() { picks.forEach((p, i) => { if (!p.saved) saveMine(i); }); }
-    function removeMine(id) { mine = mine.filter(m => m.id !== id); save(MINE_KEY, mine); renderMine(); }
+    function removeMine(id) { mine = mine.filter(m => m.id !== id); save(MINE_KEY, mine); renderMine(); renderLatest(false); }
     document.querySelectorAll('[data-win]').forEach(b => b.addEventListener('click', () => { win = +b.dataset.win; save('argon_lotto_win', win); renderStats(); }));
 
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
