@@ -91,6 +91,7 @@
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
   <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
@@ -105,6 +106,7 @@
       </div>
     </header>
 
+    <a id="ddays" href="./dday.html" class="hidden card px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 items-center"></a>
     <section id="weather" class="card p-4"><div class="skel" style="height:110px"></div></section>
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
@@ -260,6 +262,17 @@
       });
     }
 
+    // ---------- 고정한 D-Day ----------
+    function renderDdays() {
+      const el = document.getElementById('ddays'), st = load('argon_dday_v1', null);
+      const pins = st ? (st.items || []).filter(x => x.pin) : [{ name: '크리스마스', emoji: '🎄', date: '2026-12-25', yearly: true }];
+      if (!pins.length) { el.classList.add('hidden'); return; }
+      const t = new Date(); t.setHours(0, 0, 0, 0);
+      const of = it => { const [y, m, d] = it.date.split('-').map(Number); let n = new Date(y, m - 1, d); if (it.yearly) { n = new Date(t.getFullYear(), m - 1, d); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, d); } const k = Math.round((n - t) / 864e5); return k > 0 ? `D-${k}` : k === 0 ? 'D-DAY' : `D+${1 - k}`; };
+      el.innerHTML = pins.map(it => `<span class="text-sm font-extrabold text-slate-800 whitespace-nowrap">${esc(it.emoji)} ${esc(it.name)} <span class="text-indigo-600 num">${of(it)}</span></span>`).join('');
+      el.classList.remove('hidden');
+    }
+
     // ---------- 점심 (오전 10시~오후 2시) ----------
     function renderLunch() {
       const box = document.getElementById('lunch'), h = new Date().getHours(), st = load('argon_lunch_v1', null);
@@ -349,7 +362,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderLunch(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); renderLunch(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
