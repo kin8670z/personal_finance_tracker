@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.11';
+  const VERSION = '9.12';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -98,7 +98,47 @@
   }
   window.saveBrief = saveBrief;
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
-  function init() { addButton(); addVersion(); saveBrief(); }
+  // 사이드 메뉴를 카테고리로 묶기 (오늘은 맨 위 그대로, 나머지는 접었다 펴는 그룹)
+  const NAV_GROUPS = [
+    ['rec', '📝', '기록', ['diary.html', 'todo.html', 'habits.html', 'kid.html', 'dday.html']],
+    ['money', '💰', '자산관리', ['', 'index.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
+    ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'gift.html']],
+    ['trip', '✈️', '여행', ['english.html', 'fx.html']]
+  ];
+  function groupNav() {
+    const nav = document.getElementById('sideNav');
+    if (!nav || nav.dataset.grouped) return; nav.dataset.grouped = '1';
+    const css = document.createElement('style');
+    css.textContent = '.dark .nav-group{color:#e2e8f0}.dark .nav-group:hover{background:#334155}.dark #sideNav .border-slate-100{border-color:#334155}';
+    document.head.appendChild(css);
+    const file = a => (a.getAttribute('href') || '').replace(/^\.\//, '').replace(/[?#].*$/, '');
+    const links = [...nav.querySelectorAll(':scope > a.nav-item')];
+    const today = links.find(a => file(a) === 'today.html'), foot = nav.querySelector('.mt-auto');
+    let open = {}; try { open = JSON.parse(localStorage.getItem('nav_open') || '{}'); } catch (e) {}
+    const used = new Set(today ? [today] : []);
+    const groups = NAV_GROUPS.map(g => [g, links.filter(a => g[3].includes(file(a))).sort((a, b) => g[3].indexOf(file(a)) - g[3].indexOf(file(b)))]);
+    const rest = links.filter(a => !used.has(a) && !groups.some(([, ls]) => ls.includes(a)));
+    if (rest.length) groups.push([['etc', '✨', '더보기', []], rest]);
+    const wrap = document.createElement('div'); wrap.className = 'flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-1 px-1 min-h-0';
+    groups.forEach(([[id, emoji, name], ls]) => {
+      if (!ls.length) return;
+      const active = ls.some(a => a.classList.contains('active')), isOpen = open[id] !== undefined ? open[id] : active;
+      const head = document.createElement('button'); head.type = 'button';
+      head.className = 'nav-group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-extrabold text-slate-800 hover:bg-slate-100 w-full text-left mt-1';
+      head.setAttribute('aria-expanded', String(isOpen));
+      head.innerHTML = `<span>${emoji}</span><span class="flex-1">${name}</span><span class="text-[10px] font-bold text-slate-400">${ls.length}</span><span class="nav-chev text-xs text-slate-400 transition-transform" style="transform:rotate(${isOpen ? 90 : 0}deg)">▸</span>`;
+      const box = document.createElement('div'); box.className = 'flex flex-col gap-0.5 pl-3 ml-3 border-l-2 border-slate-100' + (isOpen ? '' : ' hidden');
+      ls.forEach(a => { a.classList.remove('py-2.5'); a.classList.add('py-2'); box.appendChild(a); });
+      head.addEventListener('click', () => {
+        const now = box.classList.toggle('hidden') === false;
+        head.setAttribute('aria-expanded', String(now)); head.querySelector('.nav-chev').style.transform = `rotate(${now ? 90 : 0}deg)`;
+        open[id] = now; try { localStorage.setItem('nav_open', JSON.stringify(open)); } catch (e) {}
+      });
+      wrap.appendChild(head); wrap.appendChild(box);
+    });
+    if (today) today.after(wrap); else if (foot) nav.insertBefore(wrap, foot); else nav.appendChild(wrap);
+  }
+  function init() { groupNav(); addButton(); addVersion(); saveBrief(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.installApp = install;
 })();
