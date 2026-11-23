@@ -89,7 +89,7 @@ module.exports = async (req, res) => {
       if (fresh !== 'OK') return reply(res, 429, { error: '잠깐 뒤에 다시 눌러주세요' });
       const code = await send(await vapid(), endpoint);
       if (code === 404 || code === 410) { await redis([['HDEL', P + 'subs', id]]); return reply(res, 410, { error: '알림 등록이 만료됐어요. 다시 켜주세요' }); }
-      return reply(res, code >= 200 && code < 300 ? 200 : 502, { status: code });
+      return code >= 200 && code < 300 ? reply(res, 200, { status: code }) : reply(res, 502, { error: `푸시 서버 응답 ${code}` });
     }
     return reply(res, 400, { error: 'op' });
   } catch (e) {
