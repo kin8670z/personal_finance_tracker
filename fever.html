@@ -332,7 +332,8 @@
       const band = { id: 'band', beforeDraw(c) { const { ctx, chartArea: a, scales: { y } } = c; if (!a) return; ctx.save();
         [[37.5, 38, 'rgba(245,158,11,.10)'], [38, 39, 'rgba(249,115,22,.12)'], [39, 45, 'rgba(244,63,94,.12)']].forEach(([lo, hi, col]) => { const y1 = Math.max(a.top, y.getPixelForValue(hi)), y2 = Math.min(a.bottom, y.getPixelForValue(lo)); if (y2 > y1) { ctx.fillStyle = col; ctx.fillRect(a.left, y1, a.right - a.left, y2 - y1); } });
         ctx.restore(); } };
-      const x0 = Math.min(from, temps[0].t);
+      const stepH = range <= 24 ? 3 : range <= 48 ? 6 : range <= 72 ? 12 : 24, x0d = new Date(Math.min(from, temps[0].t));
+      x0d.setMinutes(0, 0, 0); x0d.setHours(Math.floor(x0d.getHours() / stepH) * stepH); const x0 = x0d.getTime();
       chart = new Chart(document.getElementById('chart'), {
         type: 'line', plugins: [band],
         data: { datasets: [
@@ -342,7 +343,7 @@
         options: { maintainAspectRatio: false, animation: false, interaction: { mode: 'nearest', intersect: true },
           plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${dayLabel(c[0].raw.x)} ${hm(c[0].raw.x)}`, label: c => c.dataset.type === 'scatter' ? ` 💊 ${c.dataset.label}${c.raw.d ? ` ${c.raw.d}` : ''}` : ` ${c.raw.y.toFixed(1)}℃` } } },
           scales: {
-            x: { type: 'linear', min: x0, max: now, grid: { color: grid }, ticks: { color: tick, maxTicksLimit: 6, callback: v => { const d = new Date(v); return range > 48 ? `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}시` : `${d.getHours()}시`; } } },
+            x: { type: 'linear', min: x0, max: now, grid: { color: grid }, ticks: { color: tick, stepSize: stepH * 36e5, autoSkip: true, maxRotation: 0, callback: v => { const d = new Date(v); return d.getHours() === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : range > 72 ? '' : `${d.getHours()}시`; } } },
             y: { min: Math.floor(ymin * 2) / 2, max: Math.ceil(ymax * 2) / 2, grid: { color: grid }, ticks: { color: tick, stepSize: 0.5, callback: v => `${v.toFixed(1)}℃` } }
           } }
       });
