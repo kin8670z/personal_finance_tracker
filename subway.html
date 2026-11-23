@@ -298,7 +298,21 @@
       }
       return btn + inner;
     }
+    // 위치로 추정한 시간(est)은 역 간격이 긴 구간(과천선 등)에서 짧게 나오기 쉬움.
+    // 열차번호로 시간표를 찾으면, 열차가 시간표보다 일찍 오는 일은 드무니 시간표 시각보다 이르지 않게 보정.
+    function fixEst(name) {
+      const d = data[name], t = ttData[`${name}|${TT.dayType()}`];
+      if (!d || !d.arrivals || !t || !t.lines) return;
+      d.arrivals.forEach(a => {
+        if (a.sec > 0 || a.est == null) return;
+        if (a.est0 == null) a.est0 = a.est;
+        const m = TT.findTrain(t, a.no); if (!m) return;
+        const left = Math.round((TT.minsOf(m.time) - TT.nowMins(loadedAt)) * 60);
+        a.est = Math.max(a.est0, left);
+      });
+    }
     function render() {
+      favs.forEach(f => fixEst(f.name));
       const box = document.getElementById('favs');
       document.getElementById('editBtn').textContent = editing ? '완료' : '편집';
       document.getElementById('editBtn').classList.toggle('hidden', !favs.length);
