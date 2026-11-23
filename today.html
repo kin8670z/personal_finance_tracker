@@ -86,6 +86,7 @@
     <a href="./today.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">☀️ <span>오늘</span></a>
     <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
@@ -125,6 +126,7 @@
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
     <section id="phrase" class="card p-4"></section>
+    <section id="gifts" class="hidden card p-4"></section>
     <section id="todo" class="card p-4"></section>
     <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
@@ -374,6 +376,16 @@
       speechSynthesis.speak(u);
     }
 
+    // ---------- 곧 만료되는 기프티콘 (7일 이내) ----------
+    function renderGifts() {
+      const box = document.getElementById('gifts'), st = load('argon_gift_v1', { items: [] }), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+      const left = s => { const [y, m, d] = s.split('-').map(Number); return Math.round((new Date(y, m - 1, d) - t0) / 864e5); };
+      const soon = (st.items || []).filter(x => !x.used && left(x.exp) >= 0 && left(x.exp) <= 7).sort((a, b) => a.exp.localeCompare(b.exp));
+      if (!soon.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🎁 곧 만료되는 기프티콘', './gift.html', '전체') + `<div class="space-y-1.5">${soon.map(x => { const n = left(x.exp); return `<a href="./gift.html?id=${x.id}" class="flex items-center gap-2"><span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600 shrink-0">${n === 0 ? '오늘까지' : `D-${n}`}</span><span class="text-sm font-bold text-slate-800 truncate">${esc(x.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${esc(x.store || '')}</span></a>`; }).join('')}</div>`;
+    }
+
     // ---------- 할 일 (오늘까지 · 마감 없는 것) ----------
     function renderTodo() {
       const box = document.getElementById('todo'), st = load('argon_todo_v1', { todos: [], shop: [] }), today = ymd(new Date());
@@ -484,7 +496,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
