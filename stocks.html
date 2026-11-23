@@ -930,9 +930,22 @@
       const datasets = [{ data: pts.map(p => p[1]), borderColor: c, backgroundColor: grad, fill: true, borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, pointHoverBackgroundColor: c, tension: .15 }];
       const hw = watch.find(x => x.symbol === t);
       const notes = [];
-      if (held(hw)) { datasets.push({ data: pts.map(() => hw.avg), borderColor: '#f59e0b', borderDash: [6, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '내 평단가' }); notes.push('<span style="color:#f59e0b">— 평단가</span>'); }
-      if (hw && hw.target > 0) { datasets.push({ data: pts.map(() => hw.target), borderColor: '#10b981', borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '목표가' }); notes.push('<span style="color:#10b981">— 목표가</span>'); }
-      if (hw && hw.stop > 0) { datasets.push({ data: pts.map(() => hw.stop), borderColor: '#8b5cf6', borderDash: [2, 3], borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '손절가' }); notes.push('<span style="color:#8b5cf6">— 손절가</span>'); }
+      // 평단가·목표가·손절가: 가격 움직임 범위에서 너무 멀면 축을 늘리지 않고(그래프가 납작해짐) 아래에 '↑/↓ 그래프 밖'으로만 표시
+      const vals = pts.map(p => p[1]).concat(range === '1d' ? [base] : []);
+      const lo = Math.min(...vals), hi = Math.max(...vals), span = Math.max(hi - lo, hi * 0.005);
+      const refLine = (v, color, dash, name) => {
+        if (!(v > 0)) return;
+        if (v >= lo - span * 0.6 && v <= hi + span * 0.6) {
+          datasets.push({ data: pts.map(() => v), borderColor: color, borderDash: dash, borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 0, fill: false, label: name });
+          notes.push(`<span style="color:${color}">— ${name}</span>`);
+        } else {
+          const up = v > hi;
+          notes.push(`<span style="color:${color}">${up ? '↑' : '↓'} ${name} ${fmt(v, dg)} <span style="opacity:.7">(${rateText((v - last) / last * 100)}, 그래프 밖)</span></span>`);
+        }
+      };
+      if (held(hw)) refLine(hw.avg, '#f59e0b', [6, 3], '평단가');
+      if (hw) refLine(hw.target, '#10b981', [2, 3], '목표가');
+      if (hw) refLine(hw.stop, '#8b5cf6', [2, 3], '손절가');
       const ln = document.getElementById('lineNote'); ln.innerHTML = notes.join(' · '); ln.classList.toggle('hidden', !notes.length);
       if (range === '1d') datasets.push({ data: pts.map(() => base), borderColor: isDark() ? '#64748b' : '#94a3b8', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, pointHoverRadius: 0, fill: false, label: '전일 종가' });
       if (chart) chart.destroy();
