@@ -131,6 +131,11 @@
           <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 내 번호</h2><span id="mineCount" class="text-xs font-bold text-slate-400"></span></div>
           <div id="mine"></div>
         </section>
+        <!-- 내 번호 성적표 -->
+        <section class="card p-4">
+          <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧾 내 번호 성적표</h2><span class="text-[10px] font-bold text-slate-400">재미로만 🎈</span></div>
+          <div id="myStats"></div>
+        </section>
       </div>
 
       <!-- 통계 -->
@@ -282,6 +287,7 @@
     }
     // 내 번호: 회차별로 접어두고, 누르면 그 회차에 고른 번호를 펼침
     function renderMine() {
+      renderMyStats();
       const box = document.getElementById('mine');
       document.getElementById('mineCount').textContent = mine.length ? `${mine.length}게임` : '';
       if (!mine.length) { box.innerHTML = `<p class="text-xs text-slate-400">뽑은 번호에서 ☆를 누르면 여기 저장돼요. 추첨이 끝나면 자동으로 맞춰봐요.</p>`; return; }
@@ -303,6 +309,65 @@
             </div>`; }).join('')}</div>` : ''}
         </div>`;
       }).join('') + `</div>`;
+    }
+    // ---------- 내 번호 성적표 ----------
+    // 아무 번호나 6개 골랐을 때 k개 맞을 확률 (초기하분포): 평균 0.8개
+    const C = (n, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; };
+    const P_MATCH = [0, 1, 2, 3, 4, 5, 6].map(k => C(6, k) * C(39, 6 - k) / C(45, 6));
+    const PRIZE = { 2: 55000000, 3: 1500000, 4: 50000, 5: 5000 };   // 2·3등은 회차마다 달라서 대략
+    function renderMyStats() {
+      const box = document.getElementById('myStats'); if (!box) return;
+      if (!mine.length) { box.innerHTML = `<p class="text-xs text-slate-400">⭐ 내 번호를 저장하면 성적표가 생겨요.</p>`; return; }
+      const byDraw = {}; draws.forEach(d => byDraw[d[0]] = d);
+      const done = mine.map(m => ({ m, d: byDraw[m.target] })).filter(x => x.d);
+      const games = mine.length, cost = games * 1000;
+      const res = done.map(({ m, d }) => { const w = d.slice(2, 8), hit = m.nums.filter(n => w.includes(n)).length, bonus = m.nums.includes(d[8]), rank = rankOf(m.nums, d); return { m, d, hit, bonus, rank, prize: rank === 1 ? (d[9] || 2e9) : PRIZE[rank] || 0 }; });
+      const prize = res.reduce((s, r) => s + r.prize, 0), spent = done.length * 1000;
+      const rankCnt = [0, 0, 0, 0, 0, 0]; res.forEach(r => rankCnt[r.rank]++);
+      const hitCnt = Array(7).fill(0); res.forEach(r => hitCnt[r.hit]++);
+      const avgHit = res.length ? res.reduce((s, r) => s + r.hit, 0) / res.length : 0;
+      const luck = res.length ? Math.round(avgHit / 0.8 * 100) : null;
+      const best = res.slice().sort((a, b) => b.hit - a.hit || b.bonus - a.bonus || b.d[0] - a.d[0])[0];
+      // 내가 고른 번호
+      const pick = Array(46).fill(0); mine.forEach(m => m.nums.forEach(n => pick[n]++));
+      const nums = Array.from({ length: 45 }, (_, i) => i + 1);
+      const fav = nums.slice().sort((a, b) => pick[b] - pick[a] || a - b).filter(n => pick[n]).slice(0, 6);
+      const never = nums.filter(n => !pick[n]);
+      const sum = a => a.reduce((x, y) => x + y, 0);
+      const mySum = sum(mine.map(m => sum(m.nums))) / games, myOdd = sum(mine.map(m => m.nums.filter(n => n % 2).length)) / games;
+      const myConsec = mine.filter(m => consecutive(m.nums.slice().sort((a, b) => a - b)) > 0).length / games;
+      const st = draws.length ? stats() : null;
+      const weeks = new Set(mine.map(m => m.target)).size || 1, perWeek = games / weeks;
+      const years = 8145060 / perWeek / 52;
+      const cell = (l, v, sub, c) => `<div class="bg-slate-50 rounded-lg px-2 py-2 text-center"><p class="text-[10px] font-bold text-slate-400">${l}</p><p class="text-sm font-extrabold num ${c || 'text-slate-800'}">${v}</p>${sub ? `<p class="text-[9px] text-slate-400 num">${sub}</p>` : ''}</div>`;
+      const luckTxt = luck == null ? '' : luck >= 130 ? '🍀 운 좋은 편' : luck >= 90 ? '😐 딱 평균' : luck >= 60 ? '🌧️ 조금 아쉬움' : '🥲 운이 숨었어요';
+      const RN = ['낙첨', '1등', '2등', '3등', '4등', '5등'];
+      box.innerHTML = `
+        <div class="grid grid-cols-3 gap-2">
+          ${cell('산 게임', `${games}게임`, `${cost.toLocaleString()}원`)}
+          ${cell('당첨금', prize ? won(prize).replace('만원', '만') : '0원', done.length ? `추첨 끝난 ${done.length}게임` : '아직 추첨 전', prize ? 'text-emerald-600' : '')}
+          ${cell('수익률', spent ? `${Math.round(prize / spent * 100)}%` : '-', spent ? `${(prize - spent).toLocaleString()}원` : '', prize >= spent && spent ? 'text-emerald-600' : 'text-rose-600')}
+        </div>
+        ${res.length ? `
+        <div class="mt-3"><div class="flex justify-between items-end mb-1"><p class="text-xs font-extrabold text-slate-700">🎯 맞힌 개수</p><p class="text-[10px] font-bold text-slate-400">평균 ${avgHit.toFixed(2)}개 · 보통 0.80개</p></div>
+          <div class="space-y-1">${[0, 1, 2, 3, 4, 5, 6].map(k => { const n = hitCnt[k], pct = n / res.length * 100, exp = P_MATCH[k] * 100; return (k >= 4 && !n) ? '' : `<div class="flex items-center gap-2 text-[11px]"><span class="w-8 font-bold text-slate-500 shrink-0">${k}개</span><div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden relative"><div class="h-full rounded-full ${k >= 3 ? 'bg-amber-400' : 'bg-indigo-400'}" style="width:${Math.max(pct, n ? 2 : 0).toFixed(1)}%"></div><span class="absolute top-0 bottom-0 w-0.5 bg-slate-500/60" style="left:${Math.min(exp, 100).toFixed(1)}%" title="평균 ${exp.toFixed(1)}%"></span></div><span class="w-14 text-right num font-bold text-slate-700 shrink-0">${n}번 <span class="text-slate-400">${Math.round(pct)}%</span></span></div>`; }).join('')}</div>
+          <p class="text-[9px] text-slate-400 mt-1">세로선 = 아무 번호나 골랐을 때 평균 비율</p></div>
+        <div class="mt-3 flex items-center gap-3 bg-indigo-50 rounded-xl px-3 py-2.5">
+          <div class="text-center shrink-0"><p class="text-[10px] font-bold text-indigo-500">운 지수</p><p class="text-2xl font-extrabold num text-indigo-700">${luck}</p></div>
+          <div class="min-w-0"><p class="text-sm font-extrabold text-indigo-800">${luckTxt}</p><p class="text-[11px] text-indigo-700/80">100이 평균. 맞힌 개수가 평균보다 많을수록 높아요.${rankCnt.slice(1).some(Boolean) ? ` 당첨 ${rankCnt.slice(1).map((c, i) => c ? `${RN[i + 1]} ${c}번` : '').filter(Boolean).join(' · ')}!` : ''}</p></div>
+        </div>
+        ${best ? `<div class="mt-3"><p class="text-xs font-extrabold text-slate-700 mb-1">😭 제일 아까웠던 게임 <span class="text-[10px] font-bold text-slate-400">${best.d[0]}회 · ${best.hit}개${best.bonus ? ' + 보너스' : ''} 맞음</span></p>
+          <div class="flex gap-1 flex-wrap">${best.m.nums.slice().sort((a, b) => a - b).map(n => best.d.slice(2, 8).includes(n) ? ball(n, 'sm') : n === best.d[8] ? ball(n, 'sm ring-2 ring-amber-400') : ball(n, 'sm miss')).join('')}</div></div>` : ''}` : `<p class="text-xs text-slate-400 mt-3">추첨이 끝나면 맞힌 개수랑 운 지수가 나와요.</p>`}
+        <div class="mt-3"><p class="text-xs font-extrabold text-slate-700 mb-1">💘 내가 자주 고른 번호</p>
+          <div class="flex gap-1.5 flex-wrap">${fav.map(n => `<span class="flex flex-col items-center">${ball(n, 'sm')}<span class="text-[9px] text-slate-400 num mt-0.5">${pick[n]}번</span></span>`).join('')}</div>
+          <p class="text-[10px] text-slate-400 mt-1">한 번도 안 고른 번호 ${never.length}개${never.length && never.length <= 12 ? `: ${never.join(', ')}` : ''}</p></div>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          ${cell('내 평균 합계', Math.round(mySum), st ? `당첨 평균 ${Math.round(st.avgSum)}` : '')}
+          ${cell('내 홀:짝', `${myOdd.toFixed(1)}:${(6 - myOdd).toFixed(1)}`, st ? `당첨 흔함 ${st.oddMode}:${6 - st.oddMode}` : '')}
+          ${cell('연속번호', `${Math.round(myConsec * 100)}%`, st ? `당첨 ${Math.round(st.consecShare * 100)}%` : '')}
+        </div>
+        <p class="text-[11px] text-slate-500 mt-3">🐢 지금 페이스(주 ${perWeek.toFixed(1)}게임)면 1등 기대값까지 약 <b class="num">${Math.round(years).toLocaleString()}년</b>… 그래도 사는 재미 ㅎㅎ</p>
+        <p class="text-[9px] text-slate-400 mt-1">⭐로 저장한 번호 기준 · 2·3등 당첨금은 회차 평균으로 대략 계산</p>`;
     }
     function toggleGroup(t) { if (openGroups.has(t)) openGroups.delete(t); else openGroups.add(t); renderMine(); }
     function renderStats() {
