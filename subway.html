@@ -13,6 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
+  <script src="tt.js"></script>
   <title>지하철 · 아르곤 자산관리</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
@@ -223,7 +224,63 @@
       return `<div class="border border-slate-100 rounded-xl p-3">
           <div class="flex items-center justify-between gap-2 mb-1"><p class="text-sm font-extrabold text-slate-900 flex items-center gap-1.5">${esc(label(f.name))} ${tag}</p>${del}</div>
           ${body}
+          ${ttSection(f)}
         </div>`;
+    }
+
+    // ---------- 시간표 ----------
+    const TT = window.ArgonTT;
+    const ttOpen = new Set(), ttFull = new Set(), ttWeek = {}, ttData = {}, ttAuto = new Set();
+    const ttKey = f => `${f.name}|${ttWeek[f.name] || TT.dayType()}`;
+    function toggleTT(name) { ttOpen.has(name) ? ttOpen.delete(name) : ttOpen.add(name); loadTT(name); render(); }
+    function setTTWeek(name, w) { ttWeek[name] = w; loadTT(name); render(); }
+    function toggleTTFull(k) { ttFull.has(k) ? ttFull.delete(k) : ttFull.add(k); render(); }
+    async function loadTT(name) {
+      const k = ttKey({ name }); if (ttData[k]) return;
+      ttData[k] = { loading: true };
+      try { ttData[k] = await TT.load(name, ttWeek[name] || TT.dayType()); } catch (e) { ttData[k] = { error: e.message }; }
+      render();
+    }
+    function ttSection(f) {
+      // 실시간이 안 될 때는 시간표를 자동으로 펼침
+      const d = data[f.name];
+      if (d && (d.error || (!d.needKey && (d.notFound || !d.arrivals.length))) && !ttAuto.has(f.name)) { ttAuto.add(f.name); ttOpen.add(f.name); loadTT(f.name); }
+      const open = ttOpen.has(f.name);
+      const btn = `<div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+          <span role="button" tabindex="0" onclick="toggleTT('${esc(f.name)}')" class="cursor-pointer text-[11px] font-bold text-indigo-600">🕒 시간표 ${open ? '접기 ▴' : '보기 ▾'}</span>
+          ${open ? `<span class="seg flex gap-0.5 bg-slate-100 rounded-lg p-0.5">${['1', '2', '3'].map(w => `<span role="button" tabindex="0" onclick="setTTWeek('${esc(f.name)}','${w}')" aria-pressed="${(ttWeek[f.name] || TT.dayType()) === w}" class="cursor-pointer px-2 py-0.5 rounded-md text-[10px] font-bold ${(ttWeek[f.name] || TT.dayType()) === w ? 'bg-indigo-600 text-white' : 'text-slate-500'}">${TT.WEEK[w]}</span>`).join('')}</span>` : ''}
+        </div>`;
+      if (!open) return btn;
+      const t = ttData[ttKey(f)];
+      let inner;
+      if (!t || t.loading) inner = `<div class="skel mt-2" style="height:48px"></div>`;
+      else if (t.error) inner = `<p class="text-xs text-rose-600 mt-2">${esc(t.error)}</p>`;
+      else if (t.needKey) inner = `<p class="text-xs text-slate-500 mt-2">시간표 키(SEOUL_OPENAPI_KEY)가 아직 없어요.</p>`;
+      else if (!t.lines.length) inner = `<p class="text-xs text-slate-500 mt-2">이 역 시간표가 없어요. 서울교통공사가 운영하는 1~8호선 역만 나와요.</p>`;
+      else {
+        const today = (ttWeek[f.name] || TT.dayType()) === TT.dayType();
+        inner = t.lines.map(L => L.dirs.map(D => {
+          const fk = `${f.name}|${L.line}|${D.tag}`, first = D.trains[0], last = D.trains[D.trains.length - 1];
+          const next = today ? TT.upcoming(D.trains, 4) : [];
+          const full = ttFull.has(fk);
+          let table = '';
+          if (full) {
+            const hours = {}; D.trains.forEach(x => { const h = x[0].slice(0, 2); (hours[h] = hours[h] || []).push(x); });
+            const curH = String(new Date().getHours()).padStart(2, '0');
+            table = `<div class="mt-1.5 rounded-lg border border-slate-100 divide-y divide-slate-100 text-[11px]">${Object.entries(hours).map(([h, xs]) => `<div class="flex gap-2 px-2 py-1 ${today && h === curH ? 'bg-indigo-50' : ''}"><span class="w-6 shrink-0 font-extrabold text-slate-500 num">${h}</span><span class="flex flex-wrap gap-x-2 gap-y-0.5 num text-slate-700">${xs.map(x => `<span title="${esc(x[1])}행" class="${x[2] ? 'text-rose-600 font-bold' : ''}">${x[0].slice(3)}${x[1] && D.name.indexOf(x[1]) !== 0 ? `<sup class="text-[8px] text-slate-400">${esc(x[1].slice(0, 2))}</sup>` : ''}</span>`).join('')}</span></div>`).join('')}</div>
+              <p class="text-[9px] text-slate-400 mt-0.5">작은 글씨는 다른 종착역 (앞 두 글자) · 빨간색은 급행</p>`;
+          }
+          return `<div class="mt-2">
+              <div class="flex items-center justify-between gap-2"><p class="text-[11px] font-extrabold text-slate-700">${esc(L.line)} · ${esc(D.name)}</p><p class="text-[10px] font-bold text-slate-400 shrink-0">첫차 ${first[0]} · 막차 ${last[0]}</p></div>
+              ${today ? (next.length ? `<div class="flex gap-1.5 mt-1 flex-wrap">${next.map((x, i) => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold num ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}">${x[0]} <span class="text-[10px] font-bold text-slate-400">${TT.untilText(x[0])}</span>${x[1] && D.name.indexOf(x[1]) !== 0 ? ` <span class="text-[9px] text-slate-400">${esc(x[1])}행</span>` : ''}</span>`).join('')}</div>`
+                : `<p class="text-[11px] text-slate-500 mt-1">오늘 운행이 끝났어요 🌙</p>`) : ''}
+              <span role="button" tabindex="0" onclick="toggleTTFull('${esc(fk)}')" class="cursor-pointer inline-block text-[10px] font-bold text-slate-400 mt-1">${full ? '전체 시간표 접기 ▴' : '전체 시간표 ▾'}</span>
+              ${table}
+            </div>`;
+        }).join('')).join('');
+        inner += `<p class="text-[9px] text-slate-400 mt-2">서울교통공사 시간표 기준 · 실제 도착과 다를 수 있어요</p>`;
+      }
+      return btn + inner;
     }
     function render() {
       const box = document.getElementById('favs');

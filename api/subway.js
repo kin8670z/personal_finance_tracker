@@ -45,6 +45,13 @@ module.exports = async (req, res) => {
       const n = Number((/\[(\d+)\]번째/.exec(m) || [])[1]) || Number(String(a.ordkey || '').slice(2, 5)) || 0;
       return n > 0 ? n * 110 : null;
     };
+    // 정보가 만들어진 시각(recptnDt, 한국시간)부터 지난 만큼 열차가 더 왔다고 보정 (서울시 안내).
+    // 5분 넘게 지난 건 종점 대기 등으로 멈춰 있는 경우가 많아 보정하지 않음.
+    const adjust = (est, at) => {
+      if (est == null || !at) return est;
+      const lag = (Date.now() - Date.parse(String(at).replace(' ', 'T') + '+09:00')) / 1000;
+      return lag > 0 && lag < 300 ? Math.max(0, Math.round(est - lag)) : est;
+    };
     const posText = a => { const m = a.arvlMsg2 || ''; const n = /\[(\d+)\]번째 전역/.exec(m); return n ? `${n[1]}정거장 전` : /전전역/.test(m) ? '2정거장 전' : /전역/.test(m) ? '전역' : ''; };
     const arrivals = (j.realtimeArrivalList || []).map(a => {
       const [lineName, color] = LINES[a.subwayId] || [a.subwayNm || '지하철', '#64748b'];
@@ -52,7 +59,7 @@ module.exports = async (req, res) => {
         line: a.subwayId, lineName, color, dir: a.updnLine, to: a.trainLineNm, dest: a.bstatnNm,
         msg: a.arvlMsg2, now: a.arvlMsg3, code: a.arvlCd, sec: Number(a.barvlDt) || 0,
         express: a.btrainSttus && a.btrainSttus !== '일반' ? a.btrainSttus : null, last: a.lstcarAt === '1',
-        order: a.ordkey, at: a.recptnDt, est: estimate(a), pos: posText(a)
+        order: a.ordkey, at: a.recptnDt, est: adjust(estimate(a), a.recptnDt), pos: posText(a)
       };
     });
     return send(200, { station, demo, arrivals, at: new Date().toISOString() }, 'public, s-maxage=10, stale-while-revalidate=20');
