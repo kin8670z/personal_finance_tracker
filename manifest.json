@@ -52,48 +52,18 @@
       ]
     },
     {
+      "name": "여행 영어",
+      "url": "./english.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "점심 룰렛",
       "url": "./lunch.html",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "D-Day",
-      "url": "./dday.html",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "가계부",
-      "url": "./",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "주식 현황",
-      "url": "./stocks.html",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "내 자산",
-      "url": "./assets.html",
       "icons": [
         {
           "src": "icons/icon-192.png",
