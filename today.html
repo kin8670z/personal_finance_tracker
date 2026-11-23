@@ -85,6 +85,7 @@
     <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
     <a href="./today.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">☀️ <span>오늘</span></a>
     <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
@@ -124,6 +125,7 @@
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
     <section id="phrase" class="card p-4"></section>
+    <section id="todo" class="card p-4"></section>
     <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
@@ -372,6 +374,19 @@
       speechSynthesis.speak(u);
     }
 
+    // ---------- 할 일 (오늘까지 · 마감 없는 것) ----------
+    function renderTodo() {
+      const box = document.getElementById('todo'), st = load('argon_todo_v1', { todos: [], shop: [] }), today = ymd(new Date());
+      const open = (st.todos || []).filter(x => !x.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
+      const shop = (st.shop || []).filter(x => !x.done);
+      const show = open.filter(x => !x.due || x.due <= today).slice(0, 5), later = open.length - show.length;
+      box.innerHTML = head('✅ 할 일', './todo.html', '전체') +
+        (show.length ? `<div class="space-y-1.5">${show.map(x => `<div class="flex items-center gap-2"><span role="checkbox" tabindex="0" aria-checked="false" onclick="doneTodo(${x.id})" class="cursor-pointer w-5 h-5 rounded-md border-2 border-slate-300 shrink-0"></span><span class="flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(x.text)}</span>${x.due && x.due < today ? '<span class="text-[10px] font-bold text-rose-600 shrink-0">지남</span>' : x.due === today ? '<span class="text-[10px] font-bold text-amber-600 shrink-0">오늘</span>' : ''}</div>`).join('')}</div>`
+          : `<p class="text-xs text-slate-400">오늘 할 일은 없어요 🎉</p>`) +
+        `<div class="flex gap-3 mt-2 text-[11px] font-bold text-slate-500">${later > 0 ? `<span>나중 할 일 ${later}개</span>` : ''}${shop.length ? `<a href="./todo.html?tab=shop" class="text-indigo-600">🛒 장보기 ${shop.length}개: ${esc(shop.slice(0, 3).map(x => x.name).join(', '))}${shop.length > 3 ? '…' : ''}</a>` : ''}</div>`;
+    }
+    function doneTodo(id) { const st = load('argon_todo_v1', { todos: [] }); const t = (st.todos || []).find(x => x.id === id); if (t) { t.done = true; t.doneAt = Date.now(); save('argon_todo_v1', st); } renderTodo(); }
+
     // ---------- 한줄 일기: 여기서 바로 쓰기 ----------
     function renderDiary() {
       const box = document.getElementById('diary'), st = load('argon_diary_v1', { entries: [] }), today = ymd(new Date());
@@ -469,7 +484,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
