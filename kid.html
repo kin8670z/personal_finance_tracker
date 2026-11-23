@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>성장 기록 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">👶 <span>성장 기록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">👶 성장 기록</a></h1>
+        <div id="kidTabs" class="flex gap-1 shrink-0"></div>
+      </div>
+    </header>
+
+    <!-- 아이 등록 -->
+    <section id="setup" class="card p-4 hidden">
+      <h2 id="setupTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">아이 정보</h2>
+      <form id="kidForm" class="space-y-2" autocomplete="off">
+        <div class="flex gap-2"><input id="kName" maxlength="12" placeholder="이름 (애칭도 OK)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white" required>
+          <select id="kSex" class="border border-slate-200 rounded-lg px-2 bg-white"><option value="f">👧 딸</option><option value="m">👦 아들</option></select></div>
+        <label class="flex items-center gap-2 text-sm font-bold text-slate-600">생일 <input id="kBirth" type="date" class="flex-1 border border-slate-200 rounded-lg px-2.5 py-2 bg-white" required></label>
+        <div class="flex gap-2"><button class="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg">저장</button><span role="button" tabindex="0" id="kCancel" onclick="closeSetup()" class="cursor-pointer px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg">취소</span></div>
+        <p id="kDel" class="hidden text-right"><span role="button" tabindex="0" onclick="delKid()" class="cursor-pointer text-[11px] font-bold text-rose-500">이 아이 기록 모두 삭제</span></p>
+      </form>
+    </section>
+
+    <div id="main" class="space-y-3 md:space-y-4 hidden">
+      <section id="hero" class="card p-5 text-center"></section>
+
+      <section class="card p-4">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">📏 키·몸무게 기록</h2>
+        <form id="recForm" class="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 items-end" autocomplete="off">
+          <label class="text-[10px] font-bold text-slate-500">날짜<input id="rDate" type="date" class="w-full border border-slate-200 rounded-lg px-1.5 py-1.5 bg-white text-sm"></label>
+          <label class="text-[10px] font-bold text-slate-500">키 (cm)<input id="rH" inputmode="decimal" placeholder="105.3" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+          <label class="text-[10px] font-bold text-slate-500">몸무게 (kg)<input id="rW" inputmode="decimal" placeholder="17.2" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+          <button class="px-3 py-1.5 bg-indigo-600 text-white font-bold rounded-lg text-sm">기록</button>
+        </form>
+        <input id="rMemo" maxlength="40" placeholder="메모 (선택) 예: 영유아검진, 발 사이즈 160" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <div class="flex gap-1.5 mt-3"><span role="button" tabindex="0" onclick="setMetric('h')" id="mH" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold">📏 키</span><span role="button" tabindex="0" onclick="setMetric('w')" id="mW" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold">⚖️ 몸무게</span></div>
+        <div class="relative h-56 mt-2"><canvas id="chart"></canvas><p id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400">기록이 2개 이상 쌓이면 그래프가 그려져요</p></div>
+        <div id="recList" class="mt-3 divide-y divide-slate-100"></div>
+      </section>
+
+      <section class="card p-4">
+        <div role="button" tabindex="0" onclick="toggleVax()" class="cursor-pointer flex justify-between items-center"><h2 class="text-sm md:text-base font-extrabold text-slate-900">💉 예방접종 · 건강검진 체크</h2><span id="vaxArrow" class="text-xs font-bold text-slate-400">펼치기 ▾</span></div>
+        <p id="vaxSum" class="text-[11px] font-bold text-slate-500 mt-1"></p>
+        <div id="vaxBox" class="hidden mt-2"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const KEY = 'argon_kid_v1';
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const fmt = (n, d = 1) => Number(n).toLocaleString('ko-KR', { maximumFractionDigits: d });
+    let st = (() => { try { return Object.assign({ kids: [], recs: [], vax: {}, cur: null }, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { return { kids: [], recs: [], vax: {}, cur: null }; } })();
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    let metric = 'h', chart = null, vaxOpen = false, editing = null;
+    const kid = () => st.kids.find(k => k.id === st.cur) || st.kids[0];
+
+    // 만 나이 · 개월 수
+    function age(birth, on = new Date()) {
+      const b = parseD(birth); let m = (on.getFullYear() - b.getFullYear()) * 12 + on.getMonth() - b.getMonth();
+      if (on.getDate() < b.getDate()) m--;
+      return { months: m, years: Math.floor(m / 12), rest: m % 12, days: Math.round((new Date(on.getFullYear(), on.getMonth(), on.getDate()) - b) / 864e5) };
+    }
+    const ageText = (birth, on) => { const a = age(birth, on); return a.months < 24 ? `${a.months}개월` : `만 ${a.years}세${a.rest ? ` ${a.rest}개월` : ''}`; };
+
+    function renderTabs() {
+      document.getElementById('kidTabs').innerHTML = st.kids.map(k => `<span role="button" tabindex="0" onclick="pickKid(${k.id})" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold ${kid() && k.id === kid().id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${k.sex === 'm' ? '👦' : '👧'} ${esc(k.name)}</span>`).join('') +
+        `<span role="button" tabindex="0" onclick="openSetup()" aria-label="아이 추가" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-500">＋</span>`;
+    }
+    function pickKid(id) { st.cur = id; persist(); render(); }
+
+    function renderHero() {
+      const k = kid(), a = age(k.birth), b = parseD(k.birth), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+      let nb = new Date(t0.getFullYear(), b.getMonth(), b.getDate()); if (nb < t0) nb.setFullYear(nb.getFullYear() + 1);
+      const toBday = Math.round((nb - t0) / 864e5), turning = nb.getFullYear() - b.getFullYear();
+      const nextK = Math.ceil((a.days + 1) / 1000) * 1000, dK = nextK - a.days; const kDate = new Date(b); kDate.setDate(kDate.getDate() + nextK);
+      const last = recsOf(k.id).slice(-1)[0];
+      document.getElementById('hero').innerHTML = `
+        <div class="text-5xl">${k.sex === 'm' ? '👦' : '👧'}</div>
+        <div class="text-lg font-extrabold text-slate-900 mt-1">${esc(k.name)} <span role="button" tabindex="0" onclick="openSetup(${k.id})" aria-label="정보 수정" class="cursor-pointer text-xs text-slate-400">✎</span></div>
+        <div class="text-2xl font-extrabold text-indigo-600 mt-1">${ageText(k.birth)}</div>
+        <div class="text-xs font-bold text-slate-500 mt-0.5">태어난 지 <b class="text-slate-800">${fmt(a.days + 1, 0)}일째</b> · ${a.months}개월</div>
+        <div class="grid grid-cols-2 gap-2 mt-3 text-left">
+          <div class="rounded-xl bg-pink-50 px-3 py-2"><div class="text-[10px] font-bold text-pink-500">🎂 ${turning}번째 생일</div><div class="text-sm font-extrabold text-slate-800">${toBday === 0 ? '오늘! 🎉' : `D-${toBday}`}</div></div>
+          <div class="rounded-xl bg-amber-50 px-3 py-2"><div class="text-[10px] font-bold text-amber-600">✨ ${fmt(nextK, 0)}일 (${kDate.getFullYear() % 100}.${kDate.getMonth() + 1}.${kDate.getDate()})</div><div class="text-sm font-extrabold text-slate-800">${dK === 0 ? '오늘! 🎉' : `D-${dK}`}</div></div>
+        </div>
+        ${last ? `<div class="text-[11px] font-bold text-slate-500 mt-3">최근 기록 (${last.date.slice(2).replace(/-/g, '.')}) ${last.h ? `키 <b class="text-slate-800">${fmt(last.h)}cm</b>` : ''} ${last.w ? `· 몸무게 <b class="text-slate-800">${fmt(last.w)}kg</b>` : ''}</div>` : ''}`;
+    }
+
+    const recsOf = id => st.recs.filter(r => r.kid === id).sort((a, b) => a.date.localeCompare(b.date));
+    function setMetric(m) { metric = m; renderChart(); }
+    function renderChart() {
+      const k = kid(), on = 'bg-indigo-600 text-white', off = 'bg-slate-100 text-slate-600';
+      document.getElementById('mH').className = `cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${metric === 'h' ? on : off}`;
+      document.getElementById('mW').className = `cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${metric === 'w' ? on : off}`;
+      const pts = recsOf(k.id).filter(r => r[metric]).map(r => ({ x: age(k.birth, parseD(r.date)).days / 30.4375, y: r[metric], d: r.date }));
+      document.getElementById('chartEmpty').classList.toggle('hidden', pts.length >= 2);
+      if (chart) { chart.destroy(); chart = null; }
+      if (pts.length < 2 || !window.Chart) return;
+      const span = pts[pts.length - 1].x - pts[0].x;
+      const grid = isDark() ? 'rgba(148,163,184,.15)' : 'rgba(148,163,184,.25)', tick = isDark() ? '#94a3b8' : '#64748b', col = metric === 'h' ? '#6366f1' : '#ec4899';
+      chart = new Chart(document.getElementById('chart'), {
+        type: 'line', data: { datasets: [{ data: pts, borderColor: col, backgroundColor: col, pointRadius: 4, tension: .25 }] },
+        options: { maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${c[0].raw.d} (${ageText(k.birth, parseD(c[0].raw.d))})`, label: c => ` ${fmt(c.raw.y)}${metric === 'h' ? 'cm' : 'kg'}` } } },
+          scales: { x: { type: 'linear', grid: { color: grid }, ticks: { color: tick, stepSize: span > 36 ? 12 : span > 12 ? 6 : 3, callback: v => v >= 24 && v % 12 === 0 ? `${v / 12}세` : v >= 24 ? `${Math.floor(v / 12)}세 ${v % 12}개월` : `${v}개월` } }, y: { grid: { color: grid }, ticks: { color: tick, callback: v => `${v}${metric === 'h' ? 'cm' : 'kg'}` } } } }
+      });
+    }
+    function renderRecs() {
+      const k = kid(), rs = recsOf(k.id).reverse();
+      document.getElementById('recList').innerHTML = rs.map((r, i) => { const prev = rs[i + 1];
+        const diff = (key, u) => prev && prev[key] && r[key] ? ` <span class="text-[10px] ${r[key] - prev[key] >= 0 ? 'text-emerald-600' : 'text-rose-500'}">${r[key] - prev[key] >= 0 ? '+' : ''}${fmt(r[key] - prev[key])}${u}</span>` : '';
+        return `<div class="flex items-center gap-2 py-2">
+          <span class="w-20 shrink-0"><span class="block text-xs font-extrabold text-slate-700 num">${r.date.slice(2).replace(/-/g, '.')}</span><span class="block text-[10px] text-slate-400">${ageText(k.birth, parseD(r.date))}</span></span>
+          <span class="flex-1 min-w-0 text-sm font-bold text-slate-800">${r.h ? `${fmt(r.h)}cm${diff('h', 'cm')}` : ''}${r.h && r.w ? ' · ' : ''}${r.w ? `${fmt(r.w)}kg${diff('w', 'kg')}` : ''}${r.memo ? `<span class="block text-[11px] font-normal text-slate-500 truncate">${esc(r.memo)}</span>` : ''}</span>
+          <span role="button" tabindex="0" onclick="delRec(${r.id}, this)" aria-label="삭제" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`; }).join('') || '<p class="text-xs text-slate-400 py-2">아직 기록이 없어요. 건강검진 결과표의 키·몸무게부터 넣어보세요.</p>';
+    }
+    function delRec(id, el) { if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = '✕'; el.classList.remove('text-rose-500'); } }, 2500); return; } st.recs = st.recs.filter(r => r.id !== id); persist(); render(); }
+    document.getElementById('recForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const n = id => { const v = parseFloat(String(document.getElementById(id).value).replace(',', '.')); return v > 0 ? Math.round(v * 10) / 10 : null; };
+      const h = n('rH'), w = n('rW'), date = document.getElementById('rDate').value || ymd(new Date());
+      if (!h && !w) { document.getElementById('rH').focus(); return; }
+      st.recs.push({ id: Date.now(), kid: kid().id, date, h, w, memo: document.getElementById('rMemo').value.trim() });
+      ['rH', 'rW', 'rMemo'].forEach(id => document.getElementById(id).value = ''); document.getElementById('rDate').value = ymd(new Date());
+      persist(); render();
+    });
+
+    // 국가예방접종·영유아검진 (참고용 대략 시기 — 정확한 일정은 예방접종도우미)
+    const VAX = [
+      ['bcg', 'BCG (결핵)', 0, '4주 이내'], ['hepb1', 'B형간염 1차', 0, '출생 직후'], ['hepb2', 'B형간염 2차', 1, '1개월'], ['chk1', '🩺 영유아검진 1차', 1, '14~35일'],
+      ['m2', 'DTaP·IPV·Hib·폐렴구균·로타 1차', 2, '2개월'], ['m4', 'DTaP·IPV·Hib·폐렴구균·로타 2차', 4, '4개월'], ['chk2', '🩺 영유아검진 2차', 4, '4~6개월'],
+      ['m6', 'DTaP·IPV·Hib·폐렴구균 3차 · B형간염 3차', 6, '6개월'], ['flu', '인플루엔자 (매년 가을)', 6, '6개월~'], ['chk3', '🩺 영유아검진 3차', 9, '9~12개월'],
+      ['m12', 'MMR 1차 · 수두 · Hib·폐렴구균 추가', 12, '12~15개월'], ['hepa', 'A형간염 1·2차', 12, '12~23개월'], ['je', '일본뇌염 기초접종', 12, '12~23개월'],
+      ['m15', 'DTaP 4차', 15, '15~18개월'], ['chk4', '🩺 영유아검진 4차 (+구강)', 18, '18~24개월'], ['chk5', '🩺 영유아검진 5차', 30, '30~36개월'], ['je3', '일본뇌염 추가', 24, '24~35개월'],
+      ['chk6', '🩺 영유아검진 6차 (+구강)', 42, '42~48개월'], ['y4', 'DTaP·IPV 추가 · MMR 2차', 48, '만 4~6세'], ['chk7', '🩺 영유아검진 7차 (+구강)', 54, '54~60개월'],
+      ['je6', '일본뇌염 추가', 72, '만 6세'], ['chk8', '🩺 영유아검진 8차', 66, '66~71개월'], ['tdap', 'Tdap/Td · 일본뇌염 (만 12세) · HPV', 132, '만 11~12세']
+    ];
+    function toggleVax() { vaxOpen = !vaxOpen; document.getElementById('vaxBox').classList.toggle('hidden', !vaxOpen); document.getElementById('vaxArrow').textContent = vaxOpen ? '접기 ▴' : '펼치기 ▾'; renderVax(); }
+    function renderVax() {
+      const k = kid(), done = st.vax[k.id] || {}, m = age(k.birth).months;
+      const due = VAX.filter(v => !done[v[0]] && v[2] <= m), next = VAX.filter(v => !done[v[0]] && v[2] > m).sort((a, b) => a[2] - b[2])[0];
+      document.getElementById('vaxSum').textContent = `완료 ${Object.keys(done).length}/${VAX.length}` + (due.length ? ` · 체크 안 한 지난 항목 ${due.length}개` : '') + (next ? ` · 다음: ${next[1].replace('🩺 ', '')} (${next[3]})` : '');
+      if (!vaxOpen) return;
+      document.getElementById('vaxBox').innerHTML = VAX.slice().sort((a, b) => a[2] - b[2]).map(v => { const d = done[v[0]], late = !d && v[2] <= m;
+        return `<div role="checkbox" tabindex="0" aria-checked="${!!d}" onclick="tickVax('${v[0]}')" class="cursor-pointer flex items-center gap-2 py-1.5">
+          <span class="w-5 h-5 rounded-md shrink-0 flex items-center justify-center text-xs font-bold ${d ? 'bg-emerald-500 text-white' : `border-2 ${late ? 'border-amber-400' : 'border-slate-300'}`}">${d ? '✓' : ''}</span>
+          <span class="flex-1 min-w-0 text-xs font-bold ${d ? 'text-slate-400 line-through' : 'text-slate-700'}">${v[1]}</span>
+          <span class="text-[10px] font-bold shrink-0 ${d ? 'text-emerald-600' : late ? 'text-amber-600' : 'text-slate-400'}">${d ? (d.length === 10 ? d.slice(2).replace(/-/g, '.') : '완료') : v[3]}</span></div>`; }).join('') +
+        (due.length >= 3 ? `<span role="button" tabindex="0" onclick="tickPast(this)" class="cursor-pointer block text-center mt-2 py-1.5 rounded-lg bg-slate-100 text-xs font-bold text-slate-600">지금 시기까지 항목 한 번에 완료 체크 (${due.length}개)</span>` : '') +
+        `<p class="text-[10px] text-slate-400 mt-2 leading-relaxed">대략적인 시기만 적은 참고용 체크리스트예요. 실제 접종 이력·정확한 일정은 <a href="https://nip.kdca.go.kr" target="_blank" rel="noopener" class="text-indigo-600 font-bold underline">예방접종도우미</a>에서 확인하세요.</p>`;
+    }
+    function tickPast(el) {
+      if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '한 번 더 누르면 체크해요 (날짜는 비워둬요)'; return; }
+      const k = kid(), d = st.vax[k.id] = st.vax[k.id] || {}, m = age(k.birth).months;
+      VAX.forEach(v => { if (!d[v[0]] && v[2] <= m) d[v[0]] = '완료'; }); persist(); renderVax();
+    }
+    function tickVax(id) { const k = kid(), d = st.vax[k.id] = st.vax[k.id] || {}; if (d[id]) delete d[id]; else d[id] = ymd(new Date()); persist(); renderVax(); }
+
+    // 아이 등록·수정
+    function openSetup(id) {
+      editing = id || null; const k = id && st.kids.find(x => x.id === id);
+      document.getElementById('setupTitle').textContent = k ? '아이 정보 수정' : st.kids.length ? '아이 추가' : '👶 아이 정보를 먼저 넣어주세요';
+      document.getElementById('kName').value = k ? k.name : ''; document.getElementById('kSex').value = k ? k.sex : 'f'; document.getElementById('kBirth').value = k ? k.birth : '';
+      document.getElementById('kCancel').classList.toggle('hidden', !st.kids.length); document.getElementById('kDel').classList.toggle('hidden', !k);
+      document.getElementById('setup').classList.remove('hidden'); document.getElementById('kName').focus();
+    }
+    function closeSetup() { document.getElementById('setup').classList.add('hidden'); }
+    function delKid() {
+      const el = document.querySelector('#kDel span'); if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '정말 삭제할까요? 한 번 더 누르면 삭제'; return; }
+      st.kids = st.kids.filter(k => k.id !== editing); st.recs = st.recs.filter(r => r.kid !== editing); delete st.vax[editing]; st.cur = st.kids[0] ? st.kids[0].id : null;
+      el.dataset.sure = ''; el.textContent = '이 아이 기록 모두 삭제'; persist(); closeSetup(); render();
+    }
+    document.getElementById('kidForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = { name: document.getElementById('kName').value.trim(), sex: document.getElementById('kSex').value, birth: document.getElementById('kBirth').value };
+      if (!v.name || !v.birth) return;
+      if (editing) Object.assign(st.kids.find(k => k.id === editing), v); else { const id = Date.now(); st.kids.push({ id, ...v }); st.cur = id; }
+      persist(); closeSetup(); render();
+    });
+
+    function render() {
+      const has = st.kids.length > 0;
+      document.getElementById('main').classList.toggle('hidden', !has);
+      renderTabs(); if (!has) { openSetup(); return; }
+      renderHero(); renderChart(); renderRecs(); renderVax();
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드'; renderChart();
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    document.getElementById('rDate').value = ymd(new Date());
+    window.addEventListener('storage', e => { if (e.key === KEY) { try { st = Object.assign({ kids: [], recs: [], vax: {} }, JSON.parse(e.newValue || '{}')); } catch (x) {} render(); } });
+    render();
+  </script>
+</body>
+</html>
