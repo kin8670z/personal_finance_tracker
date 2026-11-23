@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>기프티콘 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🎁 <span>기프티콘</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+          <div class="min-w-0"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🎁 기프티콘</a></h1>
+          <p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        </div>
+        <span role="button" tabindex="0" onclick="openForm()" class="cursor-pointer px-3 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold shrink-0">＋ 추가</span>
+      </div>
+    </header>
+
+    <!-- 추가/수정 -->
+    <section id="formSec" class="card p-4 hidden">
+      <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🎁 기프티콘 추가</h2>
+      <form id="form" class="space-y-2" autocomplete="off">
+        <label class="block cursor-pointer rounded-xl border-2 border-dashed border-indigo-200 p-3 text-center">
+          <input id="fImg" type="file" accept="image/*" class="hidden">
+          <img id="fPreview" alt="" class="hidden mx-auto max-h-48 rounded-lg">
+          <span id="fImgHint" class="text-sm font-bold text-indigo-600">📷 기프티콘 사진·캡처 고르기</span>
+        </label>
+        <input id="fName" maxlength="40" required placeholder="이름 (예: 아메리카노 T)" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
+        <div class="grid grid-cols-2 gap-2">
+          <input id="fStore" maxlength="20" list="stores" placeholder="사용처 (예: 스타벅스)" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
+          <input id="fExp" type="date" required class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <input id="fCode" maxlength="40" inputmode="numeric" placeholder="바코드 번호 (선택)" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white num">
+          <input id="fFrom" maxlength="20" placeholder="보낸 사람 (선택)" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
+        </div>
+        <datalist id="stores"><option value="스타벅스"><option value="투썸플레이스"><option value="메가커피"><option value="이디야"><option value="배스킨라빈스"><option value="파리바게뜨"><option value="CU"><option value="GS25"><option value="세븐일레븐"><option value="BBQ"><option value="교촌치킨"><option value="맥도날드"><option value="버거킹"><option value="올리브영"><option value="다이소"></datalist>
+        <div class="flex gap-2">
+          <span role="button" tabindex="0" onclick="closeForm()" class="cursor-pointer flex-1 py-2 text-center bg-slate-100 text-slate-600 font-bold text-sm rounded-xl">취소</span>
+          <button type="submit" id="fSave" class="flex-[2] py-2 bg-indigo-600 text-white font-bold rounded-xl">저장</button>
+        </div>
+        <p class="text-[10px] text-slate-400">사진은 이 폰에만 저장돼요 (용량 때문에 동기화 안 함). 이름·날짜·바코드 번호는 다른 기기에도 보여요.</p>
+      </form>
+    </section>
+
+    <section class="card p-4">
+      <div id="list"></div>
+    </section>
+    <section id="oldSec" class="card p-4 hidden">
+      <div role="button" tabindex="0" onclick="toggleOld()" class="cursor-pointer flex justify-between items-center"><h2 class="text-sm font-extrabold text-slate-500" id="oldTitle"></h2><span id="oldArrow" class="text-xs font-bold text-slate-400">펼치기 ▾</span></div>
+      <div id="oldList" class="hidden mt-2"></div>
+    </section>
+  </div>
+
+  <!-- 크게 보기 -->
+  <div id="viewer" class="hidden fixed inset-0 z-[60] bg-slate-900/90 flex-col items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div class="w-full max-w-md bg-white rounded-2xl p-4 max-h-[92vh] overflow-y-auto" id="viewerBox"></div>
+  </div>
+
+  <script>
+    const KEY = 'argon_gift_v1', IMG_KEY = 'gift_images_v1';   // 사진은 argon_ 이 아니라 기기 동기화 안 함
+    function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const dateOf = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const daysLeft = s => Math.round((dateOf(s) - dateOf(ymd(new Date()))) / 864e5);
+
+    let st = Object.assign({ items: [] }, load(KEY, {}));
+    let imgs = load(IMG_KEY, {});
+    let editId = null, pendingImg = null, oldOpen = false;
+    const persist = () => save(KEY, st);
+
+    // 사진: 긴 변 1000px JPEG로 줄여서 저장 (바코드가 읽힐 정도)
+    function shrink(file) {
+      return new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => { const im = new Image(); im.onload = () => {
+          const k = Math.min(1, 1000 / Math.max(im.width, im.height)), c = document.createElement('canvas');
+          c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+          const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+          res(c.toDataURL('image/jpeg', 0.8));
+        }; im.onerror = rej; im.src = r.result; };
+        r.onerror = rej; r.readAsDataURL(file);
+      });
+    }
+    document.getElementById('fImg').addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      try { pendingImg = await shrink(f); const p = document.getElementById('fPreview'); p.src = pendingImg; p.classList.remove('hidden'); document.getElementById('fImgHint').textContent = '사진 바꾸기'; } catch (err) { alert('사진을 읽지 못했어요.'); }
+    });
+    function openForm(id) {
+      editId = id || null; pendingImg = null;
+      const it = id ? st.items.find(x => x.id === id) : null;
+      document.getElementById('formTitle').textContent = it ? '✏️ 기프티콘 수정' : '🎁 기프티콘 추가';
+      document.getElementById('fName').value = it ? it.name : ''; document.getElementById('fStore').value = it ? it.store || '' : '';
+      document.getElementById('fExp').value = it ? it.exp : ymd(new Date(Date.now() + 90 * 864e5));
+      document.getElementById('fCode').value = it ? it.code || '' : ''; document.getElementById('fFrom').value = it ? it.from || '' : '';
+      const p = document.getElementById('fPreview'); if (it && imgs[it.id]) { p.src = imgs[it.id]; p.classList.remove('hidden'); } else p.classList.add('hidden');
+      document.getElementById('fImgHint').textContent = it && imgs[it.id] ? '사진 바꾸기' : '📷 기프티콘 사진·캡처 고르기';
+      document.getElementById('fImg').value = '';
+      document.getElementById('formSec').classList.remove('hidden'); closeViewer();
+      document.getElementById('formSec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function closeForm() { document.getElementById('formSec').classList.add('hidden'); editId = null; pendingImg = null; }
+    document.getElementById('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const data = { name: document.getElementById('fName').value.trim(), store: document.getElementById('fStore').value.trim(), exp: document.getElementById('fExp').value, code: document.getElementById('fCode').value.trim(), from: document.getElementById('fFrom').value.trim() };
+      if (!data.name || !data.exp) return;
+      let id = editId;
+      if (id) Object.assign(st.items.find(x => x.id === id), data);
+      else { id = Math.max(Date.now(), ...st.items.map(x => x.id + 1)); st.items.push(Object.assign({ id, used: false, at: Date.now() }, data)); }
+      if (pendingImg) { imgs[id] = pendingImg; if (!save(IMG_KEY, imgs)) { delete imgs[id]; alert('폰 저장 공간이 부족해서 사진은 저장하지 못했어요. 쓴 기프티콘을 지워 보세요.'); } }
+      persist(); closeForm(); render();
+    });
+    function setUsed(id, v) { const it = st.items.find(x => x.id === id); if (!it) return; it.used = v; it.usedAt = v ? Date.now() : null; persist(); closeViewer(); render(); }
+    function delItem(id) {
+      if (!confirmDel(id)) return;
+      st.items = st.items.filter(x => x.id !== id); delete imgs[id]; save(IMG_KEY, imgs); persist(); closeViewer(); render();
+    }
+    let delArm = null;
+    function confirmDel(id) { if (delArm === id) { delArm = null; return true; } delArm = id; const b = document.getElementById('delBtn'); if (b) b.textContent = '한 번 더 누르면 삭제'; return false; }
+
+    function badge(it) {
+      if (it.used) return `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-500">사용함</span>`;
+      const n = daysLeft(it.exp);
+      return `<span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full ${n < 0 ? 'bg-slate-200 text-slate-500' : n <= 7 ? 'bg-rose-100 text-rose-600' : n <= 30 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}">${n < 0 ? '만료' : n === 0 ? '오늘까지!' : `D-${n}`}</span>`;
+    }
+    function tile(it) {
+      return `<div role="button" tabindex="0" onclick="view(${it.id})" class="cursor-pointer rounded-xl bg-slate-50 overflow-hidden ${it.used || daysLeft(it.exp) < 0 ? 'opacity-60' : ''}">
+          <div class="aspect-[4/3] bg-slate-200 flex items-center justify-center overflow-hidden">${imgs[it.id] ? `<img src="${imgs[it.id]}" alt="" class="w-full h-full object-cover object-top">` : '<span class="text-4xl">🎁</span>'}</div>
+          <div class="p-2"><div class="flex items-center justify-between gap-1">${badge(it)}<span class="text-[10px] text-slate-400 truncate">${esc(it.store || '')}</span></div>
+          <p class="text-xs font-extrabold text-slate-800 mt-1 truncate">${esc(it.name)}</p><p class="text-[10px] text-slate-400">${it.exp.replace(/-/g, '.')}까지</p></div></div>`;
+    }
+    function render() {
+      const active = st.items.filter(x => !x.used && daysLeft(x.exp) >= 0).sort((a, b) => a.exp.localeCompare(b.exp));
+      const old = st.items.filter(x => x.used || daysLeft(x.exp) < 0).sort((a, b) => (b.usedAt || dateOf(b.exp).getTime()) - (a.usedAt || dateOf(a.exp).getTime()));
+      const soon = active.filter(x => daysLeft(x.exp) <= 7).length;
+      document.getElementById('sub').textContent = active.length ? `쓸 수 있는 것 ${active.length}개${soon ? ` · ⏰ 7일 안에 만료 ${soon}개` : ''}` : '받은 기프티콘을 저장해 두세요';
+      document.getElementById('list').innerHTML = active.length ? `<div class="grid grid-cols-2 sm:grid-cols-3 gap-2">${active.map(tile).join('')}</div>`
+        : `<div class="text-center py-8"><p class="text-4xl">🎁</p><p class="text-sm font-bold text-slate-600 mt-2">저장된 기프티콘이 없어요</p><p class="text-xs text-slate-400 mt-1">카톡으로 받은 기프티콘 캡처를 위의 ＋ 추가로 넣어보세요</p></div>`;
+      const sec = document.getElementById('oldSec'); sec.classList.toggle('hidden', !old.length);
+      document.getElementById('oldTitle').textContent = `사용함·만료 ${old.length}개`;
+      document.getElementById('oldList').innerHTML = `<div class="grid grid-cols-3 gap-2">${old.map(tile).join('')}</div>`;
+    }
+    function toggleOld() { oldOpen = !oldOpen; document.getElementById('oldList').classList.toggle('hidden', !oldOpen); document.getElementById('oldArrow').textContent = oldOpen ? '접기 ▴' : '펼치기 ▾'; }
+    function view(id) {
+      const it = st.items.find(x => x.id === id); if (!it) return; delArm = null;
+      const n = daysLeft(it.exp);
+      document.getElementById('viewerBox').innerHTML = `
+        <div class="flex items-center justify-between mb-2"><p class="text-base font-extrabold text-slate-900 truncate">${esc(it.name)}</p><span role="button" tabindex="0" onclick="closeViewer()" class="cursor-pointer text-slate-400 text-xl px-1" aria-label="닫기">✕</span></div>
+        <p class="text-xs text-slate-500 mb-2">${esc(it.store || '')}${it.from ? ` · ${esc(it.from)}님이 보냄` : ''} · ${it.exp.replace(/-/g, '.')}까지 ${badge(it)}</p>
+        ${imgs[it.id] ? `<img src="${imgs[it.id]}" alt="${esc(it.name)}" class="w-full rounded-xl bg-white">` : '<div class="py-10 text-center text-5xl bg-slate-50 rounded-xl">🎁</div>'}
+        ${it.code ? `<p class="text-center text-lg font-extrabold tracking-widest num text-slate-900 mt-3 select-all">${esc(it.code.replace(/(\d{4})(?=\d)/g, '$1 '))}</p>` : ''}
+        <p class="text-[10px] text-slate-400 text-center mt-1">계산할 때 화면 밝기를 올리면 바코드가 잘 찍혀요</p>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          <span role="button" tabindex="0" id="delBtn" onclick="delItem(${it.id})" class="cursor-pointer py-2 text-center rounded-xl bg-rose-50 text-rose-600 font-bold text-xs">삭제</span>
+          <span role="button" tabindex="0" onclick="openForm(${it.id})" class="cursor-pointer py-2 text-center rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">수정</span>
+          ${it.used ? `<span role="button" tabindex="0" onclick="setUsed(${it.id}, false)" class="cursor-pointer py-2 text-center rounded-xl bg-slate-100 text-slate-600 font-bold text-xs">안 쓴 걸로</span>`
+            : `<span role="button" tabindex="0" onclick="setUsed(${it.id}, true)" class="cursor-pointer py-2 text-center rounded-xl text-white font-bold text-xs" style="background:#059669">✅ 사용 완료</span>`}
+        </div>`;
+      const v = document.getElementById('viewer'); v.classList.remove('hidden'); v.classList.add('flex');
+    }
+    function closeViewer() { const v = document.getElementById('viewer'); v.classList.add('hidden'); v.classList.remove('flex'); }
+    document.getElementById('viewer').addEventListener('click', e => { if (e.target.id === 'viewer') closeViewer(); });
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSideNav(); closeViewer(); } });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ items: [] }, load(KEY, {})); render(); } });
+    render();
+    const qv = Number(new URLSearchParams(location.search).get('id')); if (qv) view(qv);
+  </script>
+</body>
+</html>
