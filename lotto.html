@@ -157,6 +157,12 @@
       </section>
     </div>
 
+    <!-- 당첨금 -->
+    <section class="card p-4">
+      <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">💰 당첨금 <span id="prizeNo" class="text-xs font-bold text-slate-400"></span></h2><span class="text-[10px] font-bold text-slate-400">위에서 고른 회차 기준</span></div>
+      <div id="prizes"><div class="skel" style="height:140px"></div></div>
+    </section>
+
     <p class="text-[11px] text-slate-400 text-center px-3 leading-relaxed">🎈 재미로만 보세요. 로또는 매 회 완전히 무작위라 어떤 번호든 1등 확률은 똑같이 <b>8,145,060분의 1</b>이에요.<br>통계는 지난 결과일 뿐 다음 결과를 알려주지 않아요. 당첨번호는 동행복권 공개 자료예요.</p>
   </div>
 
@@ -226,7 +232,32 @@
 
     // ---------- 그리기 ----------
     // 맨 위: 고른 회차 당첨번호 (기본은 최신, ‹ › 또는 목록으로 지난 회차)
-    let viewNo = null, openGroups = new Set();
+    let viewNo = null, openGroups = new Set(), prizes = {};
+    const COND = ['6개 번호 일치', '5개 + 보너스 번호', '5개 번호 일치', '4개 번호 일치', '3개 번호 일치'];
+    const fullWon = n => n == null ? '-' : n.toLocaleString('ko-KR') + '원';
+    const bigWon = n => { if (n == null) return '-'; const eok = Math.floor(n / 1e8), man = Math.round((n % 1e8) / 1e4); return eok ? `${eok.toLocaleString()}억${man ? ` ${man.toLocaleString()}만` : ''}원` : `${man.toLocaleString()}만원`; };
+    function renderPrizes(no, d) {
+      const box = document.getElementById('prizes'); if (!box) return;
+      document.getElementById('prizeNo').textContent = no ? `${no}회` : '';
+      const p = prizes[no];
+      if (!p) { box.innerHTML = d && d[9] ? `<p class="text-xs text-slate-500">1등 ${d[10]}명 · 1인당 <b>${fullWon(d[9])}</b></p><p class="text-[10px] text-slate-400 mt-1">2~5등 상세는 최근 200회까지만 있어요.</p>` : `<p class="text-xs text-slate-400">당첨금 정보가 아직 없어요.</p>`; return; }
+      const total = p.d.reduce((s, [a, w]) => s + (a || 0) * (w || 0), 0);
+      const medal = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
+      box.innerHTML = `<div class="divide-y divide-slate-100">
+          <div class="grid grid-cols-[auto_1fr_auto] gap-x-3 pb-1.5 text-[10px] font-bold text-slate-400"><span>등수</span><span class="text-right">1인당 당첨금</span><span class="text-right w-20">당첨자</span></div>
+          ${p.d.map(([amt, w], i) => `<div class="grid grid-cols-[auto_1fr_auto] gap-x-3 py-2 items-center">
+              <span><span class="block text-sm font-extrabold text-slate-800">${medal[i]} ${i + 1}등</span><span class="block text-[10px] text-slate-400">${COND[i]}</span></span>
+              <span class="text-right"><span class="block text-sm font-extrabold num ${i === 0 ? 'text-amber-600' : 'text-slate-900'}">${i < 3 ? bigWon(amt) : fullWon(amt)}</span>${i < 3 && amt ? `<span class="block text-[10px] text-slate-400 num">${fullWon(amt)}</span>` : ''}</span>
+              <span class="text-right w-20 text-xs font-bold num text-slate-700">${w == null ? '-' : w.toLocaleString() + '명'}</span>
+            </div>`).join('')}
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-slate-50 rounded-lg px-3 py-2"><p class="text-[10px] font-bold text-slate-400">총 판매액</p><p class="text-sm font-extrabold num text-slate-800">${bigWon(p.s)}</p>${p.s ? `<p class="text-[9px] text-slate-400 num">약 ${Math.round(p.s / 1000).toLocaleString()}게임</p>` : ''}</div>
+          <div class="bg-slate-50 rounded-lg px-3 py-2"><p class="text-[10px] font-bold text-slate-400">총 당첨금</p><p class="text-sm font-extrabold num text-slate-800">${bigWon(total)}</p>${p.s ? `<p class="text-[9px] text-slate-400 num">판매액의 ${Math.round(total / p.s * 100)}%</p>` : ''}</div>
+        </div>
+        ${p.c && Object.keys(p.c).length ? `<p class="text-[11px] text-slate-500 mt-2">🥇 1등 방식: ${[['auto', '자동'], ['manual', '수동'], ['semi', '반자동'], ['semi_auto', '반자동']].filter(([k]) => p.c[k]).map(([k, l]) => `${l} <b>${p.c[k]}</b>`).join(' · ')}</p>` : ''}
+        <p class="text-[9px] text-slate-400 mt-1">1인당 금액은 세전 · 200만원 넘으면 세금 22% (3억 넘는 부분은 33%), 200만원 이하는 비과세</p>`;
+    }
     const RANK = ['낙첨', '🥇 1등', '🥈 2등', '🥉 3등', '4등 (5만원)', '5등 (5천원)'];
     const drawOf = no => draws.find(d => d[0] === no);
     function renderLatest(animate = true) {
@@ -247,6 +278,7 @@
         ${prize ? `<p class="text-xs text-slate-500 mt-2">1등 <b class="text-slate-800">${winners}명</b> · 1인당 <b class="text-slate-800">${won(prize)}</b></p>` : ''}
         ${myList.length ? `<button type="button" onclick="openGroup(${no})" class="mt-2 text-[11px] font-bold px-2 py-1 rounded-full ${best <= 5 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'}">⭐ 내 번호 ${myList.length}게임 · ${best <= 5 ? RANK[best] : '모두 낙첨'} ›</button>` : ''}`;
       document.getElementById('drawSel').onchange = e => viewDraw(+e.target.value);
+      renderPrizes(no, d);
       // 다음 추첨: 매주 토요일 20:35 (한국 시간)
       const now = new Date(), kst = new Date(now.getTime() + (now.getTimezoneOffset() + 540) * 60000);
       const next = new Date(kst); next.setHours(20, 35, 0, 0); next.setDate(kst.getDate() + ((6 - kst.getDay() + 7) % 7));
@@ -321,7 +353,7 @@
       const byDraw = {}; draws.forEach(d => byDraw[d[0]] = d);
       const done = mine.map(m => ({ m, d: byDraw[m.target] })).filter(x => x.d);
       const games = mine.length, cost = games * 1000;
-      const res = done.map(({ m, d }) => { const w = d.slice(2, 8), hit = m.nums.filter(n => w.includes(n)).length, bonus = m.nums.includes(d[8]), rank = rankOf(m.nums, d); return { m, d, hit, bonus, rank, prize: rank === 1 ? (d[9] || 2e9) : PRIZE[rank] || 0 }; });
+      const res = done.map(({ m, d }) => { const w = d.slice(2, 8), hit = m.nums.filter(n => w.includes(n)).length, bonus = m.nums.includes(d[8]), rank = rankOf(m.nums, d); const real = prizes[d[0]] && prizes[d[0]].d[rank - 1]; return { m, d, hit, bonus, rank, prize: !rank ? 0 : real && real[0] != null ? real[0] : rank === 1 ? (d[9] || 2e9) : PRIZE[rank] || 0 }; });
       const prize = res.reduce((s, r) => s + r.prize, 0), spent = done.length * 1000;
       const rankCnt = [0, 0, 0, 0, 0, 0]; res.forEach(r => rankCnt[r.rank]++);
       const hitCnt = Array(7).fill(0); res.forEach(r => hitCnt[r.hit]++);
@@ -367,7 +399,7 @@
           ${cell('연속번호', `${Math.round(myConsec * 100)}%`, st ? `당첨 ${Math.round(st.consecShare * 100)}%` : '')}
         </div>
         <p class="text-[11px] text-slate-500 mt-3">🐢 지금 페이스(주 ${perWeek.toFixed(1)}게임)면 1등 기대값까지 약 <b class="num">${Math.round(years).toLocaleString()}년</b>… 그래도 사는 재미 ㅎㅎ</p>
-        <p class="text-[9px] text-slate-400 mt-1">⭐로 저장한 번호 기준 · 2·3등 당첨금은 회차 평균으로 대략 계산</p>`;
+        <p class="text-[9px] text-slate-400 mt-1">⭐로 저장한 번호 기준 · 당첨금은 그 회차 실제 금액 (세전)</p>`;
     }
     function toggleGroup(t) { if (openGroups.has(t)) openGroups.delete(t); else openGroups.add(t); renderMine(); }
     function renderStats() {
@@ -419,7 +451,7 @@
       try {
         const r = await fetch('./api/lotto');
         if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) throw 0;
-        const j = await r.json(); draws = j.draws || []; latest = j.latest;
+        const j = await r.json(); draws = j.draws || []; latest = j.latest; prizes = j.prizes || {};
         pastSet = new Set(draws.map(d => d.slice(2, 8).join(',')));
       } catch (e) {
         document.getElementById('latest').innerHTML = `<p class="text-sm text-slate-500">당첨번호를 불러오지 못했어요. 그래도 🎲 완전 랜덤 뽑기는 돼요.</p>`;
