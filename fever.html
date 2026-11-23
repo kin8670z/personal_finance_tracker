@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>체온 기록 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🌡️ <span>체온 기록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🌡️ 체온 기록</a></h1>
+        <div id="kidTabs" class="flex gap-1 shrink-0"></div>
+      </div>
+    </header>
+
+    <section id="setup" class="card p-4 hidden">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">👶 누구 체온을 기록할까요?</h2>
+      <form id="kidForm" class="space-y-2" autocomplete="off">
+        <div class="flex gap-2"><input id="kName" maxlength="12" placeholder="이름 (애칭도 OK)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white" required>
+          <select id="kSex" class="border border-slate-200 rounded-lg px-2 bg-white"><option value="f">👧 딸</option><option value="m">👦 아들</option></select></div>
+        <label class="flex items-center gap-2 text-sm font-bold text-slate-600">생일 <input id="kBirth" type="date" class="flex-1 border border-slate-200 rounded-lg px-2.5 py-2 bg-white" required></label>
+        <button class="w-full py-2 bg-indigo-600 text-white font-bold rounded-lg">저장</button>
+        <p class="text-[10px] text-slate-400">👶 성장 기록 화면과 같은 아이 목록을 써요.</p>
+      </form>
+    </section>
+
+    <div id="main" class="space-y-3 md:space-y-4 hidden">
+      <section id="hero" class="card p-4"></section>
+
+      <section class="card p-4">
+        <div class="flex gap-1.5 mb-3">
+          <span role="button" tabindex="0" onclick="setMode('temp')" id="tabTemp" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold">🌡️ 체온</span>
+          <span role="button" tabindex="0" onclick="setMode('med')" id="tabMed" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold">💊 해열제</span>
+          <span role="button" tabindex="0" onclick="setMode('note')" id="tabNote" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold">📝 메모</span>
+        </div>
+
+        <div id="formTemp">
+          <div class="flex items-center justify-center gap-3">
+            <span role="button" tabindex="0" onclick="bump(-0.1)" aria-label="0.1도 내리기" class="cursor-pointer w-12 h-12 rounded-2xl bg-slate-100 text-2xl font-extrabold text-slate-600 flex items-center justify-center select-none">−</span>
+            <label class="text-center"><input id="tVal" inputmode="decimal" class="num w-32 text-center text-5xl font-extrabold bg-transparent outline-none" value="37.5"><span class="block text-xs font-bold text-slate-400">℃</span></label>
+            <span role="button" tabindex="0" onclick="bump(0.1)" aria-label="0.1도 올리기" class="cursor-pointer w-12 h-12 rounded-2xl bg-slate-100 text-2xl font-extrabold text-slate-600 flex items-center justify-center select-none">＋</span>
+          </div>
+          <div class="h-2 rounded-full mt-3 overflow-hidden flex"><span class="flex-[15] bg-emerald-300"></span><span class="flex-[5] bg-amber-300"></span><span class="flex-[10] bg-orange-400"></span><span class="flex-[10] bg-rose-500"></span></div>
+          <div class="flex justify-between text-[9px] font-bold text-slate-400 mt-0.5 num"><span>36.0</span><span>37.5</span><span>38.0</span><span>39.0</span><span>40.0</span></div>
+          <p id="tLabel" class="text-center text-sm font-extrabold mt-1"></p>
+        </div>
+
+        <div id="formMed" class="hidden">
+          <div id="medBtns" class="grid grid-cols-2 gap-2"></div>
+          <div class="flex gap-2 mt-2">
+            <label class="flex-1 text-[10px] font-bold text-slate-500">먹은 양 (선택)<input id="mDose" inputmode="decimal" placeholder="예: 5" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+            <label class="w-20 text-[10px] font-bold text-slate-500">단위<select id="mUnit" class="w-full border border-slate-200 rounded-lg px-1 py-1.5 bg-white text-sm"><option>ml</option><option>정</option><option>포</option><option>mg</option></select></label>
+          </div>
+          <p id="medHint" class="text-[11px] font-bold text-slate-500 mt-2"></p>
+        </div>
+
+        <div id="formNote" class="hidden">
+          <div id="noteChips" class="flex flex-wrap gap-1.5"></div>
+        </div>
+
+        <input id="memo" maxlength="60" placeholder="메모 (선택) 예: 잘 먹음, 기침, 콧물" class="w-full mt-3 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <div class="flex gap-2 mt-2 items-center">
+          <input id="when" type="datetime-local" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2 py-2 bg-white text-sm">
+          <span role="button" tabindex="0" onclick="setNow()" class="cursor-pointer text-[11px] font-bold text-indigo-600 shrink-0">지금</span>
+          <button type="button" onclick="addLog()" id="saveBtn" class="px-5 py-2 bg-indigo-600 text-white font-extrabold rounded-xl shrink-0">기록</button>
+        </div>
+      </section>
+
+      <section class="card p-4">
+        <div class="flex items-center justify-between mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">📈 체온 추이</h2><div id="rangeBtns" class="flex gap-1"></div></div>
+        <div class="relative h-60"><canvas id="chart"></canvas><p id="chartEmpty" class="hidden absolute inset-0 flex items-center justify-center text-xs text-slate-400">체온을 2번 이상 기록하면 그래프가 그려져요</p></div>
+        <p class="text-[10px] text-slate-400 mt-1">▲ 아세트아미노펜 · ◆ 이부프로펜 계열 · ● 기타 약 — 약 먹은 시각</p>
+      </section>
+
+      <section class="card p-4">
+        <div class="flex items-center justify-between mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🗒️ 기록</h2><span role="button" tabindex="0" onclick="copySummary(this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">병원용 요약 복사</span></div>
+        <div id="logList"></div>
+      </section>
+
+      <section class="card p-4">
+        <h2 class="text-xs font-extrabold text-rose-600">🚨 이럴 땐 바로 병원·119</h2>
+        <ul class="text-[11px] text-slate-600 mt-1 space-y-0.5 list-disc pl-4">
+          <li>생후 3개월 미만 아기가 38℃ 이상일 때</li>
+          <li>40℃ 이상이거나, 해열제를 먹여도 열이 잘 안 내릴 때</li>
+          <li>경련, 심하게 처짐·깨우기 힘듦, 숨쉬기 힘들어함, 소변이 크게 줄 때</li>
+          <li>열이 2~3일 넘게 계속될 때</li>
+        </ul>
+        <p class="text-[10px] text-slate-400 mt-2">복용 간격 안내는 일반적인 기준이에요. 용량·간격은 약 설명서와 의사·약사 안내를 따라주세요. 밤에는 <b>달빛어린이병원</b>이나 119 상담(☎119)을 이용할 수 있어요.</p>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const KEY = 'argon_fever_v1', KIDS = 'argon_kid_v1';
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const pad = n => String(n).padStart(2, '0');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
+    // 약 종류: g = 계열 (같은 계열끼리 간격), gap = 같은 약 최소 간격(시간)
+    const MEDS = {
+      acet: { name: '아세트아미노펜', ex: '타이레놀·챔프(빨강)·세토펜', g: 'A', gap: 4, color: '#f97316', shape: 'triangle' },
+      ibu: { name: '이부프로펜', ex: '부루펜·챔프(파랑)', g: 'B', gap: 6, color: '#3b82f6', shape: 'rectRot' },
+      dexi: { name: '덱시부프로펜', ex: '맥시부펜', g: 'B', gap: 6, color: '#8b5cf6', shape: 'rectRot' },
+      other: { name: '기타 약', ex: '항생제·감기약 등', g: 'O', gap: 0, color: '#64748b', shape: 'circle' }
+    };
+    const NOTES = ['🤮 구토', '💩 설사', '😷 기침', '🤧 콧물', '😴 잘 잠', '🍚 잘 먹음', '🥣 못 먹음', '🧊 미온수 마사지', '🏥 병원 다녀옴'];
+    let st = Object.assign({ logs: [] }, load(KEY, {})), kids = load(KIDS, { kids: [] });
+    let cur = st.cur, mode = 'temp', med = 'acet', note = null, range = 48, chart = null;
+    const kid = () => (kids.kids || []).find(k => k.id === cur) || (kids.kids || [])[0];
+    const persist = () => save(KEY, st);
+    const logsOf = id => st.logs.filter(l => l.kid === id).sort((a, b) => a.t - b.t);
+
+    function level(t) {
+      if (t >= 39) return ['고열', 'text-rose-600', 'bg-rose-50', '#f43f5e'];
+      if (t >= 38) return ['열', 'text-orange-600', 'bg-orange-50', '#f97316'];
+      if (t >= 37.5) return ['미열', 'text-amber-600', 'bg-amber-50', '#f59e0b'];
+      return ['정상', 'text-emerald-600', 'bg-emerald-50', '#10b981'];
+    }
+    const ago = ms => { const m = Math.max(0, Math.round(ms / 6e4)); return m < 1 ? '방금' : m < 60 ? `${m}분 전` : `${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''} 전`; };
+    const dur = ms => { const m = Math.max(0, Math.ceil(ms / 6e4)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''}`; };
+    const hm = t => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+    const dayLabel = t => { const d = new Date(t), n = new Date(); const a = new Date(d.getFullYear(), d.getMonth(), d.getDate()), b = new Date(n.getFullYear(), n.getMonth(), n.getDate()); const k = Math.round((b - a) / 864e5); return k === 0 ? '오늘' : k === 1 ? '어제' : `${d.getMonth() + 1}/${d.getDate()} (${'일월화수목금토'[d.getDay()]})`; };
+
+    // 해열제 다음 복용 안내 (일반 기준)
+    function medStatus(ls, now = Date.now()) {
+      const meds = ls.filter(l => l.type === 'med' && MEDS[l.med] && MEDS[l.med].g !== 'O');
+      const last = meds[meds.length - 1]; if (!last || now - last.t > 24 * 36e5) return null;
+      const out = { last, groups: {} };
+      ['A', 'B'].forEach(g => {
+        const lg = [...meds].reverse().find(l => MEDS[l.med].g === g), gap = g === 'A' ? 4 : 6;
+        const sameReady = lg ? lg.t + gap * 36e5 : 0, crossReady = last.t + 2 * 36e5;   // 다른 계열은 최소 2시간
+        const ready = Math.max(sameReady, MEDS[last.med].g === g ? 0 : crossReady);
+        const cnt = meds.filter(l => MEDS[l.med].g === g && now - l.t < 24 * 36e5).length;
+        out.groups[g] = { ready, cnt, lg };
+      });
+      return out;
+    }
+
+    function renderTabs() {
+      document.getElementById('kidTabs').innerHTML = (kids.kids || []).length > 1 ? kids.kids.map(k => `<span role="button" tabindex="0" onclick="pickKid(${k.id})" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold ${kid() && k.id === kid().id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${k.sex === 'm' ? '👦' : '👧'} ${esc(k.name)}</span>`).join('') : '';
+    }
+    function pickKid(id) { cur = id; st.cur = id; persist(); render(); }
+
+    function renderHero() {
+      const k = kid(), ls = logsOf(k.id), temps = ls.filter(l => l.type === 'temp'), lt = temps[temps.length - 1], now = Date.now();
+      const kr = (load(KIDS, {}).recs || []).filter(r => r.kid === k.id && r.w).sort((a, b) => a.date.localeCompare(b.date)).slice(-1)[0];
+      let html = `<div class="flex items-center gap-3">`;
+      if (lt && now - lt.t < 48 * 36e5) {
+        const [lab, tc, bg] = level(lt.temp), prev = temps[temps.length - 2];
+        const trend = prev && lt.t - prev.t < 12 * 36e5 ? (lt.temp - prev.temp >= 0.3 ? '↗ 오르는 중' : lt.temp - prev.temp <= -0.3 ? '↘ 내리는 중' : '→ 비슷') : '';
+        html += `<div class="rounded-2xl ${bg} px-4 py-3 text-center shrink-0"><div class="num text-4xl font-extrabold ${tc}">${lt.temp.toFixed(1)}<span class="text-lg">℃</span></div><div class="text-xs font-extrabold ${tc}">${lab}</div></div>
+          <div class="min-w-0 flex-1"><div class="text-sm font-extrabold text-slate-800">${k.sex === 'm' ? '👦' : '👧'} ${esc(k.name)}</div><div class="text-xs font-bold text-slate-500">${ago(now - lt.t)} 측정 ${trend ? `· ${trend}` : ''}</div>`;
+        const fs = feverStart(temps); if (fs) html += `<div class="text-[11px] font-bold text-orange-600 mt-0.5">🔥 열난 지 ${dur(now - fs)}째</div>`;
+        html += `</div>`;
+      } else {
+        html += `<div class="text-4xl">${k.sex === 'm' ? '👦' : '👧'}</div><div><div class="text-sm font-extrabold text-slate-800">${esc(k.name)}</div><div class="text-xs font-bold text-slate-500">${lt ? `마지막 측정 ${dayLabel(lt.t)} ${hm(lt.t)} · ${lt.temp.toFixed(1)}℃` : '아직 기록이 없어요'}</div></div>`;
+      }
+      html += `</div>`;
+      const ms = medStatus(ls);
+      if (ms) {
+        const L = ms.last, M = MEDS[L.med];
+        html += `<div class="mt-3 rounded-xl bg-slate-50 px-3 py-2"><div class="text-xs font-bold text-slate-600">💊 마지막 해열제 <b class="text-slate-900">${M.name}</b>${L.dose ? ` ${esc(L.dose)}` : ''} · ${ago(now - L.t)} (${hm(L.t)})</div>
+          <div class="grid grid-cols-2 gap-2 mt-2">${['A', 'B'].map(g => { const x = ms.groups[g], ok = now >= x.ready, nm = g === 'A' ? '아세트아미노펜' : '이부프로펜 계열';
+            return `<div class="rounded-lg px-2 py-1.5 ${ok ? 'bg-emerald-50' : 'bg-white border border-slate-200'}"><div class="text-[10px] font-bold ${g === 'A' ? 'text-orange-600' : 'text-blue-600'}">${nm}${x.cnt ? ` · 24시간 ${x.cnt}회` : ''}</div><div class="text-xs font-extrabold ${ok ? 'text-emerald-700' : 'text-slate-700'}">${ok ? '지금 먹일 수 있어요' : `${dur(x.ready - now)} 뒤 (${hm(x.ready)})`}</div></div>`; }).join('')}</div>
+          <p class="text-[10px] text-slate-400 mt-1">같은 약 4시간(이부프로펜 계열 6시간), 다른 계열은 2시간 간격 기준 · 설명서·의사 안내 우선</p></div>`;
+      }
+      if (kr) html += `<p class="text-[10px] text-slate-400 mt-2">📏 최근 몸무게 ${kr.w}kg (${kr.date.slice(2).replace(/-/g, '.')}) — 해열제 용량은 약 상자의 체중별 표를 확인하세요.</p>`;
+      document.getElementById('hero').innerHTML = html;
+    }
+    // 이번 열 시작: 38℃ 이상이 처음 나온 시각 (그 전 24시간 동안 38℃ 미만이었으면 새 열로 봄)
+    function feverStart(temps) {
+      const hot = temps.filter(l => l.temp >= 38); if (!hot.length) return null;
+      const lastHot = hot[hot.length - 1]; if (Date.now() - lastHot.t > 24 * 36e5) return null;
+      let s = lastHot.t; for (let i = hot.length - 2; i >= 0; i--) { if (s - hot[i].t > 24 * 36e5) break; s = hot[i].t; }
+      return s;
+    }
+
+    function setMode(m) {
+      mode = m;
+      [['temp', 'tabTemp', 'formTemp'], ['med', 'tabMed', 'formMed'], ['note', 'tabNote', 'formNote']].forEach(([k, tab, form]) => {
+        document.getElementById(tab).className = `cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold ${k === m ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`;
+        document.getElementById(form).classList.toggle('hidden', k !== m);
+      });
+      if (m === 'med') renderMeds(); if (m === 'note') renderNotes(); if (m === 'temp') tLabel();
+    }
+    function tVal() { return Math.round(parseFloat(String(document.getElementById('tVal').value).replace(',', '.')) * 10) / 10; }
+    function bump(d) { let v = tVal(); if (!isFinite(v)) v = 37.5; v = Math.min(43, Math.max(34, Math.round((v + d) * 10) / 10)); document.getElementById('tVal').value = v.toFixed(1); tLabel(); }
+    function tLabel() { const v = tVal(), el = document.getElementById('tLabel'); if (!isFinite(v) || v < 34 || v > 43) { el.textContent = '34~43℃ 사이로 입력해 주세요'; el.className = 'text-center text-sm font-extrabold mt-1 text-slate-400'; return; } const [lab, tc] = level(v); el.textContent = lab; el.className = `text-center text-sm font-extrabold mt-1 ${tc}`; document.getElementById('tVal').className = `num w-32 text-center text-5xl font-extrabold bg-transparent outline-none ${tc}`; }
+    document.getElementById('tVal').addEventListener('input', tLabel);
+    document.getElementById('tVal').addEventListener('focus', e => e.target.select());
+
+    function renderMeds() {
+      const ms = medStatus(logsOf(kid().id)), now = Date.now();
+      document.getElementById('medBtns').innerHTML = Object.entries(MEDS).map(([k, m]) => `<span role="button" tabindex="0" onclick="pickMed('${k}')" class="cursor-pointer rounded-xl px-3 py-2 border-2 ${med === k ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white'}">
+        <span class="block text-sm font-extrabold" style="color:${m.color}">${m.g === 'A' ? '▲' : m.g === 'B' ? '◆' : '●'} ${m.name}</span><span class="block text-[10px] font-bold text-slate-400">${m.ex}</span></span>`).join('');
+      let hint = '';
+      if (ms && MEDS[med].g !== 'O') { const x = ms.groups[MEDS[med].g]; if (now < x.ready) hint = `⏳ 일반 기준으로는 ${dur(x.ready - now)} 뒤(${hm(x.ready)})부터예요. 의사 지시가 있으면 그에 따르세요.`; }
+      const el = document.getElementById('medHint'); el.textContent = hint; el.className = `text-[11px] font-bold mt-2 ${hint ? 'text-amber-600' : 'text-slate-500'}`;
+      const lastDose = [...logsOf(kid().id)].reverse().find(l => l.type === 'med' && l.med === med && l.dose);
+      document.getElementById('mDose').placeholder = lastDose ? `지난번 ${lastDose.dose}` : '예: 5';
+    }
+    function pickMed(k) { med = k; renderMeds(); }
+    function renderNotes() { document.getElementById('noteChips').innerHTML = NOTES.map(n => `<span role="button" tabindex="0" onclick="pickNote('${n}')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${note === n ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${n}</span>`).join(''); }
+    function pickNote(n) { note = note === n ? null : n; renderNotes(); }
+
+    const localDT = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    function setNow() { document.getElementById('when').value = localDT(new Date()); }
+    function addLog() {
+      const w = document.getElementById('when').value, t = w ? new Date(w).getTime() : Date.now(), memo = document.getElementById('memo').value.trim(), k = kid();
+      if (!isFinite(t) || t > Date.now() + 5 * 6e4) { document.getElementById('when').focus(); return; }
+      let log = { id: Date.now(), kid: k.id, t, type: mode, memo };
+      if (mode === 'temp') { const v = tVal(); if (!isFinite(v) || v < 34 || v > 43) { document.getElementById('tVal').focus(); return; } log.temp = v; }
+      if (mode === 'med') { const d = document.getElementById('mDose').value.trim(); log.med = med; if (d) log.dose = `${d}${document.getElementById('mUnit').value}`; }
+      if (mode === 'note') { if (!note && !memo) { document.getElementById('memo').focus(); return; } log.note = note || ''; }
+      st.logs.push(log); persist();
+      document.getElementById('memo').value = ''; document.getElementById('mDose').value = ''; note = null; setNow();
+      const b = document.getElementById('saveBtn'); b.textContent = '✓ 저장'; setTimeout(() => b.textContent = '기록', 1200);
+      render();
+    }
+
+    function setRange(h) { range = h; renderChart(); }
+    function renderChart() {
+      document.getElementById('rangeBtns').innerHTML = [[24, '24시간'], [48, '48시간'], [72, '3일'], [168, '7일']].map(([h, l]) => `<span role="button" tabindex="0" onclick="setRange(${h})" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${range === h ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-500'}">${l}</span>`).join('');
+      const k = kid(), now = Date.now(), from = now - range * 36e5, ls = logsOf(k.id).filter(l => l.t >= from);
+      const temps = ls.filter(l => l.type === 'temp'), meds = ls.filter(l => l.type === 'med');
+      document.getElementById('chartEmpty').classList.toggle('hidden', temps.length >= 2);
+      if (chart) { chart.destroy(); chart = null; }
+      if (temps.length < 2 || !window.Chart) return;
+      const grid = isDark() ? 'rgba(148,163,184,.15)' : 'rgba(148,163,184,.25)', tick = isDark() ? '#94a3b8' : '#64748b';
+      const ymin = Math.min(36, ...temps.map(l => l.temp)) - 0.3, ymax = Math.max(39.5, ...temps.map(l => l.temp)) + 0.3;
+      const band = { id: 'band', beforeDraw(c) { const { ctx, chartArea: a, scales: { y } } = c; if (!a) return; ctx.save();
+        [[37.5, 38, 'rgba(245,158,11,.10)'], [38, 39, 'rgba(249,115,22,.12)'], [39, 45, 'rgba(244,63,94,.12)']].forEach(([lo, hi, col]) => { const y1 = Math.max(a.top, y.getPixelForValue(hi)), y2 = Math.min(a.bottom, y.getPixelForValue(lo)); if (y2 > y1) { ctx.fillStyle = col; ctx.fillRect(a.left, y1, a.right - a.left, y2 - y1); } });
+        ctx.restore(); } };
+      const stepH = range <= 24 ? 3 : range <= 48 ? 6 : range <= 72 ? 12 : 24, x0d = new Date(Math.min(from, temps[0].t));
+      x0d.setMinutes(0, 0, 0); x0d.setHours(Math.floor(x0d.getHours() / stepH) * stepH); const x0 = x0d.getTime();
+      chart = new Chart(document.getElementById('chart'), {
+        type: 'line', plugins: [band],
+        data: { datasets: [
+          { label: '체온', data: temps.map(l => ({ x: l.t, y: l.temp })), borderColor: '#6366f1', borderWidth: 2, tension: .25, pointRadius: 4, pointBackgroundColor: temps.map(l => level(l.temp)[3]), pointBorderColor: temps.map(l => level(l.temp)[3]) },
+          ...Object.entries(MEDS).map(([key, m]) => ({ label: m.name, type: 'scatter', data: meds.filter(l => l.med === key).map(l => ({ x: l.t, y: ymin + 0.15, d: l.dose })), pointStyle: m.shape, pointRadius: 7, backgroundColor: m.color, borderColor: m.color }))
+        ] },
+        options: { maintainAspectRatio: false, animation: false, interaction: { mode: 'nearest', intersect: true },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${dayLabel(c[0].raw.x)} ${hm(c[0].raw.x)}`, label: c => c.dataset.type === 'scatter' ? ` 💊 ${c.dataset.label}${c.raw.d ? ` ${c.raw.d}` : ''}` : ` ${c.raw.y.toFixed(1)}℃` } } },
+          scales: {
+            x: { type: 'linear', min: x0, max: now, grid: { color: grid }, afterBuildTicks: sc => { const t = []; for (let v = x0; v <= now; v += stepH * 36e5) t.push({ value: v }); sc.ticks = t; }, ticks: { color: tick, autoSkip: false, maxRotation: 0, callback: v => { const d = new Date(v); return d.getHours() === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : `${d.getHours()}시`; } } },
+            y: { min: Math.floor(ymin * 2) / 2, max: Math.ceil(ymax * 2) / 2, grid: { color: grid }, ticks: { color: tick, stepSize: 0.5, callback: v => `${v.toFixed(1)}℃` } }
+          } }
+      });
+    }
+
+    function line(l) {
+      if (l.type === 'temp') { const [lab, tc] = level(l.temp); return `<span class="num text-base font-extrabold ${tc}">${l.temp.toFixed(1)}℃</span> <span class="text-[10px] font-bold ${tc}">${lab}</span>`; }
+      if (l.type === 'med') { const m = MEDS[l.med] || MEDS.other; return `<span class="text-sm font-extrabold" style="color:${m.color}">💊 ${m.name}</span>${l.dose ? ` <span class="text-xs font-bold text-slate-500">${esc(l.dose)}</span>` : ''}`; }
+      return `<span class="text-sm font-bold text-slate-700">${esc(l.note || '📝')}</span>`;
+    }
+    function renderList() {
+      const ls = logsOf(kid().id).reverse().slice(0, 150); let html = '', day = '';
+      ls.forEach(l => { const d = dayLabel(l.t); if (d !== day) { day = d; html += `<p class="text-[11px] font-extrabold text-slate-400 mt-3 mb-1">${d}</p>`; }
+        html += `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="num w-11 text-xs font-bold text-slate-500 shrink-0">${hm(l.t)}</span><span class="flex-1 min-w-0">${line(l)}${l.memo ? `<span class="block text-[11px] text-slate-500 truncate">${esc(l.memo)}</span>` : ''}</span><span role="button" tabindex="0" onclick="delLog(${l.id}, this)" aria-label="삭제" class="cursor-pointer text-slate-300 text-xs px-1 shrink-0">✕</span></div>`; });
+      document.getElementById('logList').innerHTML = html || '<p class="text-xs text-slate-400 py-2">아직 기록이 없어요.</p>';
+    }
+    function delLog(id, el) { if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = '✕'; el.classList.remove('text-rose-500'); } }, 2500); return; } st.logs = st.logs.filter(l => l.id !== id); persist(); render(); }
+
+    async function copySummary(el) {
+      const k = kid(), ls = logsOf(k.id).filter(l => Date.now() - l.t < 72 * 36e5);
+      if (!ls.length) { el.textContent = '최근 3일 기록이 없어요'; setTimeout(() => el.textContent = '병원용 요약 복사', 2000); return; }
+      const temps = ls.filter(l => l.type === 'temp'), max = temps.length ? Math.max(...temps.map(l => l.temp)) : null, fs = feverStart(logsOf(k.id).filter(l => l.type === 'temp'));
+      let txt = `[${k.name} 체온 기록 · 최근 3일]\n` + (max ? `최고 ${max.toFixed(1)}℃` : '') + (fs ? ` · 열 시작 ${dayLabel(fs)} ${hm(fs)} (${dur(Date.now() - fs)}째)` : '') + '\n';
+      let day = ''; ls.forEach(l => { const d = dayLabel(l.t); if (d !== day) { day = d; txt += `\n${d}\n`; }
+        txt += `${hm(l.t)} ` + (l.type === 'temp' ? `${l.temp.toFixed(1)}℃` : l.type === 'med' ? `💊 ${(MEDS[l.med] || MEDS.other).name}${l.dose ? ` ${l.dose}` : ''}` : (l.note || '📝')) + (l.memo ? ` (${l.memo})` : '') + '\n'; });
+      try { await navigator.clipboard.writeText(txt); el.textContent = '복사했어요 ✓'; } catch (e) { el.textContent = '복사 실패'; }
+      setTimeout(() => el.textContent = '병원용 요약 복사', 2000);
+    }
+
+    document.getElementById('kidForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = { id: Date.now(), name: document.getElementById('kName').value.trim(), sex: document.getElementById('kSex').value, birth: document.getElementById('kBirth').value };
+      if (!v.name || !v.birth) return;
+      kids = Object.assign({ kids: [], recs: [], vax: {} }, load(KIDS, {})); kids.kids.push(v); kids.cur = v.id; save(KIDS, kids); cur = v.id; render();
+    });
+
+    function render() {
+      kids = load(KIDS, { kids: [] }); const has = (kids.kids || []).length > 0;
+      document.getElementById('setup').classList.toggle('hidden', has); document.getElementById('main').classList.toggle('hidden', !has);
+      if (!has) return;
+      if (!kid() || !(kids.kids || []).some(k => k.id === cur)) cur = (kids.kids.find(k => k.id === st.cur) || kids.kids[0]).id;
+      renderTabs(); renderHero(); renderChart(); renderList();
+      if (mode === 'med') renderMeds();
+      const lt = logsOf(kid().id).filter(l => l.type === 'temp').slice(-1)[0];
+      if (lt && document.activeElement.id !== 'tVal' && !render.did) { document.getElementById('tVal').value = lt.temp.toFixed(1); render.did = true; }
+      tLabel();
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드'; renderChart();
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ logs: [] }, load(KEY, {})); render(); } if (e.key === KIDS) render(); });
+    // 1분마다 "N분 전"·다음 복용 시간 갱신
+    setInterval(() => { if (document.visibilityState === 'visible' && (kids.kids || []).length) { renderHero(); if (mode === 'med') renderMeds(); } }, 60000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { st = Object.assign({ logs: [] }, load(KEY, {})); render(); } });
+    setNow(); setMode('temp'); render();
+  </script>
+</body>
+</html>
