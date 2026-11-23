@@ -57,7 +57,10 @@ module.exports = async (req, res) => {
         const main = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
         return { tag, name: main ? `${main[0]} 방면` : (tag === '1' ? '상행' : '하행'), trains: list };
       }));
-      return { line: String(row.LINE_NUM || '').replace(/^0/, ''), code: row.STATION_CD, dirs: dirs.filter(d => d.trains.length) };
+      const line = String(row.LINE_NUM || '').replace(/^0/, '');
+      // 2호선 순환선처럼 두 방향 종착역이 같으면 상행/하행(2호선은 내선/외선)으로
+      if (dirs.length === 2 && dirs[0].name === dirs[1].name) dirs.forEach(d => { d.name = line === '2호선' ? (d.tag === '1' ? '내선순환' : '외선순환') : (d.tag === '1' ? '상행' : '하행'); });
+      return { line, code: row.STATION_CD, dirs: dirs.filter(d => d.trains.length) };
     }));
     const usable = lines.filter(l => l.dirs.length);
     return send(200, { station, week, lines: usable }, 'public, s-maxage=86400, stale-while-revalidate=604800');
