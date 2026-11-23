@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>한줄 일기 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📔 <span>한줄 일기</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">📔 한줄 일기</a></h1>
+        <p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+      </div>
+    </header>
+
+    <!-- 쓰기 -->
+    <section class="card p-4">
+      <form id="form" autocomplete="off" class="space-y-2">
+        <div id="emojis" class="flex flex-wrap gap-1"></div>
+        <div class="flex gap-2">
+          <input id="text" maxlength="200" placeholder="오늘 있었던 일 한 줄 (예: 아이랑 첫눈 구경 ⛄)" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white">
+          <button type="submit" id="saveBtn" class="px-4 bg-indigo-600 text-white font-bold rounded-xl shrink-0">기록</button>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-bold text-slate-500">
+          <input id="date" type="date" class="border border-slate-200 rounded-lg px-2 py-1 bg-white" style="font-size:13px!important">
+          <input id="time" type="time" class="border border-slate-200 rounded-lg px-2 py-1 bg-white" style="font-size:13px!important">
+          <span role="button" tabindex="0" id="cancelEdit" onclick="resetForm()" class="hidden cursor-pointer ml-auto text-slate-400">수정 취소</span>
+        </div>
+      </form>
+    </section>
+
+    <!-- 추억 -->
+    <section id="memories" class="hidden card p-4"></section>
+
+    <!-- 달력 -->
+    <section class="card p-4">
+      <div class="flex justify-between items-center mb-2">
+        <span role="button" tabindex="0" onclick="moveMonth(-1)" aria-label="이전 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold">‹</span>
+        <h2 id="calTitle" class="text-sm md:text-base font-extrabold text-slate-900"></h2>
+        <span role="button" tabindex="0" onclick="moveMonth(1)" aria-label="다음 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 font-bold">›</span>
+      </div>
+      <div class="grid grid-cols-7 text-center text-[10px] font-bold text-slate-400 mb-1"><span class="text-rose-500">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span class="text-sky-500">토</span></div>
+      <div id="cal" class="grid grid-cols-7 gap-1"></div>
+      <p id="monthStat" class="text-[11px] text-slate-400 mt-2 text-center"></p>
+    </section>
+
+    <!-- 목록 -->
+    <section class="card p-4">
+      <div class="flex items-center gap-2 mb-2">
+        <h2 id="listTitle" class="text-sm md:text-base font-extrabold text-slate-900 shrink-0">🗓️ 기록</h2>
+        <input id="q" placeholder="🔍 검색" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1 bg-white" style="font-size:13px!important">
+        <span role="button" tabindex="0" id="showAll" onclick="pickDay(null)" class="hidden cursor-pointer text-[11px] font-bold text-indigo-600 shrink-0">전체 보기</span>
+      </div>
+      <div id="list"></div>
+    </section>
+  </div>
+
+  <script>
+    const KEY = 'argon_diary_v1';
+    const EMOJIS = ['🙂', '😆', '🥰', '😌', '😴', '😢', '😤', '🍽️', '🏃', '👶', '💼', '🎉', '✈️', '📚'];
+    function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const W = '일월화수목금토';
+    const dateOf = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const nice = s => { const d = dateOf(s); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} (${W[d.getDay()]})`; };
+
+    let st = Object.assign({ entries: [] }, load(KEY, {}));
+    let emoji = '🙂', editId = null, selDay = null, view = new Date(); view.setDate(1);
+    const persist = () => save(KEY, st);
+    const sorted = () => st.entries.slice().sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time) || b.id - a.id);
+
+    function renderEmojis() {
+      document.getElementById('emojis').innerHTML = EMOJIS.map(e => `<span role="button" tabindex="0" onclick="pickEmoji('${e}')" aria-pressed="${e === emoji}" class="cursor-pointer w-9 h-9 rounded-xl flex items-center justify-center text-xl ${e === emoji ? 'bg-indigo-100 ring-2 ring-indigo-400' : 'bg-slate-50'}">${e}</span>`).join('');
+    }
+    function pickEmoji(e) { emoji = e; renderEmojis(); }
+    function resetForm() {
+      editId = null; const n = new Date();
+      document.getElementById('text').value = ''; document.getElementById('date').value = ymd(n); document.getElementById('time').value = hm(n);
+      document.getElementById('saveBtn').textContent = '기록'; document.getElementById('cancelEdit').classList.add('hidden');
+      emoji = '🙂'; renderEmojis();
+    }
+    document.getElementById('form').addEventListener('submit', e => {
+      e.preventDefault();
+      const text = document.getElementById('text').value.trim(); if (!text) { document.getElementById('text').focus(); return; }
+      const date = document.getElementById('date').value || ymd(new Date()), time = document.getElementById('time').value || hm(new Date());
+      if (editId) Object.assign(st.entries.find(x => x.id === editId), { text, date, time, emoji });
+      else st.entries.push({ id: Math.max(Date.now(), ...st.entries.map(x => x.id + 1)), date, time, text, emoji });
+      persist(); resetForm(); renderAll();
+    });
+    function editEntry(id) {
+      const it = st.entries.find(x => x.id === id); if (!it) return;
+      editId = id; emoji = it.emoji || '🙂'; renderEmojis();
+      document.getElementById('text').value = it.text; document.getElementById('date').value = it.date; document.getElementById('time').value = it.time;
+      document.getElementById('saveBtn').textContent = '저장'; document.getElementById('cancelEdit').classList.remove('hidden');
+      document.getElementById('text').focus(); window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function delEntry(id) {
+      const it = st.entries.find(x => x.id === id); if (!it) return;
+      st.entries = st.entries.filter(x => x.id !== id); persist(); renderAll();
+      undo = it; showUndo();
+    }
+    let undo = null, undoTimer = null;
+    function showUndo() {
+      const box = document.getElementById('list');
+      box.insertAdjacentHTML('afterbegin', `<div id="undoBar" class="flex items-center justify-between rounded-lg bg-slate-800 text-white text-xs font-bold px-3 py-2 mb-2"><span>기록을 지웠어요</span><span role="button" tabindex="0" onclick="doUndo()" class="cursor-pointer text-amber-300">되돌리기</span></div>`);
+      clearTimeout(undoTimer); undoTimer = setTimeout(() => { undo = null; const b = document.getElementById('undoBar'); if (b) b.remove(); }, 5000);
+    }
+    function doUndo() { if (!undo) return; st.entries.push(undo); undo = null; persist(); renderAll(); }
+
+    // ---------- 추억: 1년 전·한 달 전·일주일 전 오늘 ----------
+    function renderMemories() {
+      const box = document.getElementById('memories'), t = new Date();
+      const ago = [['1년 전 오늘', new Date(t.getFullYear() - 1, t.getMonth(), t.getDate())], ['한 달 전 오늘', new Date(t.getFullYear(), t.getMonth() - 1, t.getDate())], ['일주일 전 오늘', new Date(t.getFullYear(), t.getMonth(), t.getDate() - 7)]];
+      const rows = ago.map(([l, d]) => ({ l, d: ymd(d), list: st.entries.filter(x => x.date === ymd(d)) })).filter(r => r.list.length);
+      if (!rows.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">💭 그때 오늘은</h2>` + rows.map(r => `<div class="mb-2 last:mb-0"><p class="text-[11px] font-bold text-indigo-600 mb-1">${r.l} · ${nice(r.d)}</p>${r.list.map(x => `<p class="text-sm text-slate-700">${esc(x.emoji || '')} ${esc(x.text)}</p>`).join('')}</div>`).join('');
+    }
+
+    // ---------- 달력 ----------
+    function moveMonth(d) { view.setMonth(view.getMonth() + d); renderCal(); }
+    function renderCal() {
+      const y = view.getFullYear(), m = view.getMonth(), first = new Date(y, m, 1).getDay(), dim = new Date(y, m + 1, 0).getDate(), today = ymd(new Date());
+      document.getElementById('calTitle').textContent = `${y}년 ${m + 1}월`;
+      const byDay = {}; st.entries.forEach(x => { (byDay[x.date] = byDay[x.date] || []).push(x); });
+      let cells = '';
+      for (let i = 0; i < first; i++) cells += '<span></span>';
+      for (let d = 1; d <= dim; d++) {
+        const k = `${y}-${pad(m + 1)}-${pad(d)}`, list = byDay[k] || [], dow = (first + d - 1) % 7;
+        cells += `<span role="button" tabindex="0" onclick="pickDay('${k}')" class="cursor-pointer aspect-square rounded-lg flex flex-col items-center justify-center text-xs font-bold ${k === selDay ? 'bg-indigo-600 text-white' : k === today ? 'ring-2 ring-indigo-300' : ''} ${list.length && k !== selDay ? 'bg-indigo-50' : ''} ${k !== selDay ? (dow === 0 ? 'text-rose-500' : dow === 6 ? 'text-sky-500' : 'text-slate-700') : ''}">
+            <span>${d}</span><span class="text-[11px] leading-none h-3">${list.length ? esc(list[list.length - 1].emoji || '•') : ''}</span></span>`;
+      }
+      document.getElementById('cal').innerHTML = cells;
+      const ym = `${y}-${pad(m + 1)}`, mine = st.entries.filter(x => x.date.startsWith(ym)), days = new Set(mine.map(x => x.date)).size;
+      const top = Object.entries(mine.reduce((a, x) => { a[x.emoji] = (a[x.emoji] || 0) + 1; return a; }, {})).sort((a, b) => b[1] - a[1])[0];
+      document.getElementById('monthStat').textContent = mine.length ? `이번 달 ${days}일 · ${mine.length}줄 기록${top ? ` · 가장 많은 기분 ${top[0]}` : ''}` : '이 달엔 아직 기록이 없어요';
+    }
+    function pickDay(k) {
+      selDay = selDay === k ? null : k;
+      if (selDay && !editId) document.getElementById('date').value = selDay;   // 그날로 바로 쓰기
+      renderCal(); renderList();
+    }
+
+    // ---------- 목록 ----------
+    function renderList() {
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      let list = sorted();
+      if (selDay) list = list.filter(x => x.date === selDay);
+      if (q) list = list.filter(x => x.text.toLowerCase().includes(q));
+      document.getElementById('listTitle').textContent = selDay ? `🗓️ ${nice(selDay)}` : '🗓️ 기록';
+      document.getElementById('showAll').classList.toggle('hidden', !selDay);
+      const box = document.getElementById('list');
+      if (!list.length) { box.innerHTML = `<p class="text-xs text-slate-400 py-2">${q ? '검색 결과가 없어요.' : selDay ? '이날은 기록이 없어요. 위에서 바로 써보세요.' : '첫 한 줄을 남겨보세요 ✍️'}</p>`; return; }
+      const groups = []; list.slice(0, selDay || q ? 500 : 120).forEach(x => { const g = groups[groups.length - 1]; if (g && g.date === x.date) g.items.push(x); else groups.push({ date: x.date, items: [x] }); });
+      box.innerHTML = groups.map(g => `<div class="mb-3 last:mb-0">
+          <p class="text-[11px] font-extrabold text-slate-400 mb-1">${nice(g.date)}</p>
+          <div class="space-y-1">${g.items.map(x => `<div class="flex items-start gap-2 rounded-lg bg-slate-50 px-2.5 py-2">
+              <span class="text-lg leading-none shrink-0">${esc(x.emoji || '🙂')}</span>
+              <span class="min-w-0 flex-1"><span class="block text-sm text-slate-800 break-words">${esc(x.text)}</span><span class="block text-[10px] text-slate-400 num">${esc(x.time)}</span></span>
+              <span role="button" tabindex="0" onclick="editEntry(${x.id})" class="cursor-pointer text-[11px] font-bold text-slate-400 shrink-0">수정</span>
+              <span role="button" tabindex="0" onclick="delEntry(${x.id})" aria-label="지우기" class="cursor-pointer text-[11px] text-slate-300 shrink-0">✕</span>
+            </div>`).join('')}</div></div>`).join('');
+    }
+    document.getElementById('q').addEventListener('input', renderList);
+
+    function renderSub() {
+      const days = new Set(st.entries.map(x => x.date));
+      let n = 0; const d = new Date(); if (!days.has(ymd(d))) d.setDate(d.getDate() - 1); while (days.has(ymd(d))) { n++; d.setDate(d.getDate() - 1); }
+      document.getElementById('sub').textContent = st.entries.length ? `${days.size}일 · ${st.entries.length}줄 기록${n ? ` · 🔥 ${n}일 연속` : ''}` : '하루 한 줄, 나중에 보면 다 추억이에요';
+    }
+    function renderAll() { renderSub(); renderMemories(); renderCal(); renderList(); }
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ entries: [] }, load(KEY, {})); renderAll(); } });
+    resetForm(); renderAll();
+    if (new URLSearchParams(location.search).get('write')) document.getElementById('text').focus();
+  </script>
+</body>
+</html>

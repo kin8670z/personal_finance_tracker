@@ -84,6 +84,7 @@
   <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
     <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
     <a href="./today.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
@@ -123,6 +124,7 @@
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
     <section id="phrase" class="card p-4"></section>
+    <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -370,6 +372,25 @@
       speechSynthesis.speak(u);
     }
 
+    // ---------- 한줄 일기: 여기서 바로 쓰기 ----------
+    function renderDiary() {
+      const box = document.getElementById('diary'), st = load('argon_diary_v1', { entries: [] }), today = ymd(new Date());
+      const mine = (st.entries || []).filter(x => x.date === today).sort((a, b) => a.time.localeCompare(b.time));
+      const t = new Date(), y1 = ymd(new Date(t.getFullYear() - 1, t.getMonth(), t.getDate())), past = (st.entries || []).filter(x => x.date === y1);
+      box.innerHTML = head('📔 한줄 일기', './diary.html', '전체') +
+        (mine.length ? `<div class="space-y-1 mb-2">${mine.map(x => `<p class="text-sm text-slate-700"><span class="mr-1">${esc(x.emoji || '🙂')}</span>${esc(x.text)} <span class="text-[10px] text-slate-400 num">${esc(x.time)}</span></p>`).join('')}</div>` : '') +
+        `<form onsubmit="quickDiary(event)" class="flex gap-2" autocomplete="off"><input id="diaryText" maxlength="200" placeholder="${mine.length ? '한 줄 더 남기기' : '오늘 있었던 일 한 줄'}" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white"><button type="submit" class="px-3 bg-indigo-600 text-white font-bold rounded-lg shrink-0">기록</button></form>` +
+        (past.length ? `<p class="text-[11px] text-slate-500 mt-2">💭 1년 전 오늘: ${past.map(x => `${esc(x.emoji || '')} ${esc(x.text)}`).join(' · ')}</p>` : '');
+    }
+    function quickDiary(e) {
+      e.preventDefault();
+      const el = document.getElementById('diaryText'), text = el.value.trim(); if (!text) return;
+      const st = load('argon_diary_v1', { entries: [] }); st.entries = st.entries || [];
+      const n = new Date();
+      st.entries.push({ id: Math.max(Date.now(), ...st.entries.map(x => x.id + 1)), date: ymd(n), time: `${pad(n.getHours())}:${pad(n.getMinutes())}`, text, emoji: '🙂' });
+      save('argon_diary_v1', st); renderDiary();
+    }
+
     // ---------- 가계부: 오늘·이번 달 ----------
     function renderMoney() {
       const tx = load('argon_tx_v3', []), budgets = load('argon_cat_budgets_v3', null), d = new Date(), today = ymd(d), ym = today.slice(0, 7);
@@ -448,7 +469,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
