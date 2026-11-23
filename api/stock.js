@@ -76,6 +76,20 @@ async function usQuotes(codes) {
   const j = await get(`https://polling.finance.naver.com/api/realtime/worldstock/stock/${codes.map(encodeURIComponent).join(',')}`);
   return (j.datas || []).map(d => ({ ...fromPolling(d, d.reutersCode, d.stockName), currency: 'USD', symbol: d.symbolCode || null }));
 }
+// 환율 계산기용 통화 (unit: 원화 표시 기준 수량 — 100엔, 100동 …)
+const FXS = { USD: ['미국 달러', 1], JPY: ['일본 엔', 100], EUR: ['유로', 1], CNY: ['중국 위안', 1], GBP: ['영국 파운드', 1], HKD: ['홍콩 달러', 1], TWD: ['대만 달러', 1], THB: ['태국 바트', 1], VND: ['베트남 동', 100], PHP: ['필리핀 페소', 1], SGD: ['싱가포르 달러', 1], AUD: ['호주 달러', 1] };
+async function fxOne(c) {
+  const unit = FXS[c][1];
+  // 1순위 야후 (1단위 기준 → unit 곱하기), 실패하면 네이버
+  try {
+    const y = await yahoo(`${c}KRW=X`, '1d'), last = y.points.length && y.points[y.points.length - 1][1];
+    if (last) { const price = last * unit, prev = y.prevClose ? y.prevClose * unit : null, change = prev ? price - prev : 0; return { id: c, name: FXS[c][0], unit, price, change, rate: prev ? change / prev * 100 : 0, dir: dirOf(change), src: 'yahoo' }; }
+  } catch (e) { /* 네이버로 */ }
+  const j = await get(`https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_${c}KRW`);
+  const r = j.result || {}, t = r.fluctuationsType && r.fluctuationsType.name, sign = t === 'FALLING' ? -1 : t === 'RISING' ? 1 : 0;
+  const change = sign * Math.abs(num(r.fluctuations) || 0);
+  return { id: c, name: FXS[c][0], unit, price: num(r.closePrice), change, rate: sign * Math.abs(num(r.fluctuationsRatio) || 0), dir: dirOf(change), src: 'naver' };
+}
 async function fxQuote() {
   const j = await get('https://m.stock.naver.com/front-api/marketIndex/productDetail?category=exchange&reutersCode=FX_USDKRW');
   const r = j.result || {}, t = r.fluctuationsType && r.fluctuationsType.name;
@@ -200,6 +214,13 @@ module.exports = async (req, res) => {
       if (!valid || !YRANGE[range]) return send(res, 400, { error: '잘못된 요청' });
       const r = await chart(kind, code, range);
       return send(res, 200, { points: thin(r.points, range === '1d' ? 400 : 260).map(p => [p[0], p[1]]), prevClose: r.prevClose, stats: stats(r.points) }, range === '1d' ? 60 : 1800);
+    }
+    if (op === 'fx') {
+      const codes = String(q.get('c') || Object.keys(FXS).join(',')).split(',').map(x => x.trim().toUpperCase()).filter(x => FXS[x]).slice(0, 12);
+      const got = await Promise.all(codes.map(c => fxOne(c).catch(e => { console.error(e.message); return null; })));
+      const items = got.filter(x => x && x.price);
+      if (!items.length) return send(res, 502, { error: '환율을 불러오지 못했어요' });
+      return send(res, 200, { items, at: new Date().toISOString() }, 300);
     }
     if (op === 'div') {
       const kr = list(q.get('kr'), c => CODE_RE.test(c), 20);
