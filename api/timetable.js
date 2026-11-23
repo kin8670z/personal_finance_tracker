@@ -4,6 +4,8 @@
 // 인증키는 Vercel 환경변수 SEOUL_OPENAPI_KEY (실시간 키와 다른 '일반 인증키').
 const NAME_RE = /^[가-힣0-9A-Za-z()·.\s]{1,20}$/;
 const codeCache = new Map();
+// 노선마다 이름이 다른 같은 역 (시간표 API에서 따로 등록됨): 이수(7호선) = 총신대입구(4호선)
+const ALIAS = { '이수': ['총신대입구'], '총신대입구': ['이수'] };
 
 async function getJson(url) {
   let last;
@@ -30,10 +32,15 @@ module.exports = async (req, res) => {
     let rows = codeCache.get(station);
     if (!rows) {
       rows = [];
-      for (const nm of station === '서울' ? ['서울역', '서울'] : [station]) {
+      const first = station === '서울' ? ['서울역', '서울'] : [station];
+      for (const nm of first) {
         const j = await getJson(`${B}/SearchInfoBySubwayNameService/1/20/${encodeURIComponent(nm)}/`);
         rows = ((j.SearchInfoBySubwayNameService || {}).row || []);
         if (rows.length) break;
+      }
+      for (const nm of ALIAS[station] || []) {
+        const j = await getJson(`${B}/SearchInfoBySubwayNameService/1/20/${encodeURIComponent(nm)}/`);
+        ((j.SearchInfoBySubwayNameService || {}).row || []).forEach(r => { if (!rows.some(x => x.STATION_CD === r.STATION_CD)) rows.push(r); });
       }
       codeCache.set(station, rows);
     }
