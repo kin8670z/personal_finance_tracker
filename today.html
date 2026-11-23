@@ -224,14 +224,14 @@
       try {
         const t = await ArgonTT.load(name, ArgonTT.dayType());
         el.innerHTML = (t.lines || []).flatMap(L => L.dirs.map(D => { const nx = ArgonTT.upcoming(D.trains, 3);
-          return `<div class="bg-slate-50 rounded-lg px-2.5 py-2 mt-1.5"><p class="text-[10px] font-extrabold text-slate-500">${esc(L.line)} · ${esc(D.name)}</p><p class="text-xs font-bold text-slate-800 num mt-0.5">${nx.length ? nx.map(x => `${x[0]} <span class="text-[10px] text-slate-400">${ArgonTT.untilText(x[0])}</span>`).join(' · ') : '오늘 운행 끝 🌙'}</p></div>`; })).join('') || '';
+          return `<div class="bg-slate-50 rounded-lg px-2.5 py-2 mt-1.5"><p class="text-[10px] font-extrabold text-slate-500">${esc(L.line)} · ${esc(D.name)}</p><p class="text-xs font-bold text-slate-800 num mt-0.5">${nx.length ? nx.map(x => `${ArgonTT.disp(x[0])} <span class="text-[10px] text-slate-400">${ArgonTT.untilText(x[0])}</span>`).join(' · ') : '오늘 운행 끝 🌙'}</p></div>`; })).join('') || '';
       } catch (e) {}
     }
     async function appendLast(box, name) {
       try {
         const t = await ArgonTT.load(name, ArgonTT.dayType());
         const rows = (t.lines || []).flatMap(L => L.dirs.map(D => { const last = D.trains[D.trains.length - 1]; const gone = ArgonTT.minsOf(last[0]) < ArgonTT.nowMins();
-          return `<span class="text-[11px] font-bold ${gone ? 'text-slate-400 line-through' : 'text-slate-600'}">${esc(D.name)} ${last[0]}${gone ? '' : ` <span class="text-rose-600">${ArgonTT.untilText(last[0])} 남음</span>`}</span>`; }));
+          return `<span class="text-[11px] font-bold ${gone ? 'text-slate-400 line-through' : 'text-slate-600'}">${esc(D.name)} ${ArgonTT.disp(last[0])}${gone ? '' : ` <span class="text-rose-600">${ArgonTT.untilText(last[0])} 남음</span>`}</span>`; }));
         if (rows.length) box.insertAdjacentHTML('beforeend', `<div class="mt-2 pt-2 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1 items-center"><span class="text-[11px] font-extrabold text-slate-700">🌙 막차</span>${rows.join('')}</div>`);
       } catch (e) {}
     }

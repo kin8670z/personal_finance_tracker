@@ -20,6 +20,8 @@
     if (left <= 0) return '곧';
     return left >= 60 ? `${Math.floor(left / 60)}시간 ${left % 60}분` : `${left}분`;
   }
+  // '24:26' → '00:26'
+  const disp = t => { const h = Number(t.slice(0, 2)); return h >= 24 ? String(h - 24).padStart(2, '0') + t.slice(2) : t; };
   const mem = {};
   async function load(station, week) {
     const k = `argon_tt_${station}_${week}`;
@@ -31,5 +33,5 @@
     if (!j.needKey) { mem[k] = j; try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), j })); } catch (e) {} }
     return j;
   }
-  window.ArgonTT = { dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
+  window.ArgonTT = { disp, dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
 })();

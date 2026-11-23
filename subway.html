@@ -265,14 +265,14 @@
           const full = ttFull.has(fk);
           let table = '';
           if (full) {
-            const hours = {}; D.trains.forEach(x => { const h = x[0].slice(0, 2); (hours[h] = hours[h] || []).push(x); });
+            const hours = new Map(); D.trains.forEach(x => { const h = TT.disp(x[0]).slice(0, 2); if (!hours.has(h)) hours.set(h, []); hours.get(h).push(x); });
             const curH = String(new Date().getHours()).padStart(2, '0');
-            table = `<div class="mt-1.5 rounded-lg border border-slate-100 divide-y divide-slate-100 text-[11px]">${Object.entries(hours).map(([h, xs]) => `<div class="flex gap-2 px-2 py-1 ${today && h === curH ? 'bg-indigo-50' : ''}"><span class="w-6 shrink-0 font-extrabold text-slate-500 num">${h}</span><span class="flex flex-wrap gap-x-2 gap-y-0.5 num text-slate-700">${xs.map(x => `<span title="${esc(x[1])}행" class="${x[2] ? 'text-rose-600 font-bold' : ''}">${x[0].slice(3)}${x[1] && D.name.indexOf(x[1]) !== 0 ? `<sup class="text-[8px] text-slate-400">${esc(x[1].slice(0, 2))}</sup>` : ''}</span>`).join('')}</span></div>`).join('')}</div>
+            table = `<div class="mt-1.5 rounded-lg border border-slate-100 divide-y divide-slate-100 text-[11px]">${[...hours].map(([h, xs]) => `<div class="flex gap-2 px-2 py-1 ${today && h === curH ? 'bg-indigo-50' : ''}"><span class="w-6 shrink-0 font-extrabold text-slate-500 num">${h}</span><span class="flex flex-wrap gap-x-2 gap-y-0.5 num text-slate-700">${xs.map(x => `<span title="${esc(x[1])}행" class="${x[2] ? 'text-rose-600 font-bold' : ''}">${x[0].slice(3)}${x[1] && D.name.indexOf(x[1]) !== 0 ? `<sup class="text-[8px] text-slate-400">${esc(x[1].slice(0, 2))}</sup>` : ''}</span>`).join('')}</span></div>`).join('')}</div>
               <p class="text-[9px] text-slate-400 mt-0.5">작은 글씨는 다른 종착역 (앞 두 글자) · 빨간색은 급행</p>`;
           }
           return `<div class="mt-2">
-              <div class="flex items-center justify-between gap-2"><p class="text-[11px] font-extrabold text-slate-700">${esc(L.line)} · ${esc(D.name)}</p><p class="text-[10px] font-bold text-slate-400 shrink-0">첫차 ${first[0]} · 막차 ${last[0]}</p></div>
-              ${today ? (next.length ? `<div class="flex gap-1.5 mt-1 flex-wrap">${next.map((x, i) => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold num ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}">${x[0]} <span class="text-[10px] font-bold text-slate-400">${TT.untilText(x[0])}</span>${x[1] && D.name.indexOf(x[1]) !== 0 ? ` <span class="text-[9px] text-slate-400">${esc(x[1])}행</span>` : ''}</span>`).join('')}</div>`
+              <div class="flex items-center justify-between gap-2"><p class="text-[11px] font-extrabold text-slate-700">${esc(L.line)} · ${esc(D.name)}</p><p class="text-[10px] font-bold text-slate-400 shrink-0">첫차 ${TT.disp(first[0])} · 막차 ${TT.disp(last[0])}</p></div>
+              ${today ? (next.length ? `<div class="flex gap-1.5 mt-1 flex-wrap">${next.map((x, i) => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold num ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}">${TT.disp(x[0])} <span class="text-[10px] font-bold text-slate-400">${TT.untilText(x[0])}</span>${x[1] && D.name.indexOf(x[1]) !== 0 ? ` <span class="text-[9px] text-slate-400">${esc(x[1])}행</span>` : ''}</span>`).join('')}</div>`
                 : `<p class="text-[11px] text-slate-500 mt-1">오늘 운행이 끝났어요 🌙</p>`) : ''}
               <span role="button" tabindex="0" onclick="toggleTTFull('${esc(fk)}')" class="cursor-pointer inline-block text-[10px] font-bold text-slate-400 mt-1">${full ? '전체 시간표 접기 ▴' : '전체 시간표 ▾'}</span>
               ${table}
