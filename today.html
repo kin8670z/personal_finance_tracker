@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>오늘 · 아르곤 자산관리</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💎 아르곤 자산관리</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">☀️ <span>오늘</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2 min-w-0">
+          <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+          <div class="min-w-0"><h1 id="hello" class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">☀️ 오늘</h1>
+          <p id="dateLine" class="text-[11px] font-bold text-slate-500"></p></div>
+        </div>
+        <button type="button" onclick="refreshAll()" aria-label="새로고침" id="refreshBtn" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 shrink-0">🔄</button>
+      </div>
+    </header>
+
+    <section id="weather" class="card p-4"><div class="skel" style="height:110px"></div></section>
+    <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
+    <section id="money" class="card p-4"></section>
+    <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+      <section id="lotto" class="card p-4"><div class="skel" style="height:60px"></div></section>
+      <section id="tax" class="card p-4"></section>
+    </div>
+
+    <section class="card p-4 flex items-center justify-between gap-3">
+      <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">📲 앱을 열면 이 화면부터</p><p class="text-[10px] text-slate-400">끄면 가계부가 첫 화면이에요. 이 기기에만 적용돼요.</p></div>
+      <button type="button" id="startBtn" onclick="toggleStart()" role="switch" class="w-12 h-7 rounded-full relative shrink-0 transition-colors"><span class="absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
+    </section>
+  </div>
+
+  <script src="tax-calc.js"></script>
+  <script>
+    function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+    function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const head = (title, link, linkText) => `<div class="flex items-center justify-between gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">${title}</h2>${link ? `<a href="${link}" class="text-[11px] font-bold text-indigo-600 shrink-0">${linkText || '자세히'} →</a>` : ''}</div>`;
+    const PLACE_KEY = 'argon_today_place_v1';
+    const HOME = { name: '하남시', lat: 37.5393, lng: 127.2149 };
+
+    // ---------- 인사 ----------
+    function renderHello() {
+      const d = new Date(), h = d.getHours(), W = '일월화수목금토';
+      const hi = h < 5 ? '🌙 늦은 밤이에요' : h < 11 ? '☀️ 좋은 아침이에요' : h < 14 ? '🍱 점심 맛있게 드세요' : h < 18 ? '☕ 오후도 힘내요' : h < 22 ? '🌆 오늘도 수고했어요' : '🌙 푹 쉬어요';
+      document.getElementById('hello').textContent = hi;
+      document.getElementById('dateLine').textContent = `${d.getMonth() + 1}월 ${d.getDate()}일 (${W[d.getDay()]})`;
+    }
+
+    // ---------- 날씨 (Open-Meteo, 키 없이 무료) ----------
+    const WMO = c => c === 0 ? ['☀️', '맑음'] : c <= 2 ? ['🌤️', '구름 조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫️', '안개'] : c <= 57 ? ['🌦️', '이슬비'] : c <= 67 ? ['🌧️', '비'] : c <= 77 ? ['🌨️', '눈'] : c <= 82 ? ['🌧️', '소나기'] : c <= 86 ? ['🌨️', '눈 소나기'] : ['⛈️', '뇌우'];
+    // 환경부 기준 미세먼지 등급
+    const pmGrade = (v, fine) => { const t = fine ? [15, 35, 75] : [30, 80, 150]; return v == null ? ['-', 'text-slate-400', ''] : v <= t[0] ? ['좋음', 'text-sky-600', 'bg-sky-50'] : v <= t[1] ? ['보통', 'text-emerald-600', 'bg-emerald-50'] : v <= t[2] ? ['나쁨', 'text-amber-600', 'bg-amber-50'] : ['매우 나쁨', 'text-rose-600', 'bg-rose-50']; };
+    async function loadWeather() {
+      const box = document.getElementById('weather'), p = load(PLACE_KEY, HOME);
+      try {
+        const q = `latitude=${p.lat}&longitude=${p.lng}&timezone=Asia%2FSeoul`;
+        const [w, a] = await Promise.all([
+          fetch(`https://api.open-meteo.com/v1/forecast?${q}&current=temperature_2m,apparent_temperature,weather_code,precipitation&hourly=temperature_2m,precipitation_probability,weather_code&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=2`).then(r => { if (!r.ok) throw 0; return r.json(); }),
+          fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=pm10,pm2_5`).then(r => r.ok ? r.json() : null).catch(() => null)
+        ]);
+        const c = w.current, [ic, desc] = WMO(c.weather_code), hi = Math.round(w.daily.temperature_2m_max[0]), lo = Math.round(w.daily.temperature_2m_min[0]), rain = w.daily.precipitation_probability_max[0];
+        const pm10 = a && a.current ? Math.round(a.current.pm10) : null, pm25 = a && a.current ? Math.round(a.current.pm2_5) : null;
+        const g10 = pmGrade(pm10, false), g25 = pmGrade(pm25, true);
+        // 지금부터 12시간
+        const nowIdx = w.hourly.time.findIndex(t => t >= c.time.slice(0, 13));
+        const hours = w.hourly.time.slice(Math.max(0, nowIdx), Math.max(0, nowIdx) + 12).map((t, i) => ({ h: Number(t.slice(11, 13)), temp: Math.round(w.hourly.temperature_2m[nowIdx + i]), pop: w.hourly.precipitation_probability[nowIdx + i], code: w.hourly.weather_code[nowIdx + i] }));
+        const tips = [];
+        const rainAhead = Math.max(rain || 0, ...hours.map(h => h.pop || 0));
+        if (rainAhead >= 60) tips.push('☂️ 우산 꼭 챙기세요'); else if (rainAhead >= 30) tips.push('🌂 작은 우산 있으면 좋아요');
+        if (lo <= -5) tips.push('🧤 많이 추워요, 장갑·목도리'); else if (lo <= 3) tips.push('🧥 두꺼운 외투 챙기세요');
+        if (hi - lo >= 10) tips.push(`🌡️ 일교차 ${hi - lo}도`);
+        if (/나쁨/.test(g10[0] + g25[0])) tips.push('😷 마스크 챙기세요');
+        if (hi >= 31) tips.push('🥵 더워요, 물 자주');
+        box.innerHTML = head(`🌤️ 날씨 <span class="text-[11px] font-bold text-slate-400">${esc(p.name)}</span>`) +
+          `<div class="flex items-center gap-4">
+            <div class="text-5xl leading-none">${ic}</div>
+            <div class="min-w-0"><p class="text-3xl font-extrabold num text-slate-900">${Math.round(c.temperature_2m)}°</p>
+              <p class="text-xs font-bold text-slate-500">${desc} · 체감 ${Math.round(c.apparent_temperature)}° · <span class="up">${hi}°</span> / <span class="down">${lo}°</span> · 비 ${rain ?? 0}%</p></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 mt-3">
+            <div class="rounded-xl px-3 py-2 ${g10[2] || 'bg-slate-50'}"><p class="text-[10px] font-bold text-slate-500">미세먼지</p><p class="text-sm font-extrabold ${g10[1]}">${g10[0]} <span class="text-[11px] font-bold text-slate-400 num">${pm10 ?? '-'}㎍</span></p></div>
+            <div class="rounded-xl px-3 py-2 ${g25[2] || 'bg-slate-50'}"><p class="text-[10px] font-bold text-slate-500">초미세먼지</p><p class="text-sm font-extrabold ${g25[1]}">${g25[0]} <span class="text-[11px] font-bold text-slate-400 num">${pm25 ?? '-'}㎍</span></p></div>
+          </div>
+          ${tips.length ? `<div class="flex flex-wrap gap-1.5 mt-3">${tips.map(t => `<span class="text-[11px] font-bold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">${t}</span>`).join('')}</div>` : ''}
+          <div class="flex gap-2 overflow-x-auto mt-3 pb-1 -mx-1 px-1">${hours.map((h, i) => `<div class="shrink-0 w-11 text-center rounded-lg py-1.5 ${i === 0 ? 'bg-indigo-50' : 'bg-slate-50'}">
+              <p class="text-[10px] font-bold text-slate-500">${i === 0 ? '지금' : h.h + '시'}</p><p class="text-base leading-tight">${WMO(h.code)[0]}</p><p class="text-xs font-extrabold num text-slate-800">${h.temp}°</p><p class="text-[9px] font-bold ${h.pop >= 50 ? 'text-sky-600' : 'text-slate-400'}">${h.pop ?? 0}%</p></div>`).join('')}</div>
+          <div class="flex items-center justify-between mt-2"><button type="button" onclick="useMyPlace()" class="text-[11px] font-bold text-indigo-600">📍 지금 위치로</button>${p.name !== HOME.name ? `<button type="button" onclick="resetPlace()" class="text-[11px] font-bold text-slate-400">하남시로 되돌리기</button>` : ''}<span class="text-[9px] text-slate-400">Open-Meteo · 미세먼지는 예측 모델 값</span></div>`;
+      } catch (e) {
+        box.innerHTML = head('🌤️ 날씨') + `<p class="text-xs text-slate-500">날씨를 불러오지 못했어요. 🔄 다시 시도해 보세요.</p>`;
+      }
+    }
+    function useMyPlace() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(pos => { save(PLACE_KEY, { name: '현재 위치', lat: +pos.coords.latitude.toFixed(3), lng: +pos.coords.longitude.toFixed(3) }); loadWeather(); }, () => alertBox('위치 권한이 없어서 하남시 날씨를 보여줘요.'), { timeout: 8000, maximumAge: 6e5 });
+    }
+    function resetPlace() { localStorage.removeItem(PLACE_KEY); loadWeather(); }
+    function alertBox(msg) { const b = document.getElementById('weather'); b.insertAdjacentHTML('beforeend', `<p class="text-[11px] text-amber-600 mt-1">${esc(msg)}</p>`); }
+
+    // ---------- 지하철: 출근(오후 2시 전) / 퇴근 역 ----------
+    const label = n => n === '서울' ? '서울역' : n + '역';
+    async function loadSubway() {
+      const box = document.getElementById('subway'), favs = load('argon_subway_v1', []);
+      const am = new Date().getHours() < 14, want = am ? '출근' : '퇴근';
+      const f = favs.find(x => x.tag === want) || favs.find(x => !x.tag) || favs[0];
+      if (!f) { box.innerHTML = head('🚇 지하철', './subway.html', '역 등록') + `<p class="text-xs text-slate-500">지하철 화면에서 출근·퇴근 역을 등록하면 여기 바로 떠요.</p>`; return; }
+      const title = `🚇 ${esc(label(f.name))} ${f.tag ? `<span class="text-[10px] font-bold px-1.5 py-0.5 rounded-full ${f.tag === '출근' ? 'bg-amber-100 text-amber-700' : 'bg-indigo-100 text-indigo-700'}">${f.tag === '출근' ? '🌅 출근' : '🌙 퇴근'}</span>` : ''}`;
+      try {
+        const r = await fetch(`./api/subway?station=${encodeURIComponent(f.name)}`), j = await r.json();
+        if (!r.ok || j.needKey) throw 0;
+        const list = j.arrivals || [];
+        if (!list.length) { box.innerHTML = head(title, './subway.html', '전체') + `<p class="text-xs text-slate-500">지금 도착 정보가 없어요. 운행 시간이 아닐 수 있어요.</p>`; return; }
+        const at = Date.now(), dirs = {};
+        list.forEach(a => { const k = a.lineName + '|' + a.dir; (dirs[k] = dirs[k] || []).push(a); });
+        box.innerHTML = head(title, './subway.html', '전체') + `<div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${Object.values(dirs).slice(0, 4).map(g => {
+            g.sort((x, y) => String(x.order).localeCompare(String(y.order))); const a = g[0];
+            return `<div class="bg-slate-50 rounded-lg px-2.5 py-2 flex items-center justify-between gap-2">
+                <span class="min-w-0"><span class="block text-[10px] font-extrabold truncate" style="color:${a.color}">${esc(a.lineName)} · ${esc(a.dir)}</span><span class="block text-xs font-bold text-slate-700 truncate">${esc(a.dest || '')}행</span></span>
+                <span class="text-xs font-extrabold num shrink-0 tick" data-sec="${a.sec || 0}" data-msg="${esc(a.msg || '')}" data-at="${at}"></span></div>`;
+          }).join('')}</div>`;
+        tick();
+      } catch (e) { box.innerHTML = head(title, './subway.html', '전체') + `<p class="text-xs text-slate-500">도착 정보를 불러오지 못했어요.</p>`; }
+    }
+    function tick() {
+      document.querySelectorAll('#subway .tick').forEach(el => {
+        const sec = Number(el.dataset.sec), left = sec - Math.floor((Date.now() - Number(el.dataset.at)) / 1000);
+        el.textContent = sec > 0 ? (left > 0 ? `${Math.floor(left / 60)}분 ${pad(left % 60)}초` : '곧 도착') : (el.dataset.msg || '-').replace(/\[(\d+)\]번째 전역/, '$1정거장 전').replace(/\s*\(.*\)$/, '');
+        el.className = `text-xs font-extrabold num shrink-0 tick ${sec > 0 && left <= 90 ? 'text-rose-600' : 'text-slate-900'}`;
+      });
+    }
+
+    // ---------- 가계부: 오늘·이번 달 ----------
+    function renderMoney() {
+      const tx = load('argon_tx_v3', []), budgets = load('argon_cat_budgets_v3', null), d = new Date(), today = ymd(d), ym = today.slice(0, 7);
+      const exp = tx.filter(t => t.type === 'expense');
+      const todaySpent = exp.filter(t => t.date === today).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const monthSpent = exp.filter(t => t.date && t.date.startsWith(ym) && t.date <= today).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const budget = budgets ? Object.values(budgets).reduce((s, v) => s + (Number(v) || 0), 0) : 0;
+      const dim = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate(), left = dim - d.getDate() + 1;
+      const remain = budget - monthSpent, perDay = remain / left;
+      const pct = budget ? Math.min(100, monthSpent / budget * 100) : 0, dayPct = (d.getDate() / dim) * 100;
+      const box = document.getElementById('money');
+      box.innerHTML = head('📒 가계부', './', '기록하기') + `<div class="grid grid-cols-3 gap-2">
+          <div><p class="text-[10px] font-bold text-slate-500">오늘 쓴 돈</p><p class="text-base font-extrabold num text-slate-900">${won(todaySpent)}</p></div>
+          <div><p class="text-[10px] font-bold text-slate-500">이번 달</p><p class="text-base font-extrabold num text-slate-900">${won(monthSpent)}</p></div>
+          <div><p class="text-[10px] font-bold text-slate-500">${budget ? (remain >= 0 ? '하루 써도 되는 돈' : '예산 초과') : '예산'}</p><p class="text-base font-extrabold num ${remain >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${budget ? won(Math.abs(remain >= 0 ? perDay : remain)) : '-'}</p></div>
+        </div>
+        ${budget ? `<div class="mt-3"><div class="relative h-2.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full ${pct > dayPct + 5 ? 'bg-rose-500' : 'bg-indigo-500'}" style="width:${pct.toFixed(1)}%"></div></div>
+          <div class="relative h-0"><span class="absolute -top-3 w-0.5 h-3.5 bg-slate-500" style="left:${dayPct.toFixed(1)}%"></span></div>
+          <p class="text-[10px] text-slate-400 mt-1.5">예산 ${won(budget)} 중 ${Math.round(pct)}% 사용 · 세로선은 오늘 (${d.getDate()}/${dim}일) · ${pct > dayPct + 5 ? '속도가 조금 빨라요' : '속도 괜찮아요'}</p></div>` : ''}`;
+    }
+
+    // ---------- 시장 ----------
+    async function loadMarket() {
+      const box = document.getElementById('market'), watch = load('argon_watchlist_v1', []) || [];
+      const code = s => s.split(':')[1], kr = watch.filter(w => w.symbol.startsWith('KRX:')).map(w => code(w.symbol)), us = watch.filter(w => w.symbol.startsWith('US:')).map(w => code(w.symbol));
+      try {
+        const p = new URLSearchParams({ op: 'quotes', kr: kr.join(','), us: us.join(','), idx: 'KOSPI,KOSDAQ', fx: '1' });
+        const r = await fetch(`./api/stock?${p}`, { cache: 'no-store' }); if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) throw 0;
+        const j = await r.json(), Q = {};
+        (j.kr || []).forEach(q => Q['KRX:' + q.id] = q); (j.us || []).forEach(q => Q['US:' + q.id] = q);
+        const usd = (j.fx || [])[0], fx = usd ? usd.price : 0;
+        const cls = d => d === 'up' || d > 0 ? 'up' : d === 'down' || d < 0 ? 'down' : 'flat';
+        const rt = r => (r > 0 ? '+' : '') + (Number(r) || 0).toFixed(2) + '%';
+        const tiles = [...(j.idx || []).map(q => ({ name: q.name || q.id, price: q.price, rate: q.rate, dir: q.dir })), ...(usd ? [{ name: '원/달러', price: usd.price, rate: usd.rate, dir: usd.dir }] : [])];
+        // 보유 종목 오늘 손익
+        let todayPL = 0, held = 0;
+        watch.forEach(w => { const q = Q[w.symbol]; if (q && w.qty > 0 && q.change != null) { todayPL += w.qty * q.change * (w.symbol.startsWith('US:') ? fx : 1); held++; } });
+        const movers = watch.map(w => ({ w, q: Q[w.symbol] })).filter(x => x.q).sort((a, b) => Math.abs(b.q.rate) - Math.abs(a.q.rate)).slice(0, 4);
+        box.innerHTML = head('📈 시장', './stocks.html', '주식 현황') + `<div class="grid grid-cols-3 gap-2">${tiles.map(t => `<div class="bg-slate-50 rounded-xl px-2.5 py-2"><p class="text-[10px] font-bold text-slate-500 truncate">${esc(t.name)}</p><p class="text-sm font-extrabold num text-slate-900">${Number(t.price).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}</p><p class="text-[11px] font-bold num ${cls(t.dir)}">${rt(t.rate)}</p></div>`).join('')}</div>
+          ${held ? `<p class="text-xs font-bold text-slate-600 mt-3">💼 보유 종목 오늘 <span class="num ${cls(Math.round(todayPL))}">${todayPL > 0 ? '+' : ''}${won(todayPL)}</span></p>` : ''}
+          ${movers.length ? `<div class="divide-y divide-slate-100 mt-2">${movers.map(({ w, q }) => `<div class="flex items-center justify-between gap-2 py-1.5"><span class="text-xs font-bold text-slate-700 truncate">${esc(w.name || q.name)}</span><span class="text-xs font-extrabold num ${cls(q.dir)} shrink-0">${rt(q.rate)}</span></div>`).join('')}</div>` : ''}`;
+      } catch (e) { box.innerHTML = head('📈 시장', './stocks.html', '주식 현황') + `<p class="text-xs text-slate-500">시세를 불러오지 못했어요.</p>`; }
+    }
+
+    // ---------- 로또 ----------
+    function nextDraw(now) { const d = new Date(now); const add = (6 - d.getDay() + 7) % 7; d.setDate(d.getDate() + add); d.setHours(20, 35, 0, 0); if (d < now) d.setDate(d.getDate() + 7); return d; }
+    async function loadLotto() {
+      const box = document.getElementById('lotto'), mine = load('argon_lotto_v1', []);
+      try {
+        const r = await fetch('./api/lotto'); if (!r.ok) throw 0;
+        const j = await r.json(), L = j.latest; if (!L) throw 0;
+        const now = new Date(), nd = nextDraw(now), days = Math.round((new Date(nd.getFullYear(), nd.getMonth(), nd.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+        const nextNo = L.no + 1, games = mine.filter(m => String(m.target) === String(nextNo)).length;
+        const lastMine = mine.filter(m => String(m.target) === String(L.no));
+        const win = new Set(L.nums), best = lastMine.length ? Math.max(...lastMine.map(m => m.nums.filter(n => win.has(n)).length)) : null;
+        const ball = n => `<span class="w-6 h-6 rounded-full inline-flex items-center justify-center text-[10px] font-extrabold text-white" style="background:${n <= 10 ? '#eab308' : n <= 20 ? '#3b82f6' : n <= 30 ? '#ef4444' : n <= 40 ? '#64748b' : '#22c55e'}">${n}</span>`;
+        box.innerHTML = head('🍀 로또', './lotto.html', '번호 뽑기') + `<p class="text-xs font-bold text-slate-600">${nextNo}회 추첨 <b class="text-indigo-600">${days === 0 ? '오늘 저녁 8:35' : `D-${days}`}</b> · 내 번호 ${games ? `${games}게임` : '아직 없음'}</p>
+          <div class="flex items-center gap-1 mt-2 flex-wrap">${L.nums.map(ball).join('')}<span class="text-xs font-bold text-slate-400 mx-0.5">+</span>${ball(L.bonus)}</div>
+          <p class="text-[10px] text-slate-400 mt-1">${L.no}회 당첨번호${best != null ? ` · 내 번호 최고 ${best}개 맞음` : ''}</p>`;
+      } catch (e) { box.innerHTML = head('🍀 로또', './lotto.html', '번호 뽑기') + `<p class="text-xs text-slate-500">당첨번호를 불러오지 못했어요.</p>`; }
+    }
+
+    // ---------- 연말정산 ----------
+    function renderTax() {
+      const box = document.getElementById('tax'), T = window.ArgonTax, a = T.analyze();
+      if (!a.s.salary) { box.innerHTML = head('🧾 연말정산', './tax.html', '계산하기') + `<p class="text-xs text-slate-500">올해 카드 사용액 <b class="num text-slate-800">${T.won(a.now.spent)}</b>. 총급여를 넣으면 공제 예상액이랑 남은 기간 체크·신용 중 뭐가 유리한지 알려줘요.</p>`; return; }
+      box.innerHTML = head('🧾 연말정산', './tax.html', '자세히') + `<p class="text-[10px] font-bold text-slate-500">연말 예상 카드 공제</p><p class="text-xl font-extrabold num text-indigo-600">${T.won(a.end.total)} <span class="text-xs font-bold text-emerald-600">세금 약 ${T.won(a.saveEnd)}↓</span></p>
+        <p class="text-[11px] text-slate-600 mt-1 leading-snug">${a.advice.kind === 'switch' ? `🔁 남은 기간 체크카드가 유리 (+${T.won(a.advice.gain)})` : a.advice.kind === 'below' ? `🪜 문턱(총급여 25%)까지 ${T.won(a.advice.short)} 남음` : a.advice.kind === 'cap' ? '✅ 한도 채움 · 카드 혜택 위주로' : '👍 지금 그대로 OK'}</p>`;
+    }
+
+    // ---------- 첫 화면 설정 ----------
+    const startOn = () => localStorage.getItem('argon_start_today') !== '0';
+    function renderStart() { const b = document.getElementById('startBtn'), on = startOn(); b.setAttribute('aria-checked', String(on)); b.style.background = on ? '#4f46e5' : '#cbd5e1'; b.firstElementChild.style.left = on ? '1.5rem' : '.25rem'; }
+    function toggleStart() { localStorage.setItem('argon_start_today', startOn() ? '0' : '1'); renderStart(); }
+
+    let busy = false;
+    async function refreshAll() {
+      if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
+      renderHello(); renderMoney(); renderTax();
+      await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
+      busy = false; document.getElementById('refreshBtn').style.opacity = '';
+    }
+    setInterval(tick, 1000);
+    setInterval(() => { if (document.visibilityState === 'visible') loadSubway(); }, 30000);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { renderHello(); renderMoney(); loadSubway(); } });
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    renderStart(); refreshAll();
+  </script>
+</body>
+</html>

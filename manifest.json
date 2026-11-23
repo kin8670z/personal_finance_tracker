@@ -1,7 +1,7 @@
 {
   "name": "아르곤 자산관리 Pro",
   "short_name": "아르곤 자산관리",
-  "description": "가계부·주식 현황·내 자산",
+  "description": "가계부·주식 현황·내 자산·연말정산",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -31,6 +31,16 @@
     }
   ],
   "shortcuts": [
+    {
+      "name": "오늘",
+      "url": "./today.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
     {
       "name": "지하철",
       "url": "./subway.html",
