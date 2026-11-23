@@ -58,6 +58,26 @@
     if (!foot) { foot = document.createElement('div'); foot.className = 'mt-auto pt-3 border-t border-slate-100'; nav.appendChild(foot); }
     foot.insertBefore(btn, foot.firstChild);
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', addButton); else addButton();
+  // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
+  const VERSION = '8.9';
+  window.ARGON_VERSION = VERSION;
+  function addVersion() {
+    const nav = document.getElementById('sideNav');
+    if (!nav || document.getElementById('versionNavBtn')) return;
+    let foot = nav.querySelector('.mt-auto');
+    if (!foot) { foot = document.createElement('div'); foot.className = 'mt-auto pt-3 border-t border-slate-100'; nav.appendChild(foot); }
+    const seen = (() => { try { return localStorage.getItem('argon_seen_version'); } catch (e) { return null; } })();
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.id = 'versionNavBtn';
+    btn.className = 'w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 flex items-center justify-between';
+    btn.innerHTML = `<span>🆕 업데이트 노트</span><span class="flex items-center gap-1.5"><span class="text-[10px] font-extrabold text-indigo-600">v${VERSION}</span>${seen !== VERSION ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>' : ''}</span>`;
+    btn.addEventListener('click', () => {
+      if (typeof openReleaseModal === 'function') { if (typeof closeSideNav === 'function') closeSideNav(); openReleaseModal(); }
+      else location.href = './?notes=1';   // 업데이트 노트는 가계부 화면에 있음
+    });
+    foot.appendChild(btn);
+  }
+  function init() { addButton(); addVersion(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.installApp = install;
 })();
