@@ -508,7 +508,9 @@
       divHeld().forEach(w => {
         const d = divData && divData[w.symbol]; if (!d || !d.events) return;
         const us = isUsStock(w.symbol), f = us ? (fxRate() || 0) : 1, tax = us ? 0.15 : 0.154;
-        const mk = (t, ps, est) => ({ w, t, ps, us, est, amt: ps * w.qty * f, net: ps * w.qty * f * (1 - tax) });
+        // 평소(중앙값)보다 3배 넘게 큰 배당은 특별배당일 수 있어서 표시
+        const sorted = d.events.map(e => e[1]).sort((a, b) => a - b), median = sorted[Math.floor(sorted.length / 2)] || 0;
+        const mk = (t, ps, est) => ({ w, t, ps, us, est, big: median && ps > median * 3, amt: ps * w.qty * f, net: ps * w.qty * f * (1 - tax) });
         const future = d.events.filter(e => e[0] > now);
         future.forEach(e => up.push(mk(e[0], e[1], false)));
         d.events.filter(e => e[0] <= now && e[0] > now - year).forEach(e => {
@@ -557,7 +559,7 @@
         <div class="flex gap-1 mt-1">${months.map((M, i) => `<span class="flex-1 text-center text-[9px] font-bold ${divMonth === i ? 'text-indigo-600' : 'text-slate-400'}">${M.m === 0 ? `${String(M.y).slice(2)}.` : ''}${M.m + 1}</span>`).join('')}</div>
         <div class="flex justify-between items-center mt-3 mb-1"><p class="text-xs font-extrabold text-slate-700">${divMonth != null ? `${months[divMonth].m + 1}월 배당` : '📌 다가오는 배당'}</p>${divMonth != null ? `<button type="button" onclick="divPick(null)" class="text-[11px] font-bold text-indigo-600" style="font-size:11px!important">전체 보기</button>` : ''}</div>
         ${shown.length ? `<div class="divide-y divide-slate-100">${shown.map(e => `<div class="flex items-center justify-between gap-2 py-1.5">
-            <span class="min-w-0"><span class="block text-xs font-bold text-slate-800 truncate">${esc(e.w.name)}</span><span class="block text-[10px] text-slate-400">${dt(e.t)} 배당락${e.est ? ' (작년 기준 예상)' : ''} · 주당 ${e.us ? `$${fmt(e.ps, 3)}` : `${fmt(e.ps)}원`} × ${qtyText(e.w.qty)}주</span></span>
+            <span class="min-w-0"><span class="block text-xs font-bold text-slate-800 truncate">${esc(e.w.name)}</span><span class="block text-[10px] text-slate-400">${dt(e.t)} 배당락${e.est ? ' (작년 기준 예상)' : ''}${e.big ? ' · <span class="text-amber-600 font-bold">⚡평소보다 큼 (특별배당일 수 있어요)</span>' : ''} · 주당 ${e.us ? `$${fmt(e.ps, 3)}` : `${fmt(e.ps)}원`} × ${qtyText(e.w.qty)}주</span></span>
             <span class="text-right shrink-0"><span class="block text-xs font-extrabold num text-emerald-600">${won(e.amt)}</span><span class="block text-[10px] text-slate-400 num">세후 ${won(e.net)}</span></span></div>`).join('')}</div>`
           : `<p class="text-xs text-slate-400 py-2">이 달엔 배당이 없어요.</p>`}
         ${topStock ? `<p class="text-[11px] text-slate-500 mt-2">🏆 효자 종목: <b>${esc(nameOf(topStock[0]))}</b> (1년 ${won(topStock[1])})${pastSum ? ` · 지난 12개월 기준 ${won(pastSum)}` : ''}</p>` : ''}
