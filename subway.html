@@ -179,6 +179,7 @@
       loading = true; document.getElementById('refreshBtn').style.opacity = '.5';
       const results = await Promise.all(favs.map(f => fetchStation(f.name).then(j => [f.name, j], e => [f.name, { error: e.message }])));
       results.forEach(([n, j]) => { data[n] = j; if (j.demo) demo = true; if (j.needKey) needKey = true; });
+      favs.forEach(f => loadTTWeek(f.name, TT.dayType()));   // 지연 계산용 오늘 시간표
       loadedAt = Date.now(); loading = false; document.getElementById('refreshBtn').style.opacity = '';
       render();
     }
@@ -215,7 +216,7 @@
                   ${list.slice(0, 2).map((a, i) => `<div class="flex items-center justify-between gap-2 ${i ? 'mt-0.5' : 'mt-1'}">
                       <span class="text-xs font-bold text-slate-700 truncate">${esc(a.dest || '')}행${a.express ? ` <span class="text-[9px] px-1 py-0.5 rounded bg-rose-100 text-rose-600 font-extrabold">${esc(a.express)}</span>` : ''}${a.last ? ' <span class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-white font-extrabold">막차</span>' : ''}${a.est != null && a.pos ? ` <span class="text-[10px] font-bold text-slate-400">· ${esc(a.pos)}</span>` : ''}</span>
                       <span class="tick text-xs font-extrabold shrink-0 ${i === 0 && soon(a) ? 'text-rose-600' : 'text-slate-900'}" data-sec="${a.sec}" data-est="${a.est ?? ''}">${esc(msgText(a))}</span>
-                    </div>`).join('')}
+                    </div>${schedLine(f.name, a)}`).join('')}
                 </div>`;
             }).join('')}</div>
           </div>`).join('');
@@ -235,11 +236,22 @@
     function toggleTT(name) { ttOpen.has(name) ? ttOpen.delete(name) : ttOpen.add(name); loadTT(name); render(); }
     function setTTWeek(name, w) { ttWeek[name] = w; loadTT(name); render(); }
     function toggleTTFull(k) { ttFull.has(k) ? ttFull.delete(k) : ttFull.add(k); render(); }
-    async function loadTT(name) {
-      const k = ttKey({ name }); if (ttData[k]) return;
+    async function loadTTWeek(name, week) {
+      const k = `${name}|${week}`; if (ttData[k]) return;
       ttData[k] = { loading: true };
-      try { ttData[k] = await TT.load(name, ttWeek[name] || TT.dayType()); } catch (e) { ttData[k] = { error: e.message }; }
+      try { ttData[k] = await TT.load(name, week); } catch (e) { ttData[k] = { error: e.message }; }
       render();
+    }
+    const loadTT = name => loadTTWeek(name, ttWeek[name] || TT.dayType());
+    // 실시간 열차 ↔ 시간표 (열차번호로 매칭): '시간표 13:38 · 약 6분 늦음'
+    function schedLine(name, a) {
+      const t = ttData[`${name}|${TT.dayType()}`]; if (!t || !t.lines || !a.no) return '';
+      const m = TT.findTrain(t, a.no); if (!m) return '';
+      if (String(a.code) === '2') return '';   // 이미 출발
+      const left = a.sec > 0 ? a.sec : a.est != null ? a.est : 0;
+      const d = TT.delayOf(m.time, left, loadedAt), approx = !(a.sec > 0) && a.est != null ? '약 ' : '';
+      const txt = d >= 2 ? `<span class="text-rose-600">${approx}${d}분 늦음</span>` : d <= -2 ? `<span class="text-sky-600">${approx}${-d}분 빠름</span>` : `<span class="text-emerald-600">정시</span>`;
+      return `<p class="text-[10px] font-bold text-slate-400 -mt-0.5">시간표 ${TT.disp(m.time)} · ${txt}</p>`;
     }
     function ttSection(f) {
       // 실시간이 안 될 때는 시간표를 자동으로 펼침
@@ -261,7 +273,11 @@
         const today = (ttWeek[f.name] || TT.dayType()) === TT.dayType();
         inner = t.lines.map(L => L.dirs.map(D => {
           const fk = `${f.name}|${L.line}|${D.tag}`, first = D.trains[0], last = D.trains[D.trains.length - 1];
-          const next = today ? TT.upcoming(D.trains, 4) : [];
+          let next = today ? TT.upcoming(D.trains, 4) : [];
+          // 시간표 시각은 지났지만 아직 안 온 (늦는) 열차를 앞에 붙임
+          const rt = (data[f.name] && data[f.name].arrivals) || [];
+          const late = today ? D.trains.filter(x => { const mm = TT.minsOf(x[0]), nm = TT.nowMins(); if (mm >= nm - 0.5 || mm < nm - 30) return false; const a = rt.find(r => TT.normNo(r.no) === TT.normNo(x[3])); return a && String(a.code) !== '2'; }) : [];
+          next = [...late.map(x => [...x, 'late']), ...next].slice(0, 4);
           const full = ttFull.has(fk);
           let table = '';
           if (full) {
@@ -272,7 +288,7 @@
           }
           return `<div class="mt-2">
               <div class="flex items-center justify-between gap-2"><p class="text-[11px] font-extrabold text-slate-700">${esc(L.line)} · ${esc(D.name)}</p><p class="text-[10px] font-bold text-slate-400 shrink-0">첫차 ${TT.disp(first[0])} · 막차 ${TT.disp(last[0])}</p></div>
-              ${today ? (next.length ? `<div class="flex gap-1.5 mt-1 flex-wrap">${next.map((x, i) => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold num ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}">${TT.disp(x[0])} <span class="text-[10px] font-bold text-slate-400">${TT.untilText(x[0])}</span>${x[1] && D.name.indexOf(x[1]) !== 0 ? ` <span class="text-[9px] text-slate-400">${esc(x[1])}행</span>` : ''}</span>`).join('')}</div>`
+              ${today ? (next.length ? `<div class="flex gap-1.5 mt-1 flex-wrap">${next.map((x, i) => `<span class="px-2 py-1 rounded-lg text-[11px] font-bold num ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-50 text-slate-600'}">${TT.disp(x[0])} <span class="text-[10px] font-bold ${x[4] === 'late' ? 'text-rose-600' : 'text-slate-400'}">${x[4] === 'late' ? '지연 중' : TT.untilText(x[0])}</span>${x[1] && D.name.indexOf(x[1]) !== 0 ? ` <span class="text-[9px] text-slate-400">${esc(x[1])}행</span>` : ''}</span>`).join('')}</div>`
                 : `<p class="text-[11px] text-slate-500 mt-1">오늘 운행이 끝났어요 🌙</p>`) : ''}
               <span role="button" tabindex="0" onclick="toggleTTFull('${esc(fk)}')" class="cursor-pointer inline-block text-[10px] font-bold text-slate-400 mt-1">${full ? '전체 시간표 접기 ▴' : '전체 시간표 ▾'}</span>
               ${table}

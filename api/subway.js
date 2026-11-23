@@ -59,7 +59,7 @@ module.exports = async (req, res) => {
         line: a.subwayId, lineName, color, dir: a.updnLine, to: a.trainLineNm, dest: a.bstatnNm,
         msg: a.arvlMsg2, now: a.arvlMsg3, code: a.arvlCd, sec: Number(a.barvlDt) || 0,
         express: a.btrainSttus && a.btrainSttus !== '일반' ? a.btrainSttus : null, last: a.lstcarAt === '1',
-        order: a.ordkey, at: a.recptnDt, est: adjust(estimate(a), a.recptnDt), pos: posText(a)
+        order: a.ordkey, at: a.recptnDt, no: a.btrainNo || null, est: adjust(estimate(a), a.recptnDt), pos: posText(a)
       };
     });
     return send(200, { station, demo, arrivals, at: new Date().toISOString() }, 'public, s-maxage=10, stale-while-revalidate=20');

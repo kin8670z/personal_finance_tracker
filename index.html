@@ -22,7 +22,7 @@
     } catch (e) {}
   </script>
   <script src="sync.js" defer></script>
-  <title>아르곤 자산관리 Pro v7.6</title>
+  <title>아르곤 자산관리 Pro v7.7</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -84,7 +84,7 @@
         <div class="flex items-center gap-2 min-w-0">
           <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v7.6</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v7.7</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 자산관리</h1>
         </div>
@@ -115,7 +115,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v7.6</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v7.7</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -445,7 +445,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v7.6</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v7.7</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -486,9 +486,13 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '7.6';
+    const APP_VERSION = '7.7';
     const releaseNotesData = [
-      { version: 'Pro v7.6', date: '2026.11.23 (최신)', badge: '지하철 시간표', isLatest: true, items: [
+      { version: 'Pro v7.7', date: '2026.11.23 (최신)', badge: '열차 지연 표시', isLatest: true, items: [
+        '⏱️ 실시간 열차마다 <b>시간표상 시각과 몇 분 늦는지</b> 표시 (열차번호로 시간표와 맞춰봄)',
+        '🕒 시간표의 다음 열차에 시각은 지났지만 아직 안 온 <b>지연 열차</b>도 함께 보여줘요'
+      ] },
+      { version: 'Pro v7.6', date: '2026.11.23', badge: '지하철 시간표', isLatest: false, items: [
         '🕒 즐겨찾기 역마다 <b>시간표</b>: 방향별 다음 열차 4대, 첫차·막차, 시간대별 전체 시간표 (평일·토요일·휴일 자동, 공휴일 포함)',
         '🌙 오늘 화면: 밤 9시 이후엔 <b>막차까지 남은 시간</b>, 실시간 정보가 안 될 땐 시간표로 대신 보여줘요',
         '🎯 5호선 등 추정 도착 시간을 정보가 만들어진 시각 기준으로 보정해서 더 정확하게'
