@@ -277,7 +277,8 @@
     let ddList = [], ddIdx = 0, ddTimer = null;
     function renderDdays() {
       const el = document.getElementById('ddays'), st = load('argon_dday_v1', null);
-      const items = st ? (st.items || []) : [{ name: '크리스마스', emoji: '🎄', date: '2026-12-25', yearly: true, pin: true }];
+      // D-Day 화면을 아직 안 열었으면 그쪽 기본 목록과 같게
+      const items = st ? (st.items || []) : [{ name: '크리스마스', emoji: '🎄', date: '2026-12-25', yearly: true, pin: true }, { name: '새해', emoji: '🎆', date: '2027-01-01', yearly: true }, { name: '설날', emoji: '🧧', date: '2027-02-07' }, { name: '어린이날', emoji: '🎈', date: '2027-05-05', yearly: true }];
       const t = new Date(); t.setHours(0, 0, 0, 0);
       const days = it => { const [y, m, d] = it.date.split('-').map(Number); let n = new Date(y, m - 1, d); if (it.yearly) { n = new Date(t.getFullYear(), m - 1, d); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, d); } return Math.round((n - t) / 864e5); };
       const tag = k => k > 0 ? `D-${k}` : k === 0 ? 'D-DAY' : `D+${1 - k}`;
