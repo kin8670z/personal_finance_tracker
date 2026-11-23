@@ -151,14 +151,15 @@
     }
     if (!rows.length) return `<p class="text-xs text-slate-500">${S.basis === 'dep' ? '그 시각 이후 열차가 없어요 🌙' : '그 시각까지 도착하는 열차가 없어요. 시각을 늦춰 보세요.'}</p>`;
     const lastIdx = rows.length - 1;
+    const from = (S.mode || autoMode()) === 'go' ? '집에서' : '회사에서';   // 퇴근이면 회사에서 출발
     return `<div class="space-y-2">${rows.map((r, i) => {
         const hl = S.basis === 'arr' ? i === lastIdx : i === 0;
         const leave = r.t.dep - walk;
         return card(null, r.ch, stops, segs, {
           start: r.t.dep, hl,
           left: `<span class="block text-base font-extrabold num text-slate-900">${T().disp(mm2t(r.t.dep))} 출발</span>`,
-          sub: `${esc(r.t.dest)}행 · ${esc(r.t.line)}${walk ? ` · 집에서 ${T().disp(mm2t(leave))}` : ''}`,
-          note: hl ? `<p class="text-[10px] font-bold text-emerald-700 mt-1">${S.basis === 'arr' ? `⏰ 늦어도 이 열차${walk ? ` (집에서 ${T().disp(mm2t(leave))}에 나가기)` : ''}` : `👍 ${walk ? `역까지 ${walk}분 걸으면 ` : ''}처음 탈 수 있는 열차`}</p>` : ''
+          sub: `${esc(r.t.dest)}행 · ${esc(r.t.line)}${walk ? ` · ${from} ${T().disp(mm2t(leave))}` : ''}`,
+          note: hl ? `<p class="text-[10px] font-bold text-emerald-700 mt-1">${S.basis === 'arr' ? `⏰ 늦어도 이 열차${walk ? ` (${from} ${T().disp(mm2t(leave))}에 나가기)` : ''}` : `👍 ${walk ? `역까지 ${walk}분 걸으면 ` : ''}처음 탈 수 있는 열차`}</p>` : ''
         });
       }).join('')}</div>
       <p class="text-[9px] text-slate-400 mt-1.5">${T().WEEK[(S.week || T().dayType())]} 시간표 기준 · 환승 ${transfer}분${walk ? ` · 역까지 ${walk}분` : ''} · 실제로는 지연될 수 있어요</p>`;
@@ -196,7 +197,7 @@
         ${field('cm2', s.length > 3 ? s[2] : '', '환승역 2 (없으면 비워두기)')}
         ${field('cm3', s.length > 1 ? s[s.length - 1] : '', '회사 쪽 도착역 (예: 정부과천청사)')}
         <div class="grid grid-cols-2 gap-2">
-          <label class="text-[11px] font-bold text-slate-500">역까지 걷는 시간<div class="flex items-center gap-1 mt-0.5"><input id="cmWalk" type="number" min="0" max="60" value="${c.walk || 0}" class="w-full border border-slate-200 rounded-lg px-2 py-1 bg-white"><span>분</span></div></label>
+          <label class="text-[11px] font-bold text-slate-500">집·회사 → 역 걷는 시간<div class="flex items-center gap-1 mt-0.5"><input id="cmWalk" type="number" min="0" max="60" value="${c.walk || 0}" class="w-full border border-slate-200 rounded-lg px-2 py-1 bg-white"><span>분</span></div></label>
           <label class="text-[11px] font-bold text-slate-500">환승 걷는 시간<div class="flex items-center gap-1 mt-0.5"><input id="cmTr" type="number" min="1" max="20" value="${c.transfer || 4}" class="w-full border border-slate-200 rounded-lg px-2 py-1 bg-white"><span>분</span></div></label>
         </div>
       </div>
