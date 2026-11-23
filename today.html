@@ -96,7 +96,7 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-          <div class="min-w-0"><h1 id="hello" class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">☀️ 오늘</h1>
+          <div class="min-w-0"><h1 id="hello" onclick="window.scrollTo({ top: 0, behavior: 'smooth' }); refreshAll()" title="새로고침" class="cursor-pointer text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">☀️ 오늘</h1>
           <p id="dateLine" class="text-[11px] font-bold text-slate-500"></p></div>
         </div>
         <button type="button" onclick="refreshAll()" aria-label="새로고침" id="refreshBtn" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 shrink-0">🔄</button>
