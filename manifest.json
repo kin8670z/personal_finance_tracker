@@ -62,6 +62,16 @@
       ]
     },
     {
+      "name": "D-Day",
+      "url": "./dday.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "가계부",
       "url": "./",
       "icons": [
