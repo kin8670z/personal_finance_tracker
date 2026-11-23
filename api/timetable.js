@@ -50,17 +50,17 @@ module.exports = async (req, res) => {
       const dirs = await Promise.all(['1', '2'].map(async tag => {
         const j = await getJson(`${B}/SearchSTNTimeTableByIDService/1/400/${row.STATION_CD}/${week}/${tag}/`);
         const list = ((j.SearchSTNTimeTableByIDService || {}).row || [])
-          .filter(t => t.DESTSTATION !== row.STATION_CD)   // 이 역에서 끝나는 열차는 못 탐
           .map(t => {
             const time = t.LEFTTIME && t.LEFTTIME !== '00:00:00' ? t.LEFTTIME : t.ARRIVETIME;
-            return [time.slice(0, 5), t.SUBWAYENAME || '', t.EXPRESS_YN === 'D' || t.EXPRESS_YN === 'Y' ? 1 : 0, t.TRAIN_NO || ''];
+            // 5번째 값 1 = 이 역에서 끝나는 열차 (탈 수는 없지만, 종점 도착 시각 계산엔 필요)
+            return [time.slice(0, 5), t.SUBWAYENAME || '', t.EXPRESS_YN === 'D' || t.EXPRESS_YN === 'Y' ? 1 : 0, t.TRAIN_NO || '', t.DESTSTATION === row.STATION_CD ? 1 : 0];
           })
           .filter(t => t[0] && t[0] !== '00:00');
         // 새벽 0~3시는 그날 밤 막차 쪽으로 정렬
         const k = t => { const [h, m] = t[0].split(':').map(Number); return (h < 4 ? h + 24 : h) * 60 + m; };
         list.sort((a, b) => k(a) - k(b));
         // 방향 이름: 가장 많이 가는 종착역
-        const cnt = {}; list.forEach(t => cnt[t[1]] = (cnt[t[1]] || 0) + 1);
+        const cnt = {}; list.filter(t => !t[4]).forEach(t => cnt[t[1]] = (cnt[t[1]] || 0) + 1);
         const main = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0];
         return { tag, name: main ? `${main[0]} 방면` : (tag === '1' ? '상행' : '하행'), trains: list };
       }));

@@ -205,7 +205,7 @@
     function msOfMins(mins) { const d = new Date(), base = new Date(d.getFullYear(), d.getMonth(), d.getDate()); if (d.getHours() < 4) base.setDate(base.getDate() - 1); return base.getTime() + mins * 60000; }
     // 구간 A→B를 실제로 가는 열차들: 같은 열차번호가 A 다음에 B를 지나는 것
     function segTrains(tA, tB) {
-      const atB = {}; (tB.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => { if (x[3]) atB[T().normNo(x[3])] = x[0]; })));
+      const atB = {}; (tB.allLines || tB.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => { if (x[3]) atB[T().normNo(x[3])] = x[0]; })));
       const out = [];
       (tA.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => {
         const b = atB[T().normNo(x[3])]; if (!b) return;
@@ -329,8 +329,21 @@
         const dl = document.getElementById('cmStations'); if (dl) dl.innerHTML = [...new Set(st.map(x => x[0]))].map(n => `<option value="${esc(n)}">`).join('');
       } catch (e) {}
     }
+    // 역 이름을 조금 틀리게 넣었을 때 (예: 과천정부청사 → 정부과천청사) 역 목록에서 가장 비슷한 이름 찾기
+    function fixName(n) {
+      let st = []; try { st = (JSON.parse(localStorage.getItem('subway_stations_cache_v1')) || {}).s || []; } catch (e) {}
+      const names = [...new Set(st.map(x => cleanSt(x[0])))];
+      if (!names.length || names.includes(n)) return n;
+      const key = s => [...s].sort().join('');
+      const same = names.find(x => key(x) === key(n));   // 글자는 같고 순서만 다름
+      if (same) return same;
+      const part = names.filter(x => x.includes(n) || n.includes(x)).sort((a, b) => Math.abs(a.length - n.length) - Math.abs(b.length - n.length))[0];
+      return part && Math.min(part.length, n.length) >= 2 ? part : n;
+    }
     async function saveCommute() {
-      const stops = ['cm0', 'cm1', 'cm2', 'cm3'].map(id => cleanSt(document.getElementById(id).value)).filter(Boolean);
+      const raw = ['cm0', 'cm1', 'cm2', 'cm3'].map(id => cleanSt(document.getElementById(id).value)).filter(Boolean);
+      const stops = raw.map(fixName);
+      const fixed = raw.map((n, i) => n !== stops[i] ? `${label(n)} → ${label(stops[i])}` : '').filter(Boolean);
       const msg = document.getElementById('cmMsg');
       if (stops.length < 2) { msg.textContent = '출발역과 도착역을 넣어 주세요.'; return; }
       const c = { stops, walk: Math.max(0, Math.min(60, Number(document.getElementById('cmWalk').value) || 0)), transfer: Math.max(1, Math.min(20, Number(document.getElementById('cmTr').value) || 4)) };
@@ -343,7 +356,8 @@
           if (!segTrains(tts[i], tts[i + 1]).length) { msg.textContent = `${label(stops[i])} → ${label(stops[i + 1])} 바로 가는 열차가 없어요. 중간에 환승역을 넣어 주세요.`; document.getElementById('cmSave').textContent = '저장'; return; }
         }
       } catch (e) { msg.textContent = '시간표를 못 불러와서 확인 못 했어요. 잠시 뒤 다시 해 주세요.'; document.getElementById('cmSave').textContent = '저장'; return; }
-      save(COMMUTE_KEY, c); commuteEdit = false; commuteMode = null; commuteRT = null; loadSubway();
+      save(COMMUTE_KEY, c); commuteEdit = false; commuteMode = null; commuteRT = null; await loadSubway();
+      if (fixed.length) document.getElementById('subway').insertAdjacentHTML('beforeend', `<p class="text-[10px] font-bold text-amber-600 mt-1">✏️ 역 이름을 고쳐서 저장했어요: ${esc(fixed.join(', '))}</p>`);
     }
     function clearCommute() { localStorage.removeItem(COMMUTE_KEY); commuteEdit = false; loadSubway(); }
 
