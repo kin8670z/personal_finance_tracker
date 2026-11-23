@@ -107,6 +107,7 @@
     else if (end$.spent < end$.threshold) advice = { kind: 'below', text: `연말까지 써도 총급여의 25%(${won(end$.threshold)})를 못 넘을 것 같아요. 넘는 부분부터 공제라, 지금은 결제수단보다 카드 혜택(할인·적립) 좋은 걸 쓰는 게 나아요.`, short: Math.round(end$.threshold - end$.spent) };
     else if (swap$.total - end$.total > 1000) advice = { kind: 'switch', text: `남은 기간엔 체크카드·현금영수증이 유리해요. 신용카드로 쓸 돈(약 ${won(remain.credit)})을 체크카드로 바꾸면 공제가 ${won(swap$.total - end$.total)} 늘어서 세금이 약 ${won((swap$.total - end$.total) * rate)} 줄어요.`, gain: Math.round((swap$.total - end$.total) * rate) };
     else if (end$.capped) advice = { kind: 'cap', text: `기본 한도(${won(end$.baseLimit)})를 채울 것 같아요. 결제수단을 바꿔도 공제는 그대로라 카드 혜택 좋은 걸 쓰면 돼요. 대중교통·전통시장·도서공연은 한도가 따로 ${won(end$.extraLimit)} 더 있어요.` };
+    else if (proj.credit < end$.threshold) advice = { kind: 'ok', text: `신용카드 사용액(연말 예상 ${won(proj.credit)})이 아직 문턱(${won(end$.threshold)})보다 적어서, 남은 기간엔 신용·체크 뭘 써도 공제가 똑같이 늘어요. 카드 혜택 좋은 걸 쓰세요.` };
     else advice = { kind: 'ok', text: '지금 쓰는 방식 그대로 괜찮아요.' };
     return { s, sofar, remain, proj, now: now$, end: end$, swap: swap$, rate, saveNow: Math.round(now$.total * rate), saveEnd: Math.round(end$.total * rate), advice, items, byMonth, daysLeft, remainSpend, year: YEAR };
   }

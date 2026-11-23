@@ -177,7 +177,7 @@
           ${tips.length ? `<div class="flex flex-wrap gap-1.5 mt-3">${tips.map(t => `<span class="text-[11px] font-bold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">${t}</span>`).join('')}</div>` : ''}
           <div class="flex gap-2 overflow-x-auto mt-3 pb-1 -mx-1 px-1">${hours.map((h, i) => `<div class="shrink-0 w-11 text-center rounded-lg py-1.5 ${i === 0 ? 'bg-indigo-50' : 'bg-slate-50'}">
               <p class="text-[10px] font-bold text-slate-500">${i === 0 ? '지금' : h.h + '시'}</p><p class="text-base leading-tight">${WMO(h.code)[0]}</p><p class="text-xs font-extrabold num text-slate-800">${h.temp}°</p><p class="text-[9px] font-bold ${h.pop >= 50 ? 'text-sky-600' : 'text-slate-400'}">${h.pop ?? 0}%</p></div>`).join('')}</div>
-          <div class="flex items-center justify-between mt-2"><button type="button" onclick="useMyPlace()" class="text-[11px] font-bold text-indigo-600">📍 지금 위치로</button>${p.name !== HOME.name ? `<button type="button" onclick="resetPlace()" class="text-[11px] font-bold text-slate-400">하남시로 되돌리기</button>` : ''}<span class="text-[9px] text-slate-400">Open-Meteo · 미세먼지는 예측 모델 값</span></div>`;
+          <div class="flex items-center justify-between mt-2"><span role="button" tabindex="0" onclick="useMyPlace()" class="text-[11px] font-bold text-indigo-600 cursor-pointer">📍 지금 위치로</span>${p.name !== HOME.name ? `<span role="button" tabindex="0" onclick="resetPlace()" class="text-[11px] font-bold text-slate-400 cursor-pointer">하남시로</span>` : ''}<span class="text-[9px] text-slate-400">Open-Meteo · 미세먼지는 예측 모델 값</span></div>`;
       } catch (e) {
         box.innerHTML = head('🌤️ 날씨') + `<p class="text-xs text-slate-500">날씨를 불러오지 못했어요. 🔄 다시 시도해 보세요.</p>`;
       }

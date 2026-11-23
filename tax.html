@@ -198,7 +198,7 @@
     function renderExcl() {
       document.getElementById('excl').innerHTML = CATS.map(c => {
         const on = (st.exclude || []).includes(c);
-        return `<button type="button" onclick="toggleExcl('${c}')" aria-pressed="${on}" class="px-2 py-1 rounded-full text-[11px] font-bold border ${on ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-600'}">${on ? '🚫 ' : ''}${esc(c)}</button>`;
+        return `<span role="button" tabindex="0" onclick="toggleExcl('${c}')" aria-pressed="${on}" class="cursor-pointer px-2 py-1 rounded-full text-[11px] font-bold border ${on ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-600'}">${on ? '🚫 ' : ''}${esc(c)}</span>`;
       }).join('');
     }
     function toggleExcl(c) { const ex = new Set(st.exclude || []); ex.has(c) ? ex.delete(c) : ex.add(c); st.exclude = [...ex]; renderExcl(); update(); }
