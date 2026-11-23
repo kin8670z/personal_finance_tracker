@@ -1,7 +1,7 @@
 // 든든 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v24';
+const CACHE = 'argon-shell-v25';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
 const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 
@@ -29,4 +29,45 @@ self.addEventListener('fetch', e => {
       return res;
     }).catch(() => caches.match(req).then(hit => hit || (req.mode === 'navigate' ? caches.match('./index.html') : undefined)).then(r => r || Response.error()))
   );
+});
+
+// ---------- 아침 알림 ----------
+// 서버는 내용 없는 push만 보낸다. 문구는 여기서 기기 안의 데이터(IndexedDB, pwa.js가 저장)로 만든다.
+function readBrief() {
+  return new Promise(res => {
+    try {
+      const rq = indexedDB.open('dd_notify', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+      rq.onsuccess = () => { const db = rq.result; const g = db.transaction('kv').objectStore('kv').get('brief'); g.onsuccess = () => { res(g.result || null); db.close(); }; g.onerror = () => res(null); };
+      rq.onerror = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function composeBrief(b) {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const pad = n => String(n).padStart(2, '0'), today = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+  const dd = (s, yearly) => { const [y, m, d] = s.split('-').map(Number); let n = new Date(y, m - 1, d); if (yearly) { n = new Date(t.getFullYear(), m - 1, d); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, d); } return Math.round((n - t) / 864e5); };
+  const tag = k => k === 0 ? '오늘' : `D-${k}`, lines = [];
+  if (b) {
+    (b.gifts || []).map(x => [x, dd(x.exp)]).filter(([, k]) => k >= 0 && k <= 3).sort((a, b) => a[1] - b[1]).slice(0, 3)
+      .forEach(([x, k]) => lines.push(`🎁 ${x.n}${x.s ? ` (${x.s})` : ''} 만료 ${k === 0 ? '오늘까지' : `D-${k}`}`));
+    (b.ddays || []).map(x => [x, dd(x.date, x.y)]).filter(([, k]) => [0, 1, 3, 7, 30, 100].includes(k)).sort((a, b) => a[1] - b[1]).slice(0, 3)
+      .forEach(([x, k]) => lines.push(`${x.e} ${x.n} ${k === 0 ? 'D-DAY 🎉' : tag(k)}`));
+    (b.kids || []).forEach(x => { const [, m, d] = x.b.split('-'); const k = dd(`2000-${m}-${d}`, true); if ([0, 1, 7].includes(k)) lines.push(`🎂 ${x.n} 생일 ${k === 0 ? '오늘! 🎉' : tag(k)}`); });
+    const td = (b.todos || []).filter(x => x.due && x.due <= today);
+    if (td.length) lines.push(`✅ 오늘 할 일 ${td.length}개: ${td.slice(0, 3).map(x => x.n).join(', ')}${td.length > 3 ? '…' : ''}`);
+    if (b.shop) lines.push(`🛒 장보기 ${b.shop}개 남음`);
+  }
+  return lines.length ? { title: '☀️ 든든 아침 브리핑', body: lines.join('\n') } : { title: '☀️ 좋은 아침이에요', body: '오늘 날씨랑 출근길 확인하고 가요 🚇' };
+}
+self.addEventListener('push', e => {
+  e.waitUntil(readBrief().then(b => { const m = composeBrief(b); return self.registration.showNotification(m.title, { body: m.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-morning', renotify: true, data: { url: './today.html' } }); }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || './today.html', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const w = list.find(c => c.url.startsWith(self.registration.scope));
+    return w ? w.navigate(url).then(c => (c || w).focus()) : self.clients.openWindow(url);
+  }));
 });

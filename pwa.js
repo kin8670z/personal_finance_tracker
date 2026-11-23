@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.10';
+  const VERSION = '9.11';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -77,7 +77,28 @@
     });
     foot.appendChild(btn);
   }
-  function init() { addButton(); addVersion(); }
+  // 아침 알림용: 알림 문구에 쓸 최소 데이터를 IndexedDB에 넣어둔다 (서비스 워커가 읽음 · 서버로 안 감)
+  function saveBrief() {
+    try {
+      const L = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+      const g = L('argon_gift_v1'), d = L('argon_dday_v1'), t = L('argon_todo_v1'), kd = L('argon_kid_v1');
+      const brief = {
+        at: Date.now(),
+        gifts: ((g && g.items) || []).filter(x => !x.used && x.exp).map(x => ({ n: x.name, s: x.store || '', exp: x.exp })).slice(0, 50),
+        ddays: d ? (d.items || []).map(x => ({ n: x.name, e: x.emoji || '📅', date: x.date, y: !!x.yearly })).slice(0, 50)
+          : [{ n: '크리스마스', e: '🎄', date: '2026-12-25', y: true }, { n: '새해', e: '🎆', date: '2027-01-01', y: true }, { n: '어린이날', e: '🎈', date: '2027-05-05', y: true }],
+        todos: ((t && t.todos) || []).filter(x => !x.done).map(x => ({ n: x.text, due: x.due || '' })).slice(0, 50),
+        shop: ((t && t.shop) || []).filter(x => !x.done).length,
+        kids: ((kd && kd.kids) || []).map(x => ({ n: x.name, b: x.birth }))
+      };
+      const rq = indexedDB.open('dd_notify', 1);
+      rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
+      rq.onsuccess = () => { const db = rq.result; const tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(brief, 'brief'); tx.oncomplete = () => db.close(); };
+    } catch (e) {}
+  }
+  window.saveBrief = saveBrief;
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
+  function init() { addButton(); addVersion(); saveBrief(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.installApp = install;
 })();
