@@ -124,6 +124,7 @@
           <input id="fDate" type="date" required class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
           <label class="flex items-center gap-1 text-xs font-bold text-slate-600 shrink-0"><input id="fYearly" type="checkbox" class="w-4 h-4"> 매년 반복</label>
         </div>
+        <textarea id="fMemo" rows="2" maxlength="300" placeholder="메모 (선택) 예: 선물 = 레고 소방차 🚒 / 케이크 예약하기" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm resize-none"></textarea>
         <div class="flex gap-2">
           <span role="button" tabindex="0" id="fCancel" onclick="resetForm()" class="hidden cursor-pointer flex-1 py-2 text-center bg-slate-100 text-slate-600 font-bold text-sm rounded-xl">취소</span>
           <button type="submit" id="fSubmit" class="flex-[2] py-2 bg-indigo-600 text-white font-bold rounded-xl">추가</button>
@@ -233,7 +234,7 @@
           <p class="text-[10px] text-white/70 mt-1">${dec ? '12월 달력 · 지난 날은 ✓' : '12월이 되면 하루에 한 칸씩 지워져요'}</p>`;
       }
       box.innerHTML = `<div class="absolute inset-0" style="${bg}"></div>${snow}
-        <div class="relative p-5 text-center">${main}<p class="text-white/70 text-xs font-bold mt-2">${sub}</p>${advent}</div>`;
+        <div class="relative p-5 text-center">${main}<p class="text-white/70 text-xs font-bold mt-2">${sub}</p>${it.memo ? `<div class="mt-3 mx-auto max-w-sm rounded-xl bg-white/15 px-3 py-2 text-left text-sm font-bold text-white whitespace-pre-line">📝 ${esc(it.memo)}</div>` : ''}${advent}</div>`;
     }
 
     // ---------- 목록 ----------
@@ -242,7 +243,7 @@
       document.getElementById('list').innerHTML = rows.length ? rows.map(({ it, f }) => `<div class="flex items-center gap-2 rounded-xl px-3 py-2 ${it.id === st.sel ? 'bg-indigo-50 ring-1 ring-indigo-200' : 'bg-slate-50'}">
           <span role="button" tabindex="0" onclick="pick(${it.id})" class="cursor-pointer flex-1 min-w-0 flex items-center gap-2">
             <span class="text-2xl shrink-0">${esc(it.emoji)}</span>
-            <span class="min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(it.name)}</span><span class="block text-[10px] text-slate-400 truncate">${fmtDate(f.kind === 'past' ? dateOf(it.date) : f.d)}${it.yearly ? ' · 매년' : ''}${f.kind === 'past' && f.nextM ? ` · ${f.nextM}일까지 ${f.nextMIn}일` : ''}</span></span>
+            <span class="min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(it.name)}</span><span class="block text-[10px] text-slate-400 truncate">${fmtDate(f.kind === 'past' ? dateOf(it.date) : f.d)}${it.yearly ? ' · 매년' : ''}${f.kind === 'past' && f.nextM ? ` · ${f.nextM}일까지 ${f.nextMIn}일` : ''}</span>${it.memo ? `<span class="block text-[11px] text-slate-600 truncate">📝 ${esc(it.memo.split('\n')[0])}</span>` : ''}</span>
           </span>
           <span class="text-base font-extrabold num shrink-0 ${f.kind === 'today' ? 'text-rose-600' : f.kind === 'past' ? 'text-emerald-600' : 'text-indigo-600'}">${f.text}</span>
           <span role="button" tabindex="0" onclick="togglePin(${it.id})" aria-label="오늘 화면에 고정" title="오늘 화면에 고정" class="cursor-pointer text-base shrink-0 ${it.pin ? '' : 'opacity-25'}">⭐</span>
@@ -253,7 +254,7 @@
     function togglePin(id) { const it = st.items.find(x => x.id === id); if (it) { it.pin = !it.pin; persist(); renderList(); } }
     function editItem(id) {
       const it = st.items.find(x => x.id === id); if (!it) return;
-      editId = id; document.getElementById('fEmoji').value = it.emoji; document.getElementById('fName').value = it.name; document.getElementById('fDate').value = it.date; document.getElementById('fYearly').checked = !!it.yearly;
+      editId = id; document.getElementById('fEmoji').value = it.emoji; document.getElementById('fName').value = it.name; document.getElementById('fDate').value = it.date; document.getElementById('fYearly').checked = !!it.yearly; document.getElementById('fMemo').value = it.memo || '';
       document.getElementById('formTitle').textContent = '✏️ D-Day 수정'; document.getElementById('fSubmit').textContent = '저장';
       document.getElementById('fCancel').classList.remove('hidden');
       document.getElementById('fCancel').textContent = '삭제'; document.getElementById('fCancel').onclick = () => { st.items = st.items.filter(x => x.id !== id); if (st.sel === id) st.sel = st.items[0] && st.items[0].id; persist(); resetForm(); renderAll(); };
@@ -268,7 +269,7 @@
       e.preventDefault();
       const name = document.getElementById('fName').value.trim(), date = document.getElementById('fDate').value;
       if (!name || !date) return;
-      const data = { name, date, emoji: document.getElementById('fEmoji').value.trim() || '🎉', yearly: document.getElementById('fYearly').checked };
+      const data = { name, date, emoji: document.getElementById('fEmoji').value.trim() || '🎉', yearly: document.getElementById('fYearly').checked, memo: document.getElementById('fMemo').value.trim() };
       if (editId) Object.assign(st.items.find(x => x.id === editId), data);
       else { const id = Math.max(Date.now(), ...st.items.map(x => x.id + 1)); st.items.push({ id, ...data }); st.sel = id; }
       persist(); resetForm(); renderAll(); window.scrollTo({ top: 0, behavior: 'smooth' });
