@@ -32,6 +32,16 @@
   ],
   "shortcuts": [
     {
+      "name": "지하철",
+      "url": "./subway.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "가계부",
       "url": "./",
       "icons": [
