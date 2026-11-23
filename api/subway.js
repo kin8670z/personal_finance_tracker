@@ -20,7 +20,7 @@ module.exports = async (req, res) => {
   const key = process.env.SEOUL_SUBWAY_KEY || 'sample', demo = key === 'sample';
   if (demo && station !== '서울') return send(200, { station, demo, needKey: true, arrivals: [] });
   try {
-    const r = await fetch(`http://swopenAPI.seoul.go.kr/api/subway/${encodeURIComponent(key)}/json/realtimeStationArrival/0/40/${encodeURIComponent(station)}`, { signal: AbortSignal.timeout(6000) });
+    const r = await fetch(`http://swopenAPI.seoul.go.kr/api/subway/${encodeURIComponent(key)}/json/realtimeStationArrival/0/${demo ? 5 : 40}/${encodeURIComponent(station)}`, { signal: AbortSignal.timeout(6000) });
     const j = await r.json();
     const err = j.errorMessage || j;
     if (err && err.code && err.code !== 'INFO-000') {
