@@ -228,7 +228,7 @@
       let advent = '';
       if (xmas && f.kind !== 'past') {
         const t = today0(), dec = t.getMonth() === 11, day = dec ? t.getDate() : 0;
-        advent = `<div class="grid gap-1 mt-4" style="grid-template-columns:repeat(13,minmax(0,1fr))">${Array.from({ length: 25 }, (_, i) => { const d = i + 1, done = d < day, now = d === day; return `<span class="aspect-square rounded-md flex items-center justify-center text-[9px] font-extrabold ${d === 25 ? 'bg-amber-300 text-red-700' : done ? 'bg-white/90 text-emerald-800' : now ? 'bg-red-500 text-white ring-2 ring-white' : 'bg-white/15 text-white/70'}">${d === 25 ? '🎁' : done ? '✓' : d}</span>`; }).join('')}</div>
+        advent = `<div class="grid gap-1 mt-4" style="grid-template-columns:repeat(13,minmax(0,1fr))">${Array.from({ length: 25 }, (_, i) => { const d = i + 1, done = d < day, now = d === day; return `<span class="aspect-square rounded-md flex items-center justify-center text-[9px] font-extrabold ${d === 25 ? 'bg-amber-300 text-red-700' : done ? 'bg-white/90 text-emerald-800' : now ? 'bg-red-500 text-white ring-2 ring-white' : 'bg-white/15 text-white/70'}">${d === 25 ? '★' : done ? '✓' : d}</span>`; }).join('')}</div>
           <p class="text-[10px] text-white/70 mt-1">${dec ? '12월 달력 · 지난 날은 ✓' : '12월이 되면 하루에 한 칸씩 지워져요'}</p>`;
       }
       box.innerHTML = `<div class="absolute inset-0" style="${bg}"></div>${snow}
