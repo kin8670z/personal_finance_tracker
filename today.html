@@ -118,6 +118,7 @@
       #ddRoll > span.above { transform: translateY(-100%); opacity: 0; }
       @media (prefers-reduced-motion: reduce) { #ddRoll > span { transition: none; } }
     </style>
+    <section id="quote" class="card px-4 py-3.5"></section>
     <section id="weather" class="card p-4"><div class="skel" style="height:110px"></div></section>
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
@@ -140,6 +141,7 @@
   <script src="commute.js"></script>
   <script src="english-deck.js"></script>
   <script src="japanese-deck.js"></script>
+  <script src="quotes.js"></script>
   <script>
     function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -274,6 +276,22 @@
         el.textContent = sec > 0 ? (left > 0 ? `${Math.floor(left / 60)}분 ${pad(left % 60)}초` : '곧 도착') : est != null ? (est > 40 ? `약 ${Math.ceil(est / 60)}분` : '곧 도착') : (el.dataset.msg || '-').replace(/\[(\d+)\]번째 전역/, '$1정거장 전').replace(/\s*\(.*\)$/, '');
         el.className = `text-xs font-extrabold num shrink-0 tick ${(sec > 0 && left <= 90) || (est != null && est <= 90) ? 'text-rose-600' : 'text-slate-900'}`;
       });
+    }
+
+    // ---------- 하루 명언 (날마다 바뀜, ↻로 다른 명언) ----------
+    let quoteIdx = null;
+    function renderQuote(next) {
+      const box = document.getElementById('quote'), Q = window.QUOTES || [];
+      if (!Q.length) { box.classList.add('hidden'); return; }
+      const d = new Date(), day = Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 864e5);
+      if (quoteIdx == null) quoteIdx = (day * 7) % Q.length;
+      if (next) { let k; do { k = Math.floor(Math.random() * Q.length); } while (Q.length > 1 && k === quoteIdx); quoteIdx = k; }
+      const [text, who] = Q[quoteIdx];
+      box.innerHTML = `<div class="flex items-start gap-3">
+          <span class="text-2xl leading-none shrink-0" aria-hidden="true">💬</span>
+          <span class="min-w-0 flex-1"><span class="block text-[10px] font-bold text-slate-400">${next ? '다른 명언' : '하루 명언'}</span><span class="block text-sm font-extrabold text-slate-800 leading-snug mt-0.5">${esc(text)}</span><span class="block text-[11px] font-bold text-slate-400 mt-1">— ${esc(who)}</span></span>
+          <span role="button" tabindex="0" onclick="renderQuote(true)" aria-label="다른 명언" class="cursor-pointer text-slate-400 text-lg leading-none px-1 shrink-0">↻</span>
+        </div>`;
     }
 
     // ---------- 고정한 D-Day ----------
@@ -430,7 +448,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); renderLunch(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
