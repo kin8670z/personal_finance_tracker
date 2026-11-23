@@ -121,8 +121,10 @@
     const rt = otherDay ? [] : await realtimeFirst(stops, seg0);
     const seen = new Set(rt.map(x => x.t.no)), lastEta = rt.length ? rt[rt.length - 1].eta : now;
     const sched = seg0.trains.filter(t => !seen.has(t.no) && msOfMins(t.dep) >= Math.max(now - 30000, lastEta)).slice(0, n).map(t => ({ t, eta: msOfMins(t.dep), live: false, delay: 0 }));
-    const opts = [...rt, ...sched].slice(0, n);
+    let opts = [...rt, ...sched].slice(0, n);
     if (!opts.length) return `<p class="text-xs text-slate-500">오늘 이 방향 열차는 끝났어요 🌙</p>`;
+    // 오늘 화면: 지금 탈 수 있는 열차 1대만 (역까지 걷는 시간 반영)
+    if (S.variant === 'today') { const ok = opts.find(o => (o.eta - now) / 60000 >= walk); opts = [ok || opts[opts.length - 1]]; }
     return `<div class="space-y-2">${opts.map((o, i) => {
         const ch = chain(segs, o.t, o.delay, transfer), leftMin = (o.eta - now) / 60000;
         const catchable = leftMin >= walk, firstCatch = catchable && opts.slice(0, i).every(p => (p.eta - now) / 60000 < walk);
@@ -133,7 +135,7 @@
           note: firstCatch && walk ? `<p class="text-[10px] font-bold text-emerald-700 mt-1">🏃 지금 나가면 이 열차 탈 수 있어요 (역까지 ${walk}분)</p>` : ''
         });
       }).join('')}</div>
-      <p class="text-[9px] text-slate-400 mt-1.5">첫 열차는 실시간, 환승 이후는 시간표 기준 (환승 ${transfer}분) · 지연은 도착까지 그대로 간다고 가정</p>`;
+      ${S.variant === 'today' ? '' : `<p class="text-[9px] text-slate-400 mt-1.5">첫 열차는 실시간, 환승 이후는 시간표 기준 (환승 ${transfer}분) · 지연은 도착까지 그대로 간다고 가정</p>`}`;
   }
 
   // 고른 시각 기준 (시간표만): 출발 기준 = 그 시각 이후 열차 5대 · 도착 기준 = 그 시각까지 도착하는 마지막 3대
