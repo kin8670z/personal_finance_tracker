@@ -33,7 +33,7 @@
   function delayOf(sched, leftSec, at) { return Math.round(nowMins(at) + (leftSec || 0) / 60 - minsOf(sched)); }
   const mem = {};
   async function load(station, week) {
-    const k = `argon_tt2_${station}_${week}`;   // tt2: 열차번호 들어간 형식 (예전 저장본은 무시)
+    const k = `argon_tt3_${station}_${week}`;   // tt3: 열차번호 + 이수=총신대입구 (예전 저장본은 무시)
     if (mem[k]) return mem[k];
     try { const c = JSON.parse(sessionStorage.getItem(k)); if (c && Date.now() - c.t < 6 * 3600e3) return (mem[k] = c.j); } catch (e) {}
     const r = await fetch(`./api/timetable?station=${encodeURIComponent(station)}&week=${week}`);
