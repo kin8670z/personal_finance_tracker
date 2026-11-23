@@ -536,7 +536,7 @@
           ${del}
           <div class="min-w-0 flex-1">
             <p class="text-sm font-extrabold text-slate-900 truncate">${esc(w.name)}</p>
-            <p class="text-[10px] text-slate-400 font-semibold">${isUsStock(t) ? '🇺🇸 ' : ''}${esc(tickerOf(t))}${q && q.market ? ' · ' + esc(q.market) : ''}${q && q.status === 'CLOSE' ? ' · 마감' : ''}</p>
+            <p class="text-[10px] text-slate-400 font-semibold">${esc(tickerOf(t))}${q && q.market ? ' · ' + esc(q.market) : ''}${q && q.status === 'CLOSE' ? ' · 마감' : ''}</p>
             ${(() => { const a = alertOf(w); return a ? `<span class="inline-block mt-0.5 text-[10px] font-extrabold px-1.5 py-0.5 rounded-md ${a.cls}">${a.text}</span>` : ''; })()}
             ${held(w) ? (() => { const ps = position(w); return `<p class="text-[11px] font-bold num truncate"><span class="text-indigo-600">${qtyText(w.qty)}주</span>${ps ? ` <span class="${ps.dir}">${signed(ps.pl)}원 (${rateText(ps.rate)})</span>` : ''}</p>`; })() : ''}
           </div>
@@ -894,7 +894,7 @@
     function hideSuggest() { sugBox.classList.add('hidden'); sugItems = []; sugIdx = -1; addInput.setAttribute('aria-expanded', 'false'); }
     function drawSuggest() {
       if (!sugItems.length) { sugBox.innerHTML = '<li class="px-3 py-2.5 text-xs text-slate-400">검색 결과가 없어요</li>'; }
-      else sugBox.innerHTML = sugItems.map((s, i) => `<li role="option" aria-selected="${i === sugIdx}" data-i="${i}" class="px-3 py-2.5 flex justify-between gap-2 cursor-pointer ${i === sugIdx ? 'bg-indigo-50' : 'hover:bg-slate-50'}"><span class="font-bold text-slate-800 truncate">${esc(s.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${s.nation === 'USA' ? '🇺🇸 ' + esc(s.ticker || s.code) : esc(s.code)} · ${esc(s.market)}</span></li>`).join('');
+      else sugBox.innerHTML = sugItems.map((s, i) => `<li role="option" aria-selected="${i === sugIdx}" data-i="${i}" class="px-3 py-2.5 flex justify-between gap-2 cursor-pointer ${i === sugIdx ? 'bg-indigo-50' : 'hover:bg-slate-50'}"><span class="font-bold text-slate-800 truncate">${esc(s.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${s.nation === 'USA' ? esc(s.ticker || s.code) : esc(s.code)} · ${esc(s.market)}</span></li>`).join('');
       sugBox.classList.remove('hidden'); addInput.setAttribute('aria-expanded', 'true');
     }
     addInput.addEventListener('input', () => {
