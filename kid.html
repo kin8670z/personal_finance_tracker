@@ -204,11 +204,12 @@
       document.getElementById('chartEmpty').classList.toggle('hidden', pts.length >= 2);
       if (chart) { chart.destroy(); chart = null; }
       if (pts.length < 2 || !window.Chart) return;
+      const span = pts[pts.length - 1].x - pts[0].x;
       const grid = isDark() ? 'rgba(148,163,184,.15)' : 'rgba(148,163,184,.25)', tick = isDark() ? '#94a3b8' : '#64748b', col = metric === 'h' ? '#6366f1' : '#ec4899';
       chart = new Chart(document.getElementById('chart'), {
         type: 'line', data: { datasets: [{ data: pts, borderColor: col, backgroundColor: col, pointRadius: 4, tension: .25 }] },
         options: { maintainAspectRatio: false, animation: false, plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${c[0].raw.d} (${ageText(k.birth, parseD(c[0].raw.d))})`, label: c => ` ${fmt(c.raw.y)}${metric === 'h' ? 'cm' : 'kg'}` } } },
-          scales: { x: { type: 'linear', grid: { color: grid }, ticks: { color: tick, callback: v => v >= 24 ? `${fmt(v / 12)}세` : `${fmt(v, 0)}개월` } }, y: { grid: { color: grid }, ticks: { color: tick, callback: v => `${v}${metric === 'h' ? 'cm' : 'kg'}` } } } }
+          scales: { x: { type: 'linear', grid: { color: grid }, ticks: { color: tick, stepSize: span > 36 ? 12 : span > 12 ? 6 : 3, callback: v => v >= 24 && v % 12 === 0 ? `${v / 12}세` : v >= 24 ? `${Math.floor(v / 12)}세 ${v % 12}개월` : `${v}개월` } }, y: { grid: { color: grid }, ticks: { color: tick, callback: v => `${v}${metric === 'h' ? 'cm' : 'kg'}` } } } }
       });
     }
     function renderRecs() {
