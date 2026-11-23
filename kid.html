@@ -99,6 +99,7 @@
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
@@ -191,6 +192,7 @@
           <div class="rounded-xl bg-pink-50 px-3 py-2"><div class="text-[10px] font-bold text-pink-500">🎂 ${turning}번째 생일</div><div class="text-sm font-extrabold text-slate-800">${toBday === 0 ? '오늘! 🎉' : `D-${toBday}`}</div></div>
           <div class="rounded-xl bg-amber-50 px-3 py-2"><div class="text-[10px] font-bold text-amber-600">✨ ${fmt(nextK, 0)}일 (${kDate.getFullYear() % 100}.${kDate.getMonth() + 1}.${kDate.getDate()})</div><div class="text-sm font-extrabold text-slate-800">${dK === 0 ? '오늘! 🎉' : `D-${dK}`}</div></div>
         </div>
+        <a href="./fever.html" class="inline-block mt-3 px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-extrabold">🌡️ 체온·해열제 기록 →</a>
         ${last ? `<div class="text-[11px] font-bold text-slate-500 mt-3">최근 기록 (${last.date.slice(2).replace(/-/g, '.')}) ${last.h ? `키 <b class="text-slate-800">${fmt(last.h)}cm</b>` : ''} ${last.w ? `· 몸무게 <b class="text-slate-800">${fmt(last.w)}kg</b>` : ''}</div>` : ''}`;
     }
 
