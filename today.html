@@ -123,6 +123,7 @@
 
   <script src="tax-calc.js"></script>
   <script src="tt.js"></script>
+  <script src="commute.js"></script>
   <script>
     function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -195,178 +196,14 @@
 
     // ---------- 지하철: 출근(오후 2시 전) / 퇴근 역 ----------
     const label = n => n === '서울' ? '서울역' : n + '역';
-    // ---------- 출퇴근 경로 ----------
-    // 저장: { stops: ['미사', '동대문역사문화공원', '정부과천청사'], transfer: 4(분), walk: 0(분) } · 퇴근은 거꾸로
-    const COMMUTE_KEY = 'argon_commute_v1';
-    let commuteMode = null, commuteEdit = false, commuteRT = null, commuteAt = 0;
-    const cleanSt = n => { n = String(n || '').trim().replace(/\s*\(.*\)$/, '').replace(/\s+/g, ''); return n === '서울역' ? '서울' : n.replace(/역$/, ''); };
-    const T = () => window.ArgonTT;
-    const hhmm = ms => { const d = new Date(ms); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
-    // 오늘 0시 기준 분 → 실제 시각(ms). 새벽 4시 전 운행은 전날 밤으로 계산
-    function msOfMins(mins) { const d = new Date(), base = new Date(d.getFullYear(), d.getMonth(), d.getDate()); if (d.getHours() < 4) base.setDate(base.getDate() - 1); return base.getTime() + mins * 60000; }
-    // 구간 A→B를 실제로 가는 열차들: 같은 열차번호가 A 다음에 B를 지나는 것
-    function segTrains(tA, tB) {
-      const atB = {}; (tB.allLines || tB.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => { if (x[3]) atB[T().normNo(x[3])] = x[0]; })));
-      const out = [];
-      (tA.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => {
-        const b = atB[T().normNo(x[3])]; if (!b) return;
-        const dep = T().minsOf(x[0]), arr = T().minsOf(b);
-        if (arr > dep && arr - dep < 150) out.push({ no: T().normNo(x[3]), dep, arr, line: L.line, dir: D.name, dest: x[1] });
-      })));
-      return out.sort((a, b) => a.dep - b.dep);
-    }
-    async function commutePlan() {
-      const c = load(COMMUTE_KEY, null); if (!c || !c.stops || c.stops.length < 2) return null;
-      const mode = commuteMode || (new Date().getHours() < 14 ? 'go' : 'back');
-      const stops = mode === 'go' ? c.stops : c.stops.slice().reverse();
-      const week = T().dayType();
-      const tts = await Promise.all(stops.map(s => T().load(s, week)));
-      const segs = stops.slice(1).map((s, i) => ({ from: stops[i], to: s, trains: segTrains(tts[i], tts[i + 1]) }));
-      return { c, mode, stops, segs };
-    }
-    // 첫 구간 열차 하나를 타면 → 환승 → 도착까지
-    function chain(segs, first, delayMin, transfer) {
-      let arr = first.arr + delayMin; const legs = [{ ...first, dep: first.dep + delayMin, arr }];
-      for (let i = 1; i < segs.length; i++) {
-        const nx = segs[i].trains.find(t => t.dep >= arr + transfer);
-        if (!nx) return { legs, end: null };
-        legs.push(nx); arr = nx.arr;
-      }
-      return { legs, end: arr };
-    }
-    async function renderCommute(box) {
-      let plan;
-      try { plan = await commutePlan(); } catch (e) { box.innerHTML = head('🚇 출퇴근') + `<p class="text-xs text-rose-600">시간표를 못 불러왔어요: ${esc(e.message)}</p>`; return; }
-      const { c, mode, stops, segs } = plan;
-      const bad = segs.find(s => !s.trains.length);
-      const modeChip = `<span class="flex items-center gap-1">
-          <span role="button" tabindex="0" onclick="setCommuteMode('go')" aria-pressed="${mode === 'go'}" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full border ${mode === 'go' ? 'border-transparent text-white' : 'border-slate-200 text-slate-400 opacity-70'}" style="${mode === 'go' ? 'background:#f59e0b' : ''}">🌅 출근</span>
-          <span role="button" tabindex="0" onclick="setCommuteMode('back')" aria-pressed="${mode === 'back'}" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full border ${mode === 'back' ? 'border-transparent text-white' : 'border-slate-200 text-slate-400 opacity-70'}" style="${mode === 'back' ? 'background:#4f46e5' : ''}">🌙 퇴근</span>
-          <span role="button" tabindex="0" onclick="editCommute(true)" aria-label="경로 설정" class="cursor-pointer text-sm px-1">⚙️</span></span>`;
-      const route = stops.map((s, i) => `<span class="${i === 0 || i === stops.length - 1 ? 'text-slate-900' : 'text-slate-500'}">${esc(label(s))}</span>`).join(' <span class="text-slate-300">→</span> ');
-      let body;
-      if (bad) body = `<p class="text-xs text-rose-600">${esc(label(bad.from))} → ${esc(label(bad.to))} 바로 가는 열차를 시간표에서 못 찾았어요. 환승역을 넣거나 역 이름을 확인해 주세요. (서울교통공사 시간표에 있는 역만 돼요)</p>`;
-      else {
-        // 첫 구간: 실시간 열차 중 이 구간을 가는 열차 (열차번호로) + 지연 반영
-        const now = Date.now(), nowM = T().nowMins(), seg0 = segs[0], byNo = {}; seg0.trains.forEach(t => byNo[t.no] = t);
-        let rt = [];
-        try {
-          if (!commuteRT || commuteRT.station !== stops[0] || now - commuteAt > 25000) {
-            const r = await fetch(`./api/subway?station=${encodeURIComponent(stops[0])}`); const j = await r.json();
-            commuteRT = r.ok && !j.needKey ? { station: stops[0], arrivals: j.arrivals || [] } : { station: stops[0], arrivals: [] }; commuteAt = Date.now();
-          }
-          rt = commuteRT.arrivals.filter(a => byNo[T().normNo(a.no)] && String(a.code) !== '2').map(a => {
-            const t = byNo[T().normNo(a.no)], sched = msOfMins(t.dep);
-            let eta = commuteAt + 1000 * (a.sec > 0 ? a.sec : a.est != null ? a.est : 0);
-            if (!(a.sec > 0)) eta = Math.max(eta, sched);   // 위치로 추정한 건 시간표보다 이르지 않게
-            return { t, eta, live: true, delay: Math.max(0, Math.round((eta - sched) / 60000)) };
-          }).sort((x, y) => x.eta - y.eta);
-        } catch (e) {}
-        // 실시간에 없는 뒤 열차는 시간표로 채움
-        const seen = new Set(rt.map(x => x.t.no));
-        const lastEta = rt.length ? rt[rt.length - 1].eta : now;
-        const sched = seg0.trains.filter(t => !seen.has(t.no) && msOfMins(t.dep) >= Math.max(now - 30000, lastEta)).slice(0, 3).map(t => ({ t, eta: msOfMins(t.dep), live: false, delay: 0 }));
-        const opts = [...rt, ...sched].slice(0, 3);
-        const walk = Number(c.walk) || 0, transfer = Number(c.transfer) || 4;
-        if (!opts.length) body = `<p class="text-xs text-slate-500">오늘 이 방향 열차는 끝났어요 🌙</p>`;
-        else body = `<div class="space-y-2">${opts.map((o, i) => {
-            const ch = chain(segs, o.t, o.delay, transfer), leftMin = (o.eta - now) / 60000;
-            const catchable = leftMin >= walk;
-            const endMs = ch.end != null ? msOfMins(ch.end) : null, total = endMs ? Math.round((endMs - o.eta) / 60000) : null;
-            const legs = ch.legs.slice(1).map((l, k) => `<span class="whitespace-nowrap">${esc(label(segs[k + 1].from))} ${T().disp(hhmm(msOfMins(l.dep)))} ${esc(l.line)} 환승</span>`).join(' · ');
-            const firstCatch = catchable && opts.slice(0, i).every(p => (p.eta - now) / 60000 < walk);
-            return `<div class="rounded-xl px-3 py-2.5 ${firstCatch && walk ? 'bg-emerald-50 ring-1 ring-emerald-200' : 'bg-slate-50'} ${!catchable && walk ? 'opacity-50' : ''}">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="min-w-0"><span class="block text-base font-extrabold num ctick ${leftMin <= 2 ? 'text-rose-600' : 'text-slate-900'}" data-eta="${o.eta}">-</span>
-                    <span class="block text-[10px] font-bold text-slate-500 truncate">${hhmm(o.eta)} ${esc(o.t.dest)}행 · ${o.live ? (o.delay >= 2 ? `<span class="text-rose-600">${o.delay}분 늦음</span>` : '실시간') : '시간표'}</span></span>
-                  <span class="text-right shrink-0"><span class="block text-[10px] font-bold text-slate-400">${esc(label(stops[stops.length - 1]))} 도착</span><span class="block text-base font-extrabold num text-indigo-600">${endMs ? hhmm(endMs) : '-'}</span>${total ? `<span class="block text-[10px] font-bold text-slate-400">${total}분</span>` : ''}</span>
-                </div>
-                ${legs ? `<p class="text-[10px] text-slate-500 mt-1">🔁 ${legs}</p>` : ''}
-                ${ch.end == null ? `<p class="text-[10px] text-rose-600 mt-1">환승할 열차가 오늘은 끝났어요</p>` : ''}
-                ${firstCatch && walk ? `<p class="text-[10px] font-bold text-emerald-700 mt-1">🏃 지금 나가면 이 열차 탈 수 있어요 (역까지 ${walk}분)</p>` : ''}
-              </div>`;
-          }).join('')}</div>
-          <p class="text-[9px] text-slate-400 mt-1.5">첫 열차는 실시간, 환승 이후는 시간표 기준 (환승 ${transfer}분 잡음) · 지연은 도착까지 그대로 간다고 가정</p>`;
-      }
-      box.innerHTML = `<div class="flex items-center justify-between gap-2 mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🚇 ${mode === 'go' ? '출근' : '퇴근'}</h2>${modeChip}</div>
-        <div class="flex items-center justify-between gap-2 mb-2"><p class="text-[11px] font-bold min-w-0">${route}</p><a href="./subway.html" class="text-[11px] font-bold text-indigo-600 shrink-0">지하철 →</a></div>${body}`;
-      ctick();
-    }
-    function ctick() {
-      document.querySelectorAll('#subway .ctick').forEach(el => {
-        const left = Math.round((Number(el.dataset.eta) - Date.now()) / 1000);
-        el.textContent = left <= 30 ? '곧 출발' : left >= 3600 ? `${Math.floor(left / 3600)}시간 ${Math.floor(left % 3600 / 60)}분 후` : `${Math.floor(left / 60)}분 ${pad(left % 60)}초 후`;
-      });
-    }
-    setInterval(ctick, 1000);
-    function setCommuteMode(m) { commuteMode = m; commuteRT = null; loadSubway(); }
-    async function editCommute(on) {
-      commuteEdit = on; const box = document.getElementById('subway');
-      if (!on) return loadSubway();
-      const c = load(COMMUTE_KEY, { stops: [], transfer: 4, walk: 0 }), s = c.stops || [];
-      const field = (id, v, ph) => `<input id="${id}" list="cmStations" value="${esc(v ? label(v) : '')}" placeholder="${ph}" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">`;
-      box.innerHTML = `<div class="flex items-center justify-between mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 출퇴근 경로 설정</h2><span role="button" tabindex="0" onclick="editCommute(false)" class="cursor-pointer text-xs font-bold text-slate-400">닫기</span></div>
-        <div class="space-y-1.5">
-          ${field('cm0', s[0], '집 쪽 출발역 (예: 미사)')}
-          ${field('cm1', s.length > 2 ? s[1] : '', '환승역 1 (없으면 비워두기)')}
-          ${field('cm2', s.length > 3 ? s[2] : '', '환승역 2 (없으면 비워두기)')}
-          ${field('cm3', s.length > 1 ? s[s.length - 1] : '', '회사 쪽 도착역 (예: 정부과천청사)')}
-          <div class="grid grid-cols-2 gap-2">
-            <label class="text-[11px] font-bold text-slate-500">역까지 걷는 시간<div class="flex items-center gap-1 mt-0.5"><input id="cmWalk" type="number" min="0" max="60" value="${c.walk || 0}" class="w-full border border-slate-200 rounded-lg px-2 py-1 bg-white"><span>분</span></div></label>
-            <label class="text-[11px] font-bold text-slate-500">환승 걷는 시간<div class="flex items-center gap-1 mt-0.5"><input id="cmTr" type="number" min="1" max="20" value="${c.transfer || 4}" class="w-full border border-slate-200 rounded-lg px-2 py-1 bg-white"><span>분</span></div></label>
-          </div>
-        </div>
-        <datalist id="cmStations"></datalist>
-        <p id="cmMsg" class="text-[11px] text-rose-600 mt-1.5"></p>
-        <div class="flex gap-2 mt-2">
-          ${s.length ? `<span role="button" tabindex="0" onclick="clearCommute()" class="cursor-pointer flex-1 py-2 text-center bg-slate-100 text-slate-500 font-bold text-xs rounded-xl">경로 지우기</span>` : ''}
-          <span role="button" tabindex="0" onclick="saveCommute()" id="cmSave" class="cursor-pointer flex-[2] py-2 text-center bg-indigo-600 text-white font-bold text-sm rounded-xl">저장</span>
-        </div>
-        <p class="text-[10px] text-slate-400 mt-1.5">출근 방향으로 넣으면 퇴근은 자동으로 반대예요. 같은 노선이면 환승역은 비워두세요.</p>`;
-      // 역 이름 자동완성 (지하철 화면과 같은 역 목록)
-      try {
-        let st = null; try { const cc = JSON.parse(localStorage.getItem('subway_stations_cache_v1')); if (cc && cc.s) st = cc.s; } catch (e) {}
-        if (!st) { const r = await fetch('./api/stations'); st = (await r.json()).stations || []; try { localStorage.setItem('subway_stations_cache_v1', JSON.stringify({ t: Date.now(), s: st })); } catch (e) {} }
-        const dl = document.getElementById('cmStations'); if (dl) dl.innerHTML = [...new Set(st.map(x => x[0]))].map(n => `<option value="${esc(n)}">`).join('');
-      } catch (e) {}
-    }
-    // 역 이름을 조금 틀리게 넣었을 때 (예: 과천정부청사 → 정부과천청사) 역 목록에서 가장 비슷한 이름 찾기
-    function fixName(n) {
-      let st = []; try { st = (JSON.parse(localStorage.getItem('subway_stations_cache_v1')) || {}).s || []; } catch (e) {}
-      const names = [...new Set(st.map(x => cleanSt(x[0])))];
-      if (!names.length || names.includes(n)) return n;
-      const key = s => [...s].sort().join('');
-      const same = names.find(x => key(x) === key(n));   // 글자는 같고 순서만 다름
-      if (same) return same;
-      const part = names.filter(x => x.includes(n) || n.includes(x)).sort((a, b) => Math.abs(a.length - n.length) - Math.abs(b.length - n.length))[0];
-      return part && Math.min(part.length, n.length) >= 2 ? part : n;
-    }
-    async function saveCommute() {
-      const raw = ['cm0', 'cm1', 'cm2', 'cm3'].map(id => cleanSt(document.getElementById(id).value)).filter(Boolean);
-      const stops = raw.map(fixName);
-      const fixed = raw.map((n, i) => n !== stops[i] ? `${label(n)} → ${label(stops[i])}` : '').filter(Boolean);
-      const msg = document.getElementById('cmMsg');
-      if (stops.length < 2) { msg.textContent = '출발역과 도착역을 넣어 주세요.'; return; }
-      const c = { stops, walk: Math.max(0, Math.min(60, Number(document.getElementById('cmWalk').value) || 0)), transfer: Math.max(1, Math.min(20, Number(document.getElementById('cmTr').value) || 4)) };
-      document.getElementById('cmSave').textContent = '확인 중…';
-      // 구간마다 바로 가는 열차가 있는지 시간표로 확인
-      try {
-        const week = T().dayType(), tts = await Promise.all(stops.map(s => T().load(s, week)));
-        for (let i = 0; i < stops.length - 1; i++) {
-          if (!(tts[i].lines || []).length) { msg.textContent = `'${label(stops[i])}' 시간표를 못 찾았어요. 역 이름을 확인해 주세요.`; document.getElementById('cmSave').textContent = '저장'; return; }
-          if (!segTrains(tts[i], tts[i + 1]).length) { msg.textContent = `${label(stops[i])} → ${label(stops[i + 1])} 바로 가는 열차가 없어요. 중간에 환승역을 넣어 주세요.`; document.getElementById('cmSave').textContent = '저장'; return; }
-        }
-      } catch (e) { msg.textContent = '시간표를 못 불러와서 확인 못 했어요. 잠시 뒤 다시 해 주세요.'; document.getElementById('cmSave').textContent = '저장'; return; }
-      save(COMMUTE_KEY, c); commuteEdit = false; commuteMode = null; commuteRT = null; await loadSubway();
-      if (fixed.length) document.getElementById('subway').insertAdjacentHTML('beforeend', `<p class="text-[10px] font-bold text-amber-600 mt-1">✏️ 역 이름을 고쳐서 저장했어요: ${esc(fixed.join(', '))}</p>`);
-    }
-    function clearCommute() { localStorage.removeItem(COMMUTE_KEY); commuteEdit = false; loadSubway(); }
+    // ---------- 출퇴근 경로 (commute.js) ----------
+    const commuteOpts = () => ({ variant: 'today', onChange: () => loadSubway() });
+    function editCommute(on) { Commute.mount(document.getElementById('subway'), Object.assign(commuteOpts(), { edit: !!on })).then(() => Commute.editor(on)); }
 
     async function loadSubway() {
       const box = document.getElementById('subway');
-      if (commuteEdit) return;
-      const c = load(COMMUTE_KEY, null);
-      if (c && c.stops && c.stops.length >= 2) return renderCommute(box);
+      if (Commute.editing()) return;
+      if (Commute.has()) return Commute.mount(box, commuteOpts());
       return loadFavSubway();
     }
     async function loadFavSubway() {
