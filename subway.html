@@ -14,6 +14,7 @@
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
   <script src="tt.js"></script>
+  <script src="commute.js"></script>
   <title>지하철 · 아르곤 자산관리</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
@@ -113,6 +114,9 @@
     </header>
 
     <div id="keyBox"></div>
+
+    <!-- 출퇴근 경로 (시각 골라서 보기) -->
+    <section id="commuteSec" class="card p-4"><div class="skel" style="height:90px"></div></section>
 
     <!-- 길찾기 -->
     <section id="routeSec" class="card p-4">
@@ -439,6 +443,8 @@
     }
     document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
     render(); renderRoutes(); refresh(false);
+    Commute.mount(document.getElementById('commuteSec'), { variant: 'subway' });
+    setInterval(() => { if (document.visibilityState === 'visible' && !Commute.editing()) Commute.render(); }, 30000);
     // 즐겨찾기가 없어도 실시간 키가 있는지 한 번 확인 (서울역 조회)
     if (!favs.length) fetchStation('서울').then(j => { if (j.demo) { demo = true; render(); } }).catch(() => {});
     loadStations();
