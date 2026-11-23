@@ -84,7 +84,8 @@
     const mode = S.mode || autoMode(), sub = S.variant === 'subway';
     const week = (sub && S.week) || T().dayType();
     let p;
-    try { p = await plan(mode, week); } catch (e) { box.innerHTML = `<p class="text-xs text-rose-600">시간표를 못 불러왔어요: ${esc(e.message)}</p>`; return; }
+    try { p = await plan(mode, week); } catch (e) { if (S.edit) return; box.innerHTML = `<p class="text-xs text-rose-600">시간표를 못 불러왔어요: ${esc(e.message)}</p>`; return; }
+    if (S.edit) return;
     if (!p) {
       box.innerHTML = `<div class="flex items-center justify-between mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 출퇴근 경로</h2></div>
         <p class="text-xs text-slate-500">출발·환승·도착역을 등록하면 출근·퇴근 방향 열차와 도착 시각을 바로 보여줘요.</p>
@@ -109,6 +110,7 @@
     else if (sub && !nowSel) body = timeBody(stops, segs, walk, transfer);
     else if (sub && S.basis === 'arr') body = timeBody(stops, segs, walk, transfer, T().nowMins());
     else body = await nowBody(stops, segs, walk, transfer, sub ? 5 : 3, sub && week !== T().dayType());
+    if (S.edit || S.box !== box) return;   // 그리는 사이 설정을 열었으면 덮어쓰지 않음
     box.innerHTML = head + controls + body;
     tick();
   }

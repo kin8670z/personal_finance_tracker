@@ -198,7 +198,7 @@
     const label = n => n === '서울' ? '서울역' : n + '역';
     // ---------- 출퇴근 경로 (commute.js) ----------
     const commuteOpts = () => ({ variant: 'today', onChange: () => loadSubway() });
-    function editCommute(on) { Commute.mount(document.getElementById('subway'), commuteOpts()); Commute.editor(on); }
+    function editCommute(on) { Commute.mount(document.getElementById('subway'), Object.assign(commuteOpts(), { edit: !!on })).then(() => Commute.editor(on)); }
 
     async function loadSubway() {
       const box = document.getElementById('subway');
