@@ -240,8 +240,8 @@
       const { c, mode, stops, segs } = plan;
       const bad = segs.find(s => !s.trains.length);
       const modeChip = `<span class="flex items-center gap-1">
-          <span role="button" tabindex="0" onclick="setCommuteMode('go')" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full ${mode === 'go' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'}">🌅 출근</span>
-          <span role="button" tabindex="0" onclick="setCommuteMode('back')" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full ${mode === 'back' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'}">🌙 퇴근</span>
+          <span role="button" tabindex="0" onclick="setCommuteMode('go')" aria-pressed="${mode === 'go'}" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full border ${mode === 'go' ? 'border-transparent text-white' : 'border-slate-200 text-slate-400 opacity-70'}" style="${mode === 'go' ? 'background:#f59e0b' : ''}">🌅 출근</span>
+          <span role="button" tabindex="0" onclick="setCommuteMode('back')" aria-pressed="${mode === 'back'}" class="cursor-pointer text-[10px] font-bold px-2 py-0.5 rounded-full border ${mode === 'back' ? 'border-transparent text-white' : 'border-slate-200 text-slate-400 opacity-70'}" style="${mode === 'back' ? 'background:#4f46e5' : ''}">🌙 퇴근</span>
           <span role="button" tabindex="0" onclick="editCommute(true)" aria-label="경로 설정" class="cursor-pointer text-sm px-1">⚙️</span></span>`;
       const route = stops.map((s, i) => `<span class="${i === 0 || i === stops.length - 1 ? 'text-slate-900' : 'text-slate-500'}">${esc(label(s))}</span>`).join(' <span class="text-slate-300">→</span> ');
       let body;
