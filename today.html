@@ -141,6 +141,13 @@
       <section id="tax" class="card p-4"></section>
     </div>
 
+    <section id="pushCard" class="card p-4">
+      <div class="flex items-center justify-between gap-3">
+        <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">🔔 아침 알림 (매일 8시쯤)</p><p id="pushSub" class="text-[10px] text-slate-400">기프티콘 만료·D-Day·오늘 할 일을 아침에 알려줘요</p></div>
+        <button type="button" id="pushBtn" onclick="togglePush()" role="switch" aria-checked="false" class="w-12 h-7 rounded-full relative shrink-0 transition-colors bg-slate-300"><span class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
+      </div>
+      <p id="pushTestRow" class="hidden mt-2 text-right"><span role="button" tabindex="0" onclick="testPush(this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">지금 테스트 알림 받아보기 →</span></p>
+    </section>
     <section class="card p-4 flex items-center justify-between gap-3">
       <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">📲 앱을 열면 이 화면부터</p><p class="text-[10px] text-slate-400">끄면 가계부가 첫 화면이에요. 이 기기에만 적용돼요.</p></div>
       <button type="button" id="startBtn" onclick="toggleStart()" role="switch" class="w-12 h-7 rounded-full relative shrink-0 transition-colors"><span class="absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
@@ -509,6 +516,53 @@
     // ---------- 첫 화면 설정 ----------
     const startOn = () => localStorage.getItem('argon_start_today') !== '0';
     function renderStart() { const b = document.getElementById('startBtn'), on = startOn(); b.setAttribute('aria-checked', String(on)); b.style.background = on ? '#4f46e5' : '#cbd5e1'; b.firstElementChild.style.left = on ? '1.5rem' : '.25rem'; }
+    // ---------- 아침 알림 (Web Push) ----------
+    const pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+    let pushBusy = false;
+    function pushUI(on, note) {
+      const b = document.getElementById('pushBtn');
+      b.setAttribute('aria-checked', String(!!on)); b.className = `w-12 h-7 rounded-full relative shrink-0 transition-colors ${on ? 'bg-indigo-600' : 'bg-slate-300'}`;
+      b.firstElementChild.style.left = on ? '1.5rem' : '0.25rem';
+      document.getElementById('pushTestRow').classList.toggle('hidden', !on);
+      if (note) document.getElementById('pushSub').textContent = note;
+    }
+    async function pushState() {
+      if (!pushOK) { pushUI(false, isIOS && !standalone ? '아이폰은 홈 화면에 추가한 앱에서 켤 수 있어요 (공유 → 홈 화면에 추가)' : '이 브라우저는 알림을 지원하지 않아요'); return null; }
+      const reg = await navigator.serviceWorker.ready, sub = await reg.pushManager.getSubscription();
+      pushUI(!!sub && Notification.permission === 'granted'); return sub;
+    }
+    const b64ToBytes = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
+    const pushApi = body => fetch('/api/push', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(async r => { const j = await r.json().catch(() => ({})); if (!r.ok) throw new Error(j.error || r.status); return j; });
+    async function togglePush() {
+      if (!pushOK || pushBusy) return pushState(); pushBusy = true;
+      try {
+        const reg = await navigator.serviceWorker.ready; let sub = await reg.pushManager.getSubscription();
+        if (sub && Notification.permission === 'granted') {
+          await pushApi({ op: 'unsub', endpoint: sub.endpoint }).catch(() => {}); await sub.unsubscribe();
+          pushUI(false, '알림을 껐어요'); return;
+        }
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { pushUI(false, '알림 권한이 꺼져 있어요. 휴대폰 설정에서 든든 알림을 허용해 주세요'); return; }
+        const { key } = await fetch('/api/push?op=key').then(r => r.json());
+        if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(key) });
+        await pushApi({ op: 'sub', sub: sub.toJSON() });
+        if (window.saveBrief) saveBrief();
+        pushUI(true, '켜졌어요! 매일 아침 8시쯤 알려드릴게요');
+      } catch (e) { pushUI(false, `알림을 켜지 못했어요 (${e.message})`); }
+      finally { pushBusy = false; }
+    }
+    async function testPush(el) {
+      try {
+        if (window.saveBrief) saveBrief(); el.textContent = '보내는 중…';
+        const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+        await new Promise(r => setTimeout(r, 400));
+        await pushApi({ op: 'test', endpoint: sub.endpoint }); el.textContent = '보냈어요! 잠시 후 알림이 와요 ✓';
+      } catch (e) { el.textContent = `실패: ${e.message}`; }
+      setTimeout(() => { el.textContent = '지금 테스트 알림 받아보기 →'; }, 5000);
+    }
+    pushState().catch(() => {});
+
     function toggleStart() { localStorage.setItem('argon_start_today', startOn() ? '0' : '1'); renderStart(); }
 
     let busy = false;
