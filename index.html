@@ -493,6 +493,7 @@
         '🗾 새 메뉴 <b>여행 일본어</b>: 상황별 80문장 (기본 인사·공항·호텔·식당·쇼핑·교통·관광·긴급) · 히라가나 읽기 + 한글 발음 같이 보기',
         '🎧 영어와 같은 듣기 모드·카드 복습·공부 기록·내 문장',
         '☀️ 오늘 화면 "오늘의 한 문장"에 영어 + 일본어'
+        ,'🔕 가계부 화면에 들어갈 때 업데이트 노트가 자동으로 뜨지 않아요 (왼쪽 메뉴 아래에서 보기)'
       ] },
       { version: 'v9.0', date: '2026.11.23', badge: '든든 💛', isLatest: false, items: [
         '💛 앱 이름이 <b>든든</b>으로 바뀌었어요 — 돈·출퇴근·점심·D-Day·영어까지 하루를 든든하게',
@@ -759,7 +760,7 @@
         </div>`).join('');
     }
     function openReleaseModal() { closeHeaderMenu(); setTimeout(() => { renderReleaseNotes(); const m = document.getElementById('releaseModal'); m.classList.remove('hidden'); m.classList.add('flex'); localStorage.setItem('argon_seen_version', APP_VERSION); }, 50); }
-    function checkVersionUpdatePopup() { try { if (new URLSearchParams(location.search).get('notes')) { history.replaceState(null, '', location.pathname); openReleaseModal(); return; } if (localStorage.getItem('argon_seen_version') !== APP_VERSION) openReleaseModal(); } catch (e) {} }
+    function checkVersionUpdatePopup() { try { if (new URLSearchParams(location.search).get('notes')) { history.replaceState(null, '', location.pathname); openReleaseModal(); return; } /* 새 버전이어도 자동으로 띄우지 않음 — 왼쪽 메뉴 아래 '업데이트 노트'의 노란 점으로만 알림 */ } catch (e) {} }
     function closeReleaseModal() { const m = document.getElementById('releaseModal'); m.classList.add('hidden'); m.classList.remove('flex'); localStorage.setItem('argon_seen_version', APP_VERSION); }
     function openGalaxyAutoModal() { closeHeaderMenu(); setTimeout(() => { const m = document.getElementById('galaxyAutoModal'); m.classList.remove('hidden'); m.classList.add('flex'); }, 50); }
     function closeGalaxyAutoModal() { const m = document.getElementById('galaxyAutoModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
