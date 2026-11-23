@@ -33,12 +33,17 @@
   function delayOf(sched, leftSec, at) { return Math.round(nowMins(at) + (leftSec || 0) / 60 - minsOf(sched)); }
   const mem = {};
   async function load(station, week) {
-    const k = `argon_tt3_${station}_${week}`;   // tt3: 열차번호 + 이수=총신대입구 (예전 저장본은 무시)
+    const k = `argon_tt4_${station}_${week}`;   // tt4: 종점 도착 열차 포함 (예전 저장본은 무시)
     if (mem[k]) return mem[k];
     try { const c = JSON.parse(sessionStorage.getItem(k)); if (c && Date.now() - c.t < 6 * 3600e3) return (mem[k] = c.j); } catch (e) {}
     const r = await fetch(`./api/timetable?station=${encodeURIComponent(station)}&week=${week}`);
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j.error || '시간표를 불러오지 못했어요');
+    // 화면용(lines)은 탈 수 있는 열차만, 구간 계산용(allLines)은 이 역에서 끝나는 열차까지
+    if (j.lines) {
+      j.allLines = j.lines;
+      j.lines = j.lines.map(L => ({ ...L, dirs: L.dirs.map(D => ({ ...D, trains: D.trains.filter(x => !x[4]) })).filter(D => D.trains.length) })).filter(L => L.dirs.length);
+    }
     if (!j.needKey) { mem[k] = j; try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), j })); } catch (e) {} }
     return j;
   }

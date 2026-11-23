@@ -205,7 +205,7 @@
     function msOfMins(mins) { const d = new Date(), base = new Date(d.getFullYear(), d.getMonth(), d.getDate()); if (d.getHours() < 4) base.setDate(base.getDate() - 1); return base.getTime() + mins * 60000; }
     // 구간 A→B를 실제로 가는 열차들: 같은 열차번호가 A 다음에 B를 지나는 것
     function segTrains(tA, tB) {
-      const atB = {}; (tB.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => { if (x[3]) atB[T().normNo(x[3])] = x[0]; })));
+      const atB = {}; (tB.allLines || tB.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => { if (x[3]) atB[T().normNo(x[3])] = x[0]; })));
       const out = [];
       (tA.lines || []).forEach(L => L.dirs.forEach(D => D.trains.forEach(x => {
         const b = atB[T().normNo(x[3])]; if (!b) return;
