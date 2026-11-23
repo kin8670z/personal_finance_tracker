@@ -113,11 +113,9 @@
     </section>
 
     <section class="card p-4">
-      <div class="flex justify-between items-center mb-2">
-        <h2 class="text-sm md:text-base font-extrabold text-slate-900">📝 메뉴 <span id="menuCount" class="text-xs font-bold text-slate-400"></span></h2>
-        <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-500"><span>최근</span>
-          <div id="skipSeg" class="seg flex bg-slate-100 rounded-lg p-0.5"></div><span>먹은 건 빼기</span></div>
-      </div>
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900">📝 메뉴 <span id="menuCount" class="text-xs font-bold text-slate-400"></span></h2>
+      <div class="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 mt-1.5 mb-2.5"><span class="shrink-0">최근 먹은 메뉴 빼기</span>
+        <div id="skipSeg" class="seg flex bg-slate-100 rounded-lg p-0.5 whitespace-nowrap"></div></div>
       <div id="menus" class="flex flex-wrap gap-1.5"></div>
       <form id="addForm" class="flex gap-2 mt-3" autocomplete="off">
         <input id="addName" maxlength="12" placeholder="메뉴 추가 (예: 쌀국수)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white">
@@ -168,9 +166,13 @@
         const sweep = m.w / total * Math.PI * 2;
         g.fillStyle = COLORS[i % COLORS.length]; g.beginPath(); g.moveTo(0, 0); g.arc(0, 0, R, a, a + sweep); g.closePath(); g.fill();
         g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 3; g.stroke();
-        g.save(); g.rotate(a + sweep / 2); g.textAlign = 'right'; g.textBaseline = 'middle'; g.fillStyle = '#fff';
+        g.save(); g.rotate(a + sweep / 2); g.textBaseline = 'middle'; g.fillStyle = '#fff';
         const fs = list.length > 14 ? 22 : list.length > 9 ? 26 : 32; g.font = `800 ${fs}px Pretendard, sans-serif`;
-        g.fillText((m.soup && rainy ? '🍲' : '') + m.name, R - 18, 0); g.restore();
+        const label = (m.soup && rainy ? '🍲' : '') + m.name;
+        // 왼쪽 절반에 있는 칸은 글자가 뒤집히지 않게 180도 돌려서 씀
+        if (Math.cos(angle + a + sweep / 2) < 0) { g.rotate(Math.PI); g.textAlign = 'left'; g.fillText(label, -(R - 18), 0); }
+        else { g.textAlign = 'right'; g.fillText(label, R - 18, 0); }
+        g.restore();
         m.from = a; m.to = a + sweep; a += sweep;
       });
       g.restore();
@@ -229,7 +231,7 @@
         const ate = recent.has(m.name);
         return `<span role="button" tabindex="0" data-i="${i}" class="menu-chip cursor-pointer select-none px-2.5 py-1 rounded-full text-xs font-bold border ${!m.on ? 'bg-white border-dashed border-slate-300 text-slate-400 line-through' : ate ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-indigo-50 border-indigo-200 text-indigo-700'}" title="${ate ? '최근에 먹어서 이번엔 빠져요' : ''}">${m.soup ? '🍲' : ''}${esc(m.name)}${ate ? ' 😋' : ''}</span>`;
       }).join('');
-      document.getElementById('skipSeg').innerHTML = [0, 1, 3, 5].map(d => `<span role="button" tabindex="0" onclick="setSkip(${d})" class="cursor-pointer px-1.5 py-0.5 rounded-md ${st.skip === d ? 'bg-indigo-600 text-white' : ''}">${d ? d + '일' : '안 뺌'}</span>`).join('');
+      document.getElementById('skipSeg').innerHTML = [0, 1, 3, 5].map(d => `<span role="button" tabindex="0" onclick="setSkip(${d})" class="cursor-pointer px-2 py-0.5 rounded-md whitespace-nowrap ${st.skip === d ? 'bg-indigo-600 text-white' : ''}">${d ? d + '일' : '안 뺌'}</span>`).join('');
       // 누르면 켜고 끄기, 길게 누르면 삭제
       document.querySelectorAll('.menu-chip').forEach(el => {
         let timer = null, long = false;
