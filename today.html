@@ -20,6 +20,7 @@
   </script>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
   <style>
     html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
     body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
@@ -288,7 +289,7 @@
           <p class="text-[9px] text-slate-400 mt-1.5">첫 열차는 실시간, 환승 이후는 시간표 기준 (환승 ${transfer}분 잡음) · 지연은 도착까지 그대로 간다고 가정</p>`;
       }
       box.innerHTML = `<div class="flex items-center justify-between gap-2 mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🚇 ${mode === 'go' ? '출근' : '퇴근'}</h2>${modeChip}</div>
-        <p class="text-[11px] font-bold mb-2">${route}</p>${body}`;
+        <div class="flex items-center justify-between gap-2 mb-2"><p class="text-[11px] font-bold min-w-0">${route}</p><a href="./subway.html" class="text-[11px] font-bold text-indigo-600 shrink-0">지하철 →</a></div>${body}`;
       ctick();
     }
     function ctick() {
