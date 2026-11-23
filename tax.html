@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>연말정산 · 아르곤 자산관리</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💎 아르곤 자산관리</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🧾 <span>연말정산</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate">🧾 연말정산 미리보기</h1>
+        <p class="text-[11px] font-bold text-slate-500">2026년 카드 사용분 · 가계부 기록으로 계산</p></div>
+      </div>
+    </header>
+
+    <!-- 결과 -->
+    <section id="hero" class="card p-4"></section>
+
+    <!-- 내 정보 -->
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-3">⚙️ 내 정보</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label for="salary" class="block text-[11px] font-bold text-slate-500 mb-1">총급여 (세전 연봉, 비과세 제외)</label>
+          <div class="flex items-center gap-1.5"><input id="salary" type="number" inputmode="numeric" min="0" step="100" placeholder="예: 5000" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white num"><span class="text-xs font-bold text-slate-500 shrink-0">만원</span></div>
+          <p class="text-[10px] text-slate-400 mt-1">원천징수영수증의 '총급여'. 실수령액이 아니에요.</p>
+        </div>
+        <div>
+          <p class="block text-[11px] font-bold text-slate-500 mb-1">기본공제 받는 자녀</p>
+          <div id="kidsSeg" class="seg grid grid-cols-3 gap-1 bg-slate-100 rounded-lg p-1">
+            <button type="button" data-v="0" class="py-1 rounded-md text-xs font-bold">없음</button><button type="button" data-v="1" class="py-1 rounded-md text-xs font-bold">1명</button><button type="button" data-v="2" class="py-1 rounded-md text-xs font-bold">2명 이상</button>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">자녀가 있으면 기본 한도가 늘어요 (2026년부터).</p>
+        </div>
+        <div>
+          <p class="block text-[11px] font-bold text-slate-500 mb-1">📱 간편페이 결제는</p>
+          <div id="paySeg" class="seg grid grid-cols-2 gap-1 bg-slate-100 rounded-lg p-1">
+            <button type="button" data-v="credit" class="py-1 rounded-md text-xs font-bold">신용카드 연결</button><button type="button" data-v="debit" class="py-1 rounded-md text-xs font-bold">체크·계좌 연결</button>
+          </div>
+        </div>
+        <div>
+          <p class="block text-[11px] font-bold text-slate-500 mb-1">💵 현금 결제는</p>
+          <div id="cashSeg" class="seg grid grid-cols-2 gap-1 bg-slate-100 rounded-lg p-1">
+            <button type="button" data-v="1" class="py-1 rounded-md text-xs font-bold">현금영수증 받음</button><button type="button" data-v="0" class="py-1 rounded-md text-xs font-bold">안 받음</button>
+          </div>
+        </div>
+        <div class="sm:col-span-2">
+          <p class="block text-[11px] font-bold text-slate-500 mb-1">가계부에 안 적은 올해 사용액 (가족 카드 등, 선택)</p>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="flex items-center gap-1.5"><span class="text-[11px] font-bold text-slate-500 shrink-0">신용</span><input id="extraCredit" type="number" inputmode="numeric" min="0" step="10" placeholder="0" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white num"><span class="text-xs font-bold text-slate-500 shrink-0">만원</span></div>
+            <div class="flex items-center gap-1.5"><span class="text-[11px] font-bold text-slate-500 shrink-0">체크·현금</span><input id="extraDebit" type="number" inputmode="numeric" min="0" step="10" placeholder="0" class="w-full border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white num"><span class="text-xs font-bold text-slate-500 shrink-0">만원</span></div>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">소득 100만원 이하인 배우자·부모·자녀 명의 카드도 합칠 수 있어요 (형제자매는 안 돼요).</p>
+        </div>
+        <div class="sm:col-span-2">
+          <p class="block text-[11px] font-bold text-slate-500 mb-1">공제에서 뺄 카테고리 <span class="font-normal text-slate-400">· 월세·관리비·통신비·보험료는 카드로 내도 공제가 안 돼요</span></p>
+          <div id="excl" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 사용액 구성 -->
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">📊 어디에 얼마 썼나</h2>
+      <div id="breakdown"></div>
+    </section>
+
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗓️ 월별 사용액</h2>
+      <div id="months"></div>
+    </section>
+
+    <section class="card p-4">
+      <button type="button" onclick="toggleItems()" class="w-full flex items-center justify-between text-left" aria-expanded="false" id="itemsBtn">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900">🔎 내역별로 보기</h2><span class="text-xs font-bold text-slate-400" id="itemsArrow">펼치기 ▾</span>
+      </button>
+      <div id="items" class="hidden mt-2"></div>
+    </section>
+
+    <section class="card p-4 text-[11px] text-slate-500 leading-relaxed space-y-1">
+      <p class="font-extrabold text-slate-700 text-xs">ℹ️ 계산 기준</p>
+      <p>· 2026년 귀속 기준: 신용카드 15%, 체크카드·현금영수증 30%, 전통시장·대중교통 40%, 도서·공연·영화·박물관·수영장·헬스장 30% (총급여 7천만원 이하만).</p>
+      <p>· 총급여의 25%를 넘게 쓴 부분부터 공제돼요. 25%는 공제율 낮은 신용카드 사용분부터 채워요.</p>
+      <p>· 기본 한도: 총급여 7천만원 이하 300만원 (자녀 1명 350만 · 2명 이상 400만), 7천만원 초과 250만원 (275만 · 300만). 전통시장·대중교통·도서공연은 300만원 (7천만원 초과 200만원) 더.</p>
+      <p>· 대중교통·도서공연·전통시장은 가맹점 이름으로 추정해요. 할부는 산 달에 전체 금액으로 잡아요. 연말 예상은 지금까지 하루 평균으로 남은 날을 채운 값이에요.</p>
+      <p>· 줄어드는 세금은 과세표준을 대략 추정한 세율(지방소득세 포함)로 계산했어요. 정확한 금액은 내년 1월 홈택스 연말정산 간소화 자료로 확인하세요.</p>
+      <p>· 대중교통 40% 공제는 2027년 사용분부터 없어질 예정이에요 (정부 세제개편안, 국회 통과 전). 올해 사용분은 그대로 공제돼요.</p>
+    </section>
+  </div>
+
+  <script src="tax-calc.js"></script>
+  <script>
+    const T = window.ArgonTax, won = T.won;
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const CATS = ['🍔 식비', '☕ 카페/간식', '🛍️ 쇼핑/생활', '🚌 교통/차량', '🏠 주거/통신', '🏥 의료/건강', '🎬 문화/여가', '📺 구독', '💐 경조사', '🎸 기타지출'];
+    const COLOR = { credit: '#6366f1', debit: '#10b981', culture: '#f59e0b', market: '#ec4899', transit: '#0ea5e9', none: '#cbd5e1' };
+    let st = T.loadSettings(), itemsOpen = false;
+
+    function setSeg(id, v) { document.querySelectorAll(`#${id} button`).forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
+    function bindSeg(id, fn) { document.querySelectorAll(`#${id} button`).forEach(b => b.addEventListener('click', () => { fn(b.dataset.v); setSeg(id, b.dataset.v); update(); })); }
+    function update() { T.saveSettings(st); render(); }
+
+    function fillForm() {
+      document.getElementById('salary').value = st.salary ? Math.round(st.salary / 1e4) : '';
+      document.getElementById('extraCredit').value = st.extraCredit ? Math.round(st.extraCredit / 1e4) : '';
+      document.getElementById('extraDebit').value = st.extraDebit ? Math.round(st.extraDebit / 1e4) : '';
+      setSeg('kidsSeg', Math.min(2, st.kids || 0)); setSeg('paySeg', st.pay); setSeg('cashSeg', st.cash ? 1 : 0);
+      renderExcl();
+    }
+    function renderExcl() {
+      document.getElementById('excl').innerHTML = CATS.map(c => {
+        const on = (st.exclude || []).includes(c);
+        return `<span role="button" tabindex="0" onclick="toggleExcl('${c}')" aria-pressed="${on}" class="cursor-pointer px-2 py-1 rounded-full text-[11px] font-bold border ${on ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-600'}">${on ? '🚫 ' : ''}${esc(c)}</span>`;
+      }).join('');
+    }
+    function toggleExcl(c) { const ex = new Set(st.exclude || []); ex.has(c) ? ex.delete(c) : ex.add(c); st.exclude = [...ex]; renderExcl(); update(); }
+
+    const bar = (pct, color) => `<div class="h-2.5 rounded-full bg-slate-100 overflow-hidden"><div class="h-full rounded-full" style="width:${Math.max(0, Math.min(100, pct)).toFixed(1)}%;background:${color}"></div></div>`;
+
+    function render() {
+      const a = T.analyze(st), e = a.end, n = a.now, hero = document.getElementById('hero');
+      if (!st.salary) {
+        hero.innerHTML = `<p class="text-xs font-bold text-slate-500">올해 카드 등 사용액 (가계부 기준)</p>
+          <p class="text-3xl font-extrabold num text-slate-900 mt-1">${won(n.spent)}</p>
+          <p class="text-sm text-slate-600 mt-3">👇 <b>총급여</b>를 넣으면 공제액이랑 줄어드는 세금을 계산해요.</p>`;
+      } else {
+        const advColor = { below: 'bg-amber-50 text-amber-800 border-amber-200', switch: 'bg-emerald-50 text-emerald-800 border-emerald-200', cap: 'bg-indigo-50 text-indigo-800 border-indigo-200', ok: 'bg-slate-50 text-slate-700 border-slate-200' }[a.advice.kind] || '';
+        const icon = { below: '🪜', switch: '🔁', cap: '✅', ok: '👍' }[a.advice.kind] || '💡';
+        hero.innerHTML = `<div class="grid grid-cols-2 gap-3">
+            <div><p class="text-[11px] font-bold text-slate-500">연말까지 쓰면 예상 공제</p><p class="text-2xl md:text-3xl font-extrabold num text-indigo-600 mt-0.5">${won(e.total)}</p>
+              <p class="text-[11px] font-bold text-slate-500 mt-0.5">세금 약 <b class="text-emerald-600">${won(a.saveEnd)}</b> 줄어요</p></div>
+            <div><p class="text-[11px] font-bold text-slate-500">오늘까지 쓴 걸로만</p><p class="text-2xl md:text-3xl font-extrabold num text-slate-900 mt-0.5">${won(n.total)}</p>
+              <p class="text-[11px] font-bold text-slate-500 mt-0.5">세금 약 ${won(a.saveNow)}</p></div>
+          </div>
+          <div class="mt-4 space-y-3">
+            <div><div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1"><span>사용액 (연말 예상 ${won(e.spent)})</span><span>문턱 ${won(e.threshold)} = 총급여 25%</span></div>
+              ${bar(e.threshold ? n.spent / Math.max(e.threshold, e.spent) * 100 : 0, '#6366f1')}
+              <p class="text-[11px] mt-1 ${n.overThreshold >= 0 ? 'text-emerald-600' : 'text-slate-500'} font-bold">${n.overThreshold >= 0 ? `✔ 문턱을 ${won(n.overThreshold)} 넘었어요. 이제부터 쓰는 건 공제돼요.` : `문턱까지 ${won(-n.overThreshold)} 남았어요. 그 전까지 쓴 돈은 공제가 안 돼요.`}</p></div>
+            <div><div class="flex justify-between text-[11px] font-bold text-slate-500 mb-1"><span>공제 (연말 예상)</span><span>기본 한도 ${won(e.baseLimit)}</span></div>
+              ${bar(e.baseLimit ? e.base / e.baseLimit * 100 : 0, '#10b981')}
+              ${e.extra > 0 ? `<p class="text-[11px] mt-1 font-bold text-emerald-600">+ 대중교통·전통시장·도서공연 추가 공제 ${won(e.extra)}</p>` : ''}</div>
+          </div>
+          <div class="mt-4 border rounded-xl p-3 text-sm leading-relaxed ${advColor}"><b>${icon} 남은 ${a.daysLeft}일 추천</b><br>${esc(a.advice.text)}</div>
+          <p class="text-[10px] text-slate-400 mt-2">세율 약 ${Math.round(a.rate / 1.1 * 100)}% 구간 (지방소득세 포함 ${(a.rate * 100).toFixed(1)}%)으로 대략 계산</p>`;
+      }
+      renderBreakdown(a); renderMonths(a); if (itemsOpen) renderItems(a);
+    }
+
+    function renderBreakdown(a) {
+      const keys = ['credit', 'debit', 'transit', 'culture', 'market', 'none'];
+      const total = keys.reduce((s, k) => s + a.sofar[k], 0) || 1;
+      document.getElementById('breakdown').innerHTML = `<div class="flex h-3 rounded-full overflow-hidden bg-slate-100 mb-3">${keys.map(k => a.sofar[k] ? `<div style="width:${a.sofar[k] / total * 100}%;background:${COLOR[k]}"></div>` : '').join('')}</div>
+        <div class="divide-y divide-slate-100">
+          <div class="grid grid-cols-[1fr_auto_auto] gap-x-3 py-1.5 text-[10px] font-bold text-slate-400"><span>구분</span><span class="text-right w-20">오늘까지</span><span class="text-right w-20">연말 예상</span></div>
+          ${keys.map(k => `<div class="grid grid-cols-[1fr_auto_auto] gap-x-3 py-2 items-center">
+              <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${COLOR[k]}"></span>${T.LABEL[k]}${T.RATE[k] ? ` <span class="text-[10px] text-slate-400">${Math.round(T.RATE[k] * 100)}%</span>` : ''}</span>
+              <span class="text-xs font-extrabold num text-right w-20 text-slate-900">${won(a.sofar[k])}</span>
+              <span class="text-xs font-bold num text-right w-20 text-slate-500">${k === 'none' ? '-' : won(a.proj[k])}</span>
+            </div>`).join('')}
+        </div>
+        ${st.salary && st.salary > 7e7 ? `<p class="text-[10px] text-slate-400 mt-2">총급여 7천만원 초과라 도서·공연 사용분은 신용·체크로 합쳐서 계산해요.</p>` : ''}`;
+    }
+
+    function renderMonths(a) {
+      const keys = ['credit', 'debit', 'transit', 'culture', 'market'];
+      const months = Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0'));
+      const sums = months.map(m => keys.reduce((s, k) => s + ((a.byMonth[m] || {})[k] || 0), 0));
+      const max = Math.max(...sums, 1), cur = new Date().getFullYear() === a.year ? new Date().getMonth() : 11;
+      document.getElementById('months').innerHTML = `<div class="flex items-end gap-1 h-32">${months.map((m, i) => {
+          const b = a.byMonth[m] || {};
+          return `<div class="flex-1 flex flex-col items-center justify-end h-full" title="${i + 1}월 ${won(sums[i])}">
+              <div class="w-full flex flex-col-reverse rounded-t overflow-hidden" style="height:${sums[i] / max * 100}%">${keys.map(k => b[k] ? `<div style="height:${b[k] / sums[i] * 100}%;background:${COLOR[k]}"></div>` : '').join('')}</div>
+            </div>`;
+        }).join('')}</div>
+        <div class="flex gap-1 mt-1">${months.map((m, i) => `<span class="flex-1 text-center text-[9px] font-bold ${i === cur ? 'text-indigo-600' : 'text-slate-400'}">${i + 1}</span>`).join('')}</div>
+        <p class="text-[10px] text-slate-400 mt-1">공제 대상 사용액만 · 가계부에 안 적은 사용액은 빠져 있어요</p>`;
+    }
+
+    function toggleItems() { itemsOpen = !itemsOpen; document.getElementById('items').classList.toggle('hidden', !itemsOpen); document.getElementById('itemsArrow').textContent = itemsOpen ? '접기 ▴' : '펼치기 ▾'; document.getElementById('itemsBtn').setAttribute('aria-expanded', String(itemsOpen)); if (itemsOpen) renderItems(T.analyze(st)); }
+    function renderItems(a) {
+      const groups = { transit: [], culture: [], market: [], none: [] };
+      a.items.forEach(i => { if (groups[i.kind]) groups[i.kind].push(i); });
+      const sec = (k, title) => {
+        const list = groups[k].sort((x, y) => y.amount - x.amount), shown = list.slice(0, 30);
+        if (!list.length) return '';
+        return `<div class="mt-3 first:mt-0"><p class="text-xs font-extrabold text-slate-700 mb-1">${title} <span class="text-slate-400 font-bold">${list.length}건 · ${won(list.reduce((s, i) => s + i.amount, 0))}</span></p>
+          <div class="divide-y divide-slate-100">${shown.map(i => `<div class="flex items-center justify-between gap-2 py-1.5">
+              <span class="min-w-0"><span class="block text-xs font-bold text-slate-700 truncate">${esc(i.t.merchant || i.t.memo || i.t.category)}</span><span class="block text-[10px] text-slate-400 truncate">${esc(i.t.date)} · ${esc(i.t.method || '')} · ${esc(i.t.category || '')}${i.why ? ` · ${esc(i.why)}` : ''}</span></span>
+              <span class="text-xs font-extrabold num shrink-0 text-slate-900">${i.amount.toLocaleString('ko-KR')}원</span></div>`).join('')}</div>
+          ${list.length > shown.length ? `<p class="text-[10px] text-slate-400 mt-1">큰 금액 순 30건만 보여줘요</p>` : ''}</div>`;
+      };
+      const html = sec('transit', '🚇 대중교통으로 잡힌 것 (40%)') + sec('culture', '📚 도서·공연·체육으로 잡힌 것 (30%)') + sec('market', '🧺 전통시장 (40%)') + sec('none', '🚫 공제 안 되는 것');
+      document.getElementById('items').innerHTML = html || `<p class="text-xs text-slate-400">올해 가계부 내역이 없어요.</p>`;
+    }
+
+    const num = id => Math.max(0, Number(document.getElementById(id).value) || 0) * 1e4;
+    ['salary', 'extraCredit', 'extraDebit'].forEach(id => document.getElementById(id).addEventListener('input', () => { st[id] = num(id); update(); }));
+    bindSeg('kidsSeg', v => st.kids = Number(v)); bindSeg('paySeg', v => st.pay = v); bindSeg('cashSeg', v => st.cash = v === '1');
+    // 다른 기기에서 동기화돼 들어오면 다시 그림
+    window.addEventListener('storage', e => { if (e.key === T.TAX_KEY || e.key === 'argon_tx_v3') { st = T.loadSettings(); fillForm(); render(); } });
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    fillForm(); render();
+  </script>
+</body>
+</html>

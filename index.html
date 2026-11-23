@@ -12,8 +12,17 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="아르곤 자산관리">
   <script src="pwa.js" defer></script>
+  <script>
+    // 폰(또는 설치한 앱)에서 새로 열면 ☀️ 오늘 화면부터 (오늘 화면에서 끌 수 있음). 메뉴로 들어온 건 그대로.
+    try {
+      const fresh = !sessionStorage.getItem('argon_session') && !(document.referrer && new URL(document.referrer).origin === location.origin);
+      sessionStorage.setItem('argon_session', '1');
+      const phoneOrApp = matchMedia('(display-mode: standalone)').matches || navigator.standalone || /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+      if (fresh && phoneOrApp && localStorage.getItem('argon_start_today') !== '0' && !location.search && !location.hash) location.replace('./today.html');
+    } catch (e) {}
+  </script>
   <script src="sync.js" defer></script>
-  <title>아르곤 자산관리 Pro v7.3</title>
+  <title>아르곤 자산관리 Pro v7.4</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -61,7 +70,9 @@
   <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
   <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
     <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💎 아르곤 자산관리</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
     <a href="./" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
@@ -73,7 +84,7 @@
         <div class="flex items-center gap-2 min-w-0">
           <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold shrink-0">☰</button>
           <button onclick="openReleaseModal()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-full flex items-center gap-1 transition shadow-xs cursor-pointer shrink-0">
-            <span>🚀 v7.3</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
+            <span>🚀 v7.4</span><span class="w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse"></span>
           </button>
           <h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight truncate">아르곤 자산관리</h1>
         </div>
@@ -104,7 +115,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v7.3</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v7.4</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -434,7 +445,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v7.3</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">Pro v7.4</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -475,9 +486,14 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '7.3';
+    const APP_VERSION = '7.4';
     const releaseNotesData = [
-      { version: 'Pro v7.3', date: '2026.11.23 (최신)', badge: '네이버 길찾기', isLatest: true, items: [
+      { version: 'Pro v7.4', date: '2026.11.23 (최신)', badge: '오늘 · 연말정산', isLatest: true, items: [
+        '☀️ 새 메뉴 <b>오늘</b>: 날씨·미세먼지, 출근/퇴근 역 지하철 도착, 오늘·이번 달 지출, 시장·보유 종목, 로또 추첨일을 한 화면에',
+        '📲 폰에서 앱을 열면 오늘 화면부터 보여줘요 (오늘 화면 아래에서 끌 수 있어요)',
+        '🧾 새 메뉴 <b>연말정산</b>: 가계부 기록으로 올해 카드 소득공제·줄어드는 세금을 미리 계산하고, 남은 기간 체크카드·신용카드 중 뭐가 유리한지 알려줘요'
+      ] },
+      { version: 'Pro v7.3', date: '2026.11.23', badge: '네이버 길찾기', isLatest: false, items: [
         '🚇 지하철 길찾기가 이제 네이버 지도로 열려요 — 폰에선 네이버 지도 앱 대중교통 길찾기가 출발·도착이 채워진 채로 바로 열려요 (환승·하차 알림도 앱에서)',
         '🔎 역 이름 자동완성에 수도권 전체 역이 나와요. 이름이 같은 역은 "양평역 (5호선)"처럼 노선으로 구분해요',
         '🧹 구글 지도는 한국 대중교통 길찾기를 지원하지 않아 뺐어요. 실제 키가 있으면 "서울역 체험" 버튼은 숨겨요'

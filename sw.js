@@ -1,9 +1,9 @@
 // 아르곤 자산관리 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v7';
+const CACHE = 'argon-shell-v8';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
-const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
+const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './tax.html', './tax-calc.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
