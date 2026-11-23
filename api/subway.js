@@ -20,8 +20,14 @@ module.exports = async (req, res) => {
   const key = process.env.SEOUL_SUBWAY_KEY || 'sample', demo = key === 'sample';
   if (demo && station !== '서울') return send(200, { station, demo, needKey: true, arrivals: [] });
   try {
-    const r = await fetch(`http://swopenAPI.seoul.go.kr/api/subway/${encodeURIComponent(key)}/json/realtimeStationArrival/0/${demo ? 5 : 40}/${encodeURIComponent(station)}`, { signal: AbortSignal.timeout(6000) });
-    const j = await r.json();
+    const path = `/api/subway/${encodeURIComponent(key)}/json/realtimeStationArrival/0/${demo ? 5 : 40}/${encodeURIComponent(station)}`;
+    // 서울시 서버가 가끔 응답을 안 줘서: 4초 기다리고 한 번 더 (두 번째는 swopenapi 소문자 호스트)
+    let j, last;
+    for (const host of ['http://swopenAPI.seoul.go.kr', 'http://swopenapi.seoul.go.kr']) {
+      try { const r = await fetch(host + path, { signal: AbortSignal.timeout(4000) }); j = await r.json(); break; }
+      catch (e) { last = e; }
+    }
+    if (!j) throw last;
     const err = j.errorMessage || j;
     if (err && err.code && err.code !== 'INFO-000') {
       if (err.code === 'INFO-200') return send(200, { station, demo, arrivals: [], notFound: true }, 'public, s-maxage=15');
@@ -52,6 +58,7 @@ module.exports = async (req, res) => {
     return send(200, { station, demo, arrivals, at: new Date().toISOString() }, 'public, s-maxage=10, stale-while-revalidate=20');
   } catch (e) {
     console.error(e.message);
-    return send(502, { error: '지하철 정보를 불러오지 못했어요' });
+    const why = (e && (e.cause && e.cause.code || e.name)) || 'unknown';
+    return send(502, { error: '서울시 지하철 정보 서버가 응답하지 않아요. 잠시 뒤 다시 시도해 주세요', why: String(why).slice(0, 40) });
   }
 };
