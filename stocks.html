@@ -89,6 +89,7 @@
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
 
@@ -129,6 +130,11 @@
             </div>
           </div>
           <div id="calBody"></div>
+        </section>
+        <!-- 배당 캘린더 (보유 종목이 있을 때만) -->
+        <section id="divSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">💰 배당 캘린더</h2><span class="text-[10px] font-bold text-slate-400">앞으로 12개월 예상</span></div>
+          <div id="divBody"><div class="skel" style="height:120px"></div></div>
         </section>
         <!-- 시장 지수 -->
         <section class="card p-4">
@@ -479,6 +485,87 @@
       calMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; calPick = null; renderCalendar();
     }
     let pfChart = null;
+    // ---------- 배당 캘린더 ----------
+    // 지난 1년 배당 기록(배당락일·주당 배당금)을 1년 뒤로 옮겨서 앞으로 12개월을 예상. 이미 공시된 미래 배당은 그대로.
+    const DIV_CACHE = 'stock_div_cache_v1';   // argon_ 아님 → 기기 동기화 안 함 (12시간 캐시)
+    let divData = null, divKey = '', divLoading = false, divMonth = null;
+    const divHeld = () => watch.filter(w => isStock(w.symbol) && w.qty > 0);
+    async function loadDivs(key) {
+      divLoading = true;
+      try {
+        const c = JSON.parse(localStorage.getItem(DIV_CACHE) || 'null');
+        if (c && c.key === key && Date.now() - c.t < 12 * 3600e3) { divData = c.div; return; }
+        const kr = divHeld().filter(w => !isUsStock(w.symbol)).map(w => codeOf(w.symbol)), us = divHeld().filter(w => isUsStock(w.symbol)).map(w => codeOf(w.symbol));
+        const r = await fetch(`${API}?op=div&kr=${kr.join(',')}&us=${us.map(encodeURIComponent).join(',')}`);
+        if (!r.ok) throw 0;
+        divData = (await r.json()).div || {};
+        try { localStorage.setItem(DIV_CACHE, JSON.stringify({ key, t: Date.now(), div: divData })); } catch (e) {}
+      } catch (e) { divData = divData || { _error: true }; }
+      finally { divLoading = false; divKey = key; renderDividends(); }
+    }
+    function divEvents() {
+      const now = Date.now(), year = 365 * 864e5, up = [], past = [];
+      divHeld().forEach(w => {
+        const d = divData && divData[w.symbol]; if (!d || !d.events) return;
+        const us = isUsStock(w.symbol), f = us ? (fxRate() || 0) : 1, tax = us ? 0.15 : 0.154;
+        // 평소(중앙값)보다 3배 넘게 큰 배당은 특별배당일 수 있어서 표시
+        const sorted = d.events.map(e => e[1]).sort((a, b) => a - b), median = sorted[Math.floor(sorted.length / 2)] || 0;
+        const mk = (t, ps, est) => ({ w, t, ps, us, est, big: median && ps > median * 3, amt: ps * w.qty * f, net: ps * w.qty * f * (1 - tax) });
+        const future = d.events.filter(e => e[0] > now);
+        future.forEach(e => up.push(mk(e[0], e[1], false)));
+        d.events.filter(e => e[0] <= now && e[0] > now - year).forEach(e => {
+          past.push(mk(e[0], e[1], false));
+          const t = new Date(e[0]); t.setFullYear(t.getFullYear() + 1);
+          if (t.getTime() > now && t.getTime() < now + year && !future.some(x => Math.abs(x[0] - t.getTime()) < 45 * 864e5)) up.push(mk(t.getTime(), e[1], true));
+        });
+      });
+      up.sort((a, b) => a.t - b.t); past.sort((a, b) => b.t - a.t);
+      return { up: up.filter(e => e.t < now + year), past };
+    }
+    function renderDividends() {
+      const sec = document.getElementById('divSection'), box = document.getElementById('divBody');
+      const list = divHeld();
+      if (!list.length) { sec.classList.add('hidden'); return; }
+      sec.classList.remove('hidden');
+      const key = list.map(w => w.symbol).sort().join(',');
+      if (key !== divKey && !divLoading) { loadDivs(key); if (!divData) return; }
+      if (!divData) return;
+      if (divData._error) { box.innerHTML = `<p class="text-xs text-slate-500">배당 정보를 불러오지 못했어요.</p>`; return; }
+      const { up, past } = divEvents();
+      const total = up.reduce((s, e) => s + e.amt, 0), net = up.reduce((s, e) => s + e.net, 0);
+      const cost = list.reduce((s, w) => s + (w.avg > 0 ? w.qty * w.avg * krwOf(w.symbol) : 0), 0);
+      const value = list.reduce((s, w) => { const q = quotes[keyOf(w.symbol)]; return s + (q && q.price ? w.qty * q.price * krwOf(w.symbol) : 0); }, 0);
+      const pastSum = past.reduce((s, e) => s + e.amt, 0);
+      if (!up.length && !past.length) { box.innerHTML = `<p class="text-xs text-slate-500">보유 종목의 최근 3년 배당 기록이 없어요. (배당을 안 주는 종목이거나 정보가 없어요)</p>`; return; }
+      // 이번 달부터 12개월
+      const n0 = new Date(), months = Array.from({ length: 12 }, (_, i) => { const d = new Date(n0.getFullYear(), n0.getMonth() + i, 1); return { y: d.getFullYear(), m: d.getMonth(), sum: 0, ev: [] }; });
+      up.forEach(e => { const d = new Date(e.t), M = months.find(x => x.y === d.getFullYear() && x.m === d.getMonth()); if (M) { M.sum += e.amt; M.ev.push(e); } });
+      const max = Math.max(...months.map(m => m.sum), 1);
+      if (divMonth != null && !months[divMonth]) divMonth = null;
+      const shown = divMonth != null ? months[divMonth].ev : up.slice(0, 6);
+      const won = n => `${fmt(Math.round(n))}원`;
+      const dt = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()}`; };
+      const byStock = {}; up.forEach(e => byStock[e.w.symbol] = (byStock[e.w.symbol] || 0) + e.amt);
+      const topStock = Object.entries(byStock).sort((a, b) => b[1] - a[1])[0];
+      box.innerHTML = `<div class="grid grid-cols-3 gap-2">
+          <div class="bg-slate-50 rounded-lg px-2 py-2 text-center"><p class="text-[10px] font-bold text-slate-400">1년 예상 (세전)</p><p class="text-sm font-extrabold num text-emerald-600">${won(total)}</p><p class="text-[9px] text-slate-400 num">세후 약 ${won(net)}</p></div>
+          <div class="bg-slate-50 rounded-lg px-2 py-2 text-center"><p class="text-[10px] font-bold text-slate-400">한 달 평균</p><p class="text-sm font-extrabold num text-slate-800">${won(total / 12)}</p><p class="text-[9px] text-slate-400 num">세후 ${won(net / 12)}</p></div>
+          <div class="bg-slate-50 rounded-lg px-2 py-2 text-center"><p class="text-[10px] font-bold text-slate-400">배당률</p><p class="text-sm font-extrabold num text-slate-800">${value ? (total / value * 100).toFixed(2) + '%' : '-'}</p><p class="text-[9px] text-slate-400 num">${cost ? `내 평단 기준 ${(total / cost * 100).toFixed(2)}%` : '지금 시세 기준'}</p></div>
+        </div>
+        <div class="flex items-end gap-1 h-24 mt-3">${months.map((M, i) => `<button type="button" onclick="divPick(${i})" aria-label="${M.m + 1}월 ${won(M.sum)}" class="flex-1 h-full flex flex-col justify-end items-center gap-0.5 rounded-md ${divMonth === i ? 'bg-indigo-50' : ''}" style="font-size:9px!important">
+            ${M.sum ? `<span class="text-[8px] font-bold text-slate-500 num leading-none">${M.sum >= 1e4 ? Math.round(M.sum / 1e4) + '만' : Math.round(M.sum / 1e3) + '천'}</span>` : ''}
+            <span class="w-full rounded-t ${M.sum ? (divMonth === i ? 'bg-indigo-600' : 'bg-emerald-400') : 'bg-slate-100'}" style="height:${M.sum ? Math.max(6, M.sum / max * 70) : 3}px"></span>
+          </button>`).join('')}</div>
+        <div class="flex gap-1 mt-1">${months.map((M, i) => `<span class="flex-1 text-center text-[9px] font-bold ${divMonth === i ? 'text-indigo-600' : 'text-slate-400'}">${M.m === 0 ? `${String(M.y).slice(2)}.` : ''}${M.m + 1}</span>`).join('')}</div>
+        <div class="flex justify-between items-center mt-3 mb-1"><p class="text-xs font-extrabold text-slate-700">${divMonth != null ? `${months[divMonth].m + 1}월 배당` : '📌 다가오는 배당'}</p>${divMonth != null ? `<button type="button" onclick="divPick(null)" class="text-[11px] font-bold text-indigo-600" style="font-size:11px!important">전체 보기</button>` : ''}</div>
+        ${shown.length ? `<div class="divide-y divide-slate-100">${shown.map(e => `<div class="flex items-center justify-between gap-2 py-1.5">
+            <span class="min-w-0"><span class="block text-xs font-bold text-slate-800 truncate">${esc(e.w.name)}</span><span class="block text-[10px] text-slate-400">${dt(e.t)} 배당락${e.est ? ' (작년 기준 예상)' : ''}${e.big ? ' · <span class="text-amber-600 font-bold">⚡평소보다 큼 (특별배당일 수 있어요)</span>' : ''} · 주당 ${e.us ? `$${fmt(e.ps, 3)}` : `${fmt(e.ps)}원`} × ${qtyText(e.w.qty)}주</span></span>
+            <span class="text-right shrink-0"><span class="block text-xs font-extrabold num text-emerald-600">${won(e.amt)}</span><span class="block text-[10px] text-slate-400 num">세후 ${won(e.net)}</span></span></div>`).join('')}</div>`
+          : `<p class="text-xs text-slate-400 py-2">이 달엔 배당이 없어요.</p>`}
+        ${topStock ? `<p class="text-[11px] text-slate-500 mt-2">🏆 효자 종목: <b>${esc(nameOf(topStock[0]))}</b> (1년 ${won(topStock[1])})${pastSum ? ` · 지난 12개월 기준 ${won(pastSum)}` : ''}</p>` : ''}
+        <p class="text-[9px] text-slate-400 mt-1">지난 배당을 그대로 반복한다고 가정한 예상이에요 · 배당락일 전날까지 갖고 있어야 받아요 · 실제 입금은 국내 1~2달, 미국 2~4주 뒤 · 세금 국내 15.4%, 미국 15% · 지금 수량 기준</p>`;
+    }
+    function divPick(i) { divMonth = divMonth === i ? null : i; renderDividends(); }
     function renderPortfolio() {
       const sec = document.getElementById('pfSection');
       const rows = watch.filter(held).map(w => ({ w, ps: position(w) })).filter(r => r.ps).sort((a, b) => b.ps.value - a.ps.value);
@@ -791,7 +878,7 @@
       }
       meta.className = `grid ${html.split('<div').length - 1 === 4 ? 'grid-cols-4' : 'grid-cols-3'} gap-2 mt-3`; meta.innerHTML = html;
     }
-    function renderAll(prev) { renderStatus(); renderSummary(); renderCalendar(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
+    function renderAll(prev) { renderStatus(); renderSummary(); renderCalendar(); renderDividends(); renderMarkets(prev); renderWatch(prev); renderDetailHead(); }
 
     // ---------- 상세 차트 (Chart.js) ----------
     function timeLabel(ms) {

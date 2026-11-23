@@ -52,6 +52,16 @@
       ]
     },
     {
+      "name": "점심 룰렛",
+      "url": "./lunch.html",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
       "name": "가계부",
       "url": "./",
       "icons": [

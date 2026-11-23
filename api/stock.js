@@ -4,6 +4,7 @@
 //   /api/stock?op=quotes&kr=005930,000660&us=AAPL.O,NVDA.O&idx=KOSPI,KOSDAQ&world=.DJI,.IXIC&fx=1&spark=1
 //   /api/stock?op=chart&kind=kr|us|idx|world|fx&code=005930&range=1d|1m|3m|1y|3y
 //   /api/stock?op=search&q=카카오
+//   /api/stock?op=div&kr=005930&us=AAPL.O   → 최근 3년 배당 기록 (배당락일, 주당 배당금) — 야후 파이낸스
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const NAVER = { 'User-Agent': UA, Referer: 'https://m.stock.naver.com/' };
@@ -112,6 +113,19 @@ async function yahoo(symbol, range) {
   if (range === '3y') { const cut = Date.now() - 3 * 365 * 864e5; points = points.filter(p => p[0] >= cut); }
   return { points, prevClose: res.meta ? (res.meta.chartPreviousClose ?? res.meta.previousClose ?? null) : null };
 }
+// 배당 기록: 야후 chart API의 events=div (국내는 코스피 .KS, 아니면 코스닥 .KQ)
+async function dividends(symbols) {
+  for (const s of symbols) {
+    try {
+      const j = await get(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(s)}?range=3y&interval=1mo&events=div`, { 'User-Agent': UA });
+      const res = j.chart && j.chart.result && j.chart.result[0];
+      if (!res || !res.meta) continue;
+      const ev = Object.values((res.events && res.events.dividends) || {}).map(d => [d.date * 1000, d.amount]).filter(d => d[1] > 0).sort((a, b) => a[0] - b[0]);
+      return { sym: s, cur: res.meta.currency || null, events: ev };
+    } catch (e) { /* 다음 후보 */ }
+  }
+  return null;
+}
 const FROM = { '1m': 31, '3m': 92, '1y': 366, '3y': 3 * 366 };
 async function chart(kind, code, range) {
   if (kind === 'world') return yahoo(WORLD[code], range);
@@ -186,6 +200,14 @@ module.exports = async (req, res) => {
       if (!valid || !YRANGE[range]) return send(res, 400, { error: '잘못된 요청' });
       const r = await chart(kind, code, range);
       return send(res, 200, { points: thin(r.points, range === '1d' ? 400 : 260).map(p => [p[0], p[1]]), prevClose: r.prevClose, stats: stats(r.points) }, range === '1d' ? 60 : 1800);
+    }
+    if (op === 'div') {
+      const kr = list(q.get('kr'), c => CODE_RE.test(c), 20);
+      const us = String(q.get('us') || '').split(',').map(s => s.trim()).filter(c => US_RE.test(c)).slice(0, 20);
+      const jobs = [...kr.map(c => [`KRX:${c}`, [`${c}.KS`, `${c}.KQ`]]), ...us.map(c => [`US:${c}`, [yahooOf(c)]])];
+      const got = await Promise.all(jobs.map(([, syms]) => dividends(syms).catch(() => null)));
+      const div = {}; jobs.forEach(([k], i) => { if (got[i]) div[k] = got[i]; });
+      return send(res, 200, { div }, 43200);
     }
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
