@@ -183,17 +183,25 @@
     let editingId = undefined, mixChart = null, trendChart = null;
 
     // ---------- 주식 ----------
-    const heldList = () => (load(WATCH_KEY, []) || []).filter(w => w.qty > 0 && w.avg > 0 && /^KRX:[0-9A-Z]{6}$/.test(w.symbol));
+    // 국내(KRX:) + 미국(US:) 보유 종목. 미국은 원/달러 환율로 원화 환산
+    const isKr = w => /^KRX:[0-9A-Z]{6}$/.test(w.symbol), isUs = w => /^US:[A-Za-z0-9]{1,10}(\.[A-Z]{1,2})?$/.test(w.symbol);
+    const heldList = () => (load(WATCH_KEY, []) || []).filter(w => w.qty > 0 && w.avg > 0 && (isKr(w) || isUs(w)));
+    const codeOfW = w => w.symbol.slice(w.symbol.indexOf(':') + 1);
     async function refreshStocks() {
       const list = heldList();
-      stock = { value: list.reduce((a, w) => a + w.qty * w.avg, 0), cost: list.reduce((a, w) => a + w.qty * w.avg, 0), count: list.length, live: false };
+      let fx = Number(localStorage.getItem('argon_fx_usd')) || null;
+      const costOf = w => w.qty * w.avg * (isUs(w) ? (fx || 0) : 1);
+      stock = { value: list.reduce((a, w) => a + costOf(w), 0), cost: list.reduce((a, w) => a + costOf(w), 0), count: list.length, live: false };
       if (list.length) {
         try {
-          const r = await fetch(`./api/stock?op=quotes&kr=${list.map(w => w.symbol.slice(4)).join(',')}`, { cache: 'no-store' });
+          const kr = list.filter(isKr).map(codeOfW), us = list.filter(isUs).map(codeOfW);
+          const r = await fetch(`./api/stock?op=quotes&kr=${kr.join(',')}&us=${us.map(encodeURIComponent).join(',')}&fx=${us.length ? 1 : 0}`, { cache: 'no-store' });
           if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) throw 0;
           const j = await r.json(), price = {};
-          (j.kr || []).forEach(q => { price[q.id] = q.price; });
-          if (list.every(w => price[w.symbol.slice(4)] != null)) { stock.value = list.reduce((a, w) => a + w.qty * price[w.symbol.slice(4)], 0); stock.live = true; }
+          (j.kr || []).forEach(q => { price['KRX:' + q.id] = q.price; });
+          (j.us || []).forEach(q => { price['US:' + q.id] = q.price; });
+          const f = (j.fx || [])[0]; if (f && f.price) { fx = f.price; try { localStorage.setItem('argon_fx_usd', String(fx)); } catch (e) {} }
+          if (list.every(w => price[w.symbol] != null) && (!us.length || fx)) { stock.value = list.reduce((a, w) => a + w.qty * price[w.symbol] * (isUs(w) ? fx : 1), 0); stock.live = true; }
         } catch (e) { /* 시세를 못 받으면 매입금액으로 */ }
       }
       renderAll(); snapshot();
