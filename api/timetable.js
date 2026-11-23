@@ -46,7 +46,7 @@ module.exports = async (req, res) => {
           .filter(t => t.DESTSTATION !== row.STATION_CD)   // 이 역에서 끝나는 열차는 못 탐
           .map(t => {
             const time = t.LEFTTIME && t.LEFTTIME !== '00:00:00' ? t.LEFTTIME : t.ARRIVETIME;
-            return [time.slice(0, 5), t.SUBWAYENAME || '', t.EXPRESS_YN === 'D' || t.EXPRESS_YN === 'Y' ? 1 : 0];
+            return [time.slice(0, 5), t.SUBWAYENAME || '', t.EXPRESS_YN === 'D' || t.EXPRESS_YN === 'Y' ? 1 : 0, t.TRAIN_NO || ''];
           })
           .filter(t => t[0] && t[0] !== '00:00');
         // 새벽 0~3시는 그날 밤 막차 쪽으로 정렬
