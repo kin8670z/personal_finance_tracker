@@ -106,7 +106,17 @@
       </div>
     </header>
 
-    <a id="ddays" href="./dday.html" class="hidden card px-4 py-3 flex flex-wrap gap-x-4 gap-y-1 items-center"></a>
+    <a id="ddays" href="./dday.html" class="hidden card px-4 flex items-center gap-2" style="height:3rem" aria-live="off">
+      <span class="relative flex-1 min-w-0 h-full overflow-hidden" id="ddRoll"></span>
+      <span id="ddDots" class="flex gap-1 shrink-0"></span>
+    </a>
+    <style>
+      #ddRoll > span { position: absolute; inset: 0; display: flex; align-items: center; transition: transform .45s ease, opacity .45s ease; }
+      #ddRoll > span.in { transform: translateY(0); opacity: 1; }
+      #ddRoll > span.below { transform: translateY(100%); opacity: 0; }
+      #ddRoll > span.above { transform: translateY(-100%); opacity: 0; }
+      @media (prefers-reduced-motion: reduce) { #ddRoll > span { transition: none; } }
+    </style>
     <section id="weather" class="card p-4"><div class="skel" style="height:110px"></div></section>
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
@@ -263,14 +273,38 @@
     }
 
     // ---------- 고정한 D-Day ----------
+    // 고정(⭐)한 게 2개 이상이면 그것만, 아니면 전체 D-Day를 (고정한 것 먼저) 3초마다 위로 넘기며 보여줌
+    let ddList = [], ddIdx = 0, ddTimer = null;
     function renderDdays() {
       const el = document.getElementById('ddays'), st = load('argon_dday_v1', null);
-      const pins = st ? (st.items || []).filter(x => x.pin) : [{ name: '크리스마스', emoji: '🎄', date: '2026-12-25', yearly: true }];
-      if (!pins.length) { el.classList.add('hidden'); return; }
+      const items = st ? (st.items || []) : [{ name: '크리스마스', emoji: '🎄', date: '2026-12-25', yearly: true, pin: true }];
       const t = new Date(); t.setHours(0, 0, 0, 0);
-      const of = it => { const [y, m, d] = it.date.split('-').map(Number); let n = new Date(y, m - 1, d); if (it.yearly) { n = new Date(t.getFullYear(), m - 1, d); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, d); } const k = Math.round((n - t) / 864e5); return k > 0 ? `D-${k}` : k === 0 ? 'D-DAY' : `D+${1 - k}`; };
-      el.innerHTML = pins.map(it => `<span class="text-sm font-extrabold text-slate-800 whitespace-nowrap">${esc(it.emoji)} ${esc(it.name)} <span class="text-indigo-600 num">${of(it)}</span></span>`).join('');
+      const days = it => { const [y, m, d] = it.date.split('-').map(Number); let n = new Date(y, m - 1, d); if (it.yearly) { n = new Date(t.getFullYear(), m - 1, d); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, d); } return Math.round((n - t) / 864e5); };
+      const tag = k => k > 0 ? `D-${k}` : k === 0 ? 'D-DAY' : `D+${1 - k}`;
+      const pins = items.filter(x => x.pin);
+      const pool = pins.length >= 2 ? pins : [...pins, ...items.filter(x => !x.pin).sort((a, b) => (days(a) < 0) - (days(b) < 0) || days(a) - days(b))];
+      if (!pool.length) { el.classList.add('hidden'); clearInterval(ddTimer); return; }
+      ddList = pool.map(it => { const k = days(it); return `${esc(it.emoji)} <span class="ml-1.5 text-sm font-extrabold text-slate-800 truncate">${esc(it.name)}</span> <span class="ml-2 text-sm font-extrabold num shrink-0 ${k === 0 ? 'text-rose-600' : k < 0 ? 'text-emerald-600' : 'text-indigo-600'}">${tag(k)}</span>`; });
+      if (ddIdx >= ddList.length) ddIdx = 0;
+      const roll = document.getElementById('ddRoll');
+      roll.innerHTML = `<span class="in">${ddList[ddIdx]}</span>`;
       el.classList.remove('hidden');
+      ddDots();
+      clearInterval(ddTimer);
+      if (ddList.length > 1) ddTimer = setInterval(ddNext, 3000);
+    }
+    function ddDots() {
+      document.getElementById('ddDots').innerHTML = ddList.length > 1 ? ddList.map((_, i) => `<span class="w-1.5 h-1.5 rounded-full ${i === ddIdx ? 'bg-indigo-500' : 'bg-slate-300'}"></span>`).join('') : '';
+    }
+    function ddNext() {
+      if (document.visibilityState !== 'visible' || ddList.length < 2) return;
+      const roll = document.getElementById('ddRoll'), cur = roll.firstElementChild;
+      ddIdx = (ddIdx + 1) % ddList.length;
+      const nx = document.createElement('span'); nx.className = 'below'; nx.innerHTML = ddList[ddIdx];
+      roll.appendChild(nx);
+      requestAnimationFrame(() => requestAnimationFrame(() => { nx.className = 'in'; if (cur) cur.className = 'above'; }));
+      setTimeout(() => { if (cur && cur.parentNode) cur.remove(); }, 500);
+      ddDots();
     }
 
     // ---------- 점심 (오전 10시~오후 2시) ----------
