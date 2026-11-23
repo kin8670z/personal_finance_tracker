@@ -92,6 +92,7 @@
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 영어</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
   <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
@@ -120,6 +121,7 @@
     <section id="weather" class="card p-4"><div class="skel" style="height:110px"></div></section>
     <section id="subway" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lunch" class="card p-4 hidden"></section>
+    <section id="phrase" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -136,6 +138,7 @@
   <script src="tax-calc.js"></script>
   <script src="tt.js"></script>
   <script src="commute.js"></script>
+  <script src="english-deck.js"></script>
   <script>
     function load(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
     function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -319,6 +322,24 @@
           <span class="text-2xl shrink-0">🎡</span></a>`;
     }
 
+    // ---------- 오늘의 영어 문장 (날마다 바뀜) ----------
+    function renderPhrase() {
+      const box = document.getElementById('phrase'); if (!window.EN_DECK) { box.classList.add('hidden'); return; }
+      const all = []; EN_DECK.forEach(c => c.items.forEach((x, i) => all.push({ id: `${c.id}:${i}`, cat: c.name, en: x[0], ko: x[1] })));
+      const d = new Date(), n = Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 864e5);
+      const c = all[(n * 37) % all.length];   // 날짜마다 다른 문장 (상황이 골고루 섞이게)
+      const en = load('argon_english_v1', null), s = en && en.days ? (() => { let k = 0; const t = new Date(); if (!en.days[ymd(t)]) t.setDate(t.getDate() - 1); while (en.days[ymd(t)]) { k++; t.setDate(t.getDate() - 1); } return k; })() : 0;
+      box.innerHTML = head(`🗣️ 오늘의 영어 <span class="text-[11px] font-bold text-slate-400">${esc(c.cat)}${s ? ` · 🔥 ${s}일 연속` : ''}</span>`, `./english.html?card=${encodeURIComponent(c.id)}`, '듣기 모드') +
+        `<div class="flex items-center gap-3"><span role="button" tabindex="0" onclick="sayPhrase(${JSON.stringify(c.en).replace(/"/g, '&quot;')})" aria-label="듣기" class="cursor-pointer w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0" style="background:#4f46e5">🔊</span>
+          <span class="min-w-0"><span class="block text-base font-extrabold text-slate-900">${esc(c.en)}</span><span class="block text-xs text-slate-500">${esc(c.ko)}</span></span></div>`;
+    }
+    function sayPhrase(t) {
+      if (!window.speechSynthesis) return;
+      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'en-US'; u.rate = 0.9;
+      const v = speechSynthesis.getVoices().find(x => /en[-_]US/i.test(x.lang)); if (v) u.voice = v;
+      speechSynthesis.speak(u);
+    }
+
     // ---------- 가계부: 오늘·이번 달 ----------
     function renderMoney() {
       const tx = load('argon_tx_v3', []), budgets = load('argon_cat_budgets_v3', null), d = new Date(), today = ymd(d), ym = today.slice(0, 7);
@@ -397,7 +418,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); renderLunch(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); renderLunch(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
