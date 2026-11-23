@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="든든">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
-  <title>여행 영어 · 든든</title>
+  <title>여행 외국어 · 든든</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
     try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
@@ -93,8 +93,7 @@
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
-    <a href="./english.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🗣️ <span>여행 영어</span></a>
-    <a href="./japanese.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗾 <span>여행 일본어</span></a>
+    <a href="./english.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🗣️ <span>여행 외국어</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
   <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
@@ -102,11 +101,15 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-2 min-w-0">
           <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-          <div class="min-w-0"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🗣️ 여행 영어</a></h1>
+          <div class="min-w-0"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🗣️ 여행 외국어</a></h1>
           <p id="streakLine" class="text-[11px] font-bold text-slate-500"></p></div>
         </div>
       </div>
-      <div id="cats" class="flex gap-1.5 overflow-x-auto mt-3 pb-1 -mx-1 px-1"></div>
+      <div class="seg grid grid-cols-2 gap-1 bg-slate-100 rounded-xl p-1 mt-3" role="group" aria-label="언어">
+        <span role="button" tabindex="0" id="pickEn" onclick="switchLang('en')" class="cursor-pointer py-1.5 rounded-lg text-center text-sm font-extrabold">🇺🇸 영어</span>
+        <span role="button" tabindex="0" id="pickJa" onclick="switchLang('ja')" class="cursor-pointer py-1.5 rounded-lg text-center text-sm font-extrabold">🇯🇵 일본어</span>
+      </div>
+      <div id="cats" class="flex flex-wrap gap-1.5 mt-3"></div>
     </header>
 
     <!-- 듣기 -->
@@ -153,8 +156,27 @@
 
   <style>.dark #stage { background: linear-gradient(160deg, #1e1b4b, #2e1065) !important; }</style>
   <script src="english-deck.js"></script>
+  <script src="japanese-deck.js"></script>
   <script>
-    window.LANG = { key: 'argon_english_v1', name: '영어', flag: '🇺🇸', tts: 'en-US', voiceRe: /^en[-_]/i, voicePref: /en[-_]US/i, deck: window.EN_DECK, item: x => ({ en: x[0], ko: x[1] }) };
+    // 영어·일본어 한 화면: 위 버튼으로 바꾸면 보던 상황(카테고리)은 그대로. 공부 기록은 언어별로 따로 저장.
+    const LANGS = {
+      en: { code: 'en', key: 'argon_english_v1', name: '영어', flag: '🇺🇸', tts: 'en-US', voiceRe: /^en[-_]/i, voicePref: /en[-_]US/i, deck: window.EN_DECK, item: x => ({ en: x[0], ko: x[1] }), ph: '영어 (예: Can I get a refill?)' },
+      ja: { code: 'ja', key: 'argon_japanese_v1', name: '일본어', flag: '🇯🇵', tts: 'ja-JP', voiceRe: /^ja/i, voicePref: /ja[-_]JP/i, deck: window.JA_DECK, item: x => ({ en: x[0], r: x[1], p: x[2], ko: x[3] }), ph: '일본어 (예: おかわりできますか。)' }
+    };
+    (function () {
+      const qs = new URLSearchParams(location.search);
+      let pick = qs.get('lang'); if (!LANGS[pick]) { try { pick = localStorage.getItem('lang_pick'); } catch (e) {} }
+      if (!LANGS[pick]) pick = 'en';
+      try { localStorage.setItem('lang_pick', pick); } catch (e) {}
+      window.LANG = LANGS[pick];
+      document.getElementById('addEn').placeholder = LANGS[pick].ph;
+      ['en', 'ja'].forEach(k => { const el = document.getElementById(k === 'en' ? 'pickEn' : 'pickJa'); el.setAttribute('aria-pressed', String(k === pick)); el.className += k === pick ? ' bg-indigo-600 text-white' : ' text-slate-500'; });
+    })();
+    function switchLang(k) {
+      if (!LANGS[k] || k === window.LANG.code) return;
+      let cat = 'all'; try { cat = (JSON.parse(localStorage.getItem(window.LANG.key)) || {}).set.cat || 'all'; } catch (e) {}
+      location.replace(`./english.html?lang=${k}&cat=${encodeURIComponent(cat)}`);
+    }
   </script>
   <script src="lang-study.js"></script>
 </body>

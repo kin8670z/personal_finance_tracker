@@ -1,5 +1,17 @@
 // 든든: 여행 영어 기본 문장 (상황별) — [영어, 한국어]
 window.EN_DECK = [
+  { id: 'hi', name: '👋 기본 인사', items: [
+    ['Hello, nice to meet you.', '안녕하세요, 만나서 반가워요.'],
+    ['Thank you very much.', '정말 고마워요.'],
+    ['Excuse me.', '실례합니다.'],
+    ["I'm sorry.", '죄송해요.'],
+    ["That's okay.", '괜찮아요.'],
+    ['Yes, please.', '네, 부탁해요.'],
+    ['No, thank you.', '아니요, 괜찮아요. (사양할게요)'],
+    ["I'm from Korea.", '한국에서 왔어요.'],
+    ['I speak a little English.', '영어 조금 해요.'],
+    ['Have a nice day!', '좋은 하루 보내세요!']
+  ] },
   { id: 'air', name: '✈️ 공항', items: [
     ["I'd like a window seat, please.", '창가 자리로 주세요.'],
     ['Can I check this bag?', '이 가방 부칠 수 있나요?'],
@@ -98,7 +110,7 @@ window.EN_DECK = [
     ['Is there a stroller rental?', '유모차 대여되나요?'],
     ['What is this place famous for?', '여기는 뭐로 유명해요?']
   ] },
-  { id: 'help', name: '🚨 긴급·기본', items: [
+  { id: 'help', name: '🚨 긴급', items: [
     ['Can you help me, please?', '좀 도와주시겠어요?'],
     ['I lost my passport.', '여권을 잃어버렸어요.'],
     ['My wallet was stolen.', '지갑을 도난당했어요.'],
