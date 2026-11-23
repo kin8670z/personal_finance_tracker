@@ -184,9 +184,12 @@
 
     // 도착 메시지 → 짧게, 곧 도착이면 강조
     function soon(a) { return ['0', '1', '3', '4', '5'].includes(String(a.code)) || /도착|진입|전역/.test(a.msg || ''); }
+    // 시간을 안 주는 노선(5호선 등)은 열차 위치로 추정한 시간: '약 N분'
+    const estText = left => left > 40 ? `약 ${Math.ceil(left / 60)}분 후` : '곧 도착';
     function msgText(a) {
       let m = String(a.msg || '').replace(/\[(\d+)\]번째 전역/, '$1정거장 전').replace(/\s*\(.*\)$/, '');
       if (a.sec > 0) { const left = Math.max(0, a.sec - Math.floor((Date.now() - loadedAt) / 1000)); m = left > 0 ? `${Math.floor(left / 60)}분 ${String(left % 60).padStart(2, '0')}초 후` : '곧 도착'; }
+      else if (a.est != null) m = estText(a.est - Math.floor((Date.now() - loadedAt) / 1000));
       return m || '-';
     }
     function stationCard(f) {
@@ -209,8 +212,8 @@
               return `<div class="bg-slate-50 rounded-lg px-2.5 py-2">
                   <p class="text-[10px] font-bold text-slate-400 truncate">${esc(dir)} · ${esc(dest)}</p>
                   ${list.slice(0, 2).map((a, i) => `<div class="flex items-center justify-between gap-2 ${i ? 'mt-0.5' : 'mt-1'}">
-                      <span class="text-xs font-bold text-slate-700 truncate">${esc(a.dest || '')}행${a.express ? ` <span class="text-[9px] px-1 py-0.5 rounded bg-rose-100 text-rose-600 font-extrabold">${esc(a.express)}</span>` : ''}${a.last ? ' <span class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-white font-extrabold">막차</span>' : ''}</span>
-                      <span class="tick text-xs font-extrabold shrink-0 ${i === 0 && soon(a) ? 'text-rose-600' : 'text-slate-900'}" data-sec="${a.sec}">${esc(msgText(a))}</span>
+                      <span class="text-xs font-bold text-slate-700 truncate">${esc(a.dest || '')}행${a.express ? ` <span class="text-[9px] px-1 py-0.5 rounded bg-rose-100 text-rose-600 font-extrabold">${esc(a.express)}</span>` : ''}${a.last ? ' <span class="text-[9px] px-1 py-0.5 rounded bg-slate-800 text-white font-extrabold">막차</span>' : ''}${a.est != null && a.pos ? ` <span class="text-[10px] font-bold text-slate-400">· ${esc(a.pos)}</span>` : ''}</span>
+                      <span class="tick text-xs font-extrabold shrink-0 ${i === 0 && soon(a) ? 'text-rose-600' : 'text-slate-900'}" data-sec="${a.sec}" data-est="${a.est ?? ''}">${esc(msgText(a))}</span>
                     </div>`).join('')}
                 </div>`;
             }).join('')}</div>
@@ -248,7 +251,7 @@
     }
 
     // 초 단위 카운트다운 (서버는 20초마다)
-    setInterval(() => { if (!loadedAt) return; document.querySelectorAll('[data-sec]').forEach(el => { const s = +el.dataset.sec; if (s > 0) { const left = Math.max(0, s - Math.floor((Date.now() - loadedAt) / 1000)); el.textContent = left > 0 ? `${Math.floor(left / 60)}분 ${String(left % 60).padStart(2, '0')}초 후` : '곧 도착'; } }); }, 1000);
+    setInterval(() => { if (!loadedAt) return; document.querySelectorAll('[data-sec]').forEach(el => { const s = +el.dataset.sec; if (!(s > 0) && el.dataset.est !== '') { el.textContent = estText(+el.dataset.est - Math.floor((Date.now() - loadedAt) / 1000)); return; } if (s > 0) { const left = Math.max(0, s - Math.floor((Date.now() - loadedAt) / 1000)); el.textContent = left > 0 ? `${Math.floor(left / 60)}분 ${String(left % 60).padStart(2, '0')}초 후` : '곧 도착'; } }); }, 1000);
     setInterval(() => { if (document.visibilityState === 'visible') refresh(false); }, 20000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - loadedAt > 10000) refresh(false); });
 
