@@ -1,4 +1,4 @@
-// 아르곤 자산관리: 여행 영어 기본 문장 (상황별) — [영어, 한국어]
+// 든든: 여행 영어 기본 문장 (상황별) — [영어, 한국어]
 window.EN_DECK = [
   { id: 'air', name: '✈️ 공항', items: [
     ["I'd like a window seat, please.", '창가 자리로 주세요.'],
