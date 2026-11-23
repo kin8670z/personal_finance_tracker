@@ -103,12 +103,31 @@
       <p id="status" class="text-[11px] font-bold text-slate-500 mt-2"></p>
       <div class="grid grid-cols-2 gap-2 mt-3">
         <a href="https://map.naver.com/p/subway" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-bold text-center">🗺️ 노선도 보기</a>
-        <a href="https://map.naver.com/p/directions/-/-/-/transit" target="_blank" rel="noopener" class="py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-bold text-center">🧭 길찾기</a>
+        <button type="button" onclick="document.getElementById('routeSec').scrollIntoView({ behavior: 'smooth', block: 'start' }); document.getElementById('rFrom').focus()" class="py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-sm font-bold text-center">🧭 길찾기</button>
       </div>
-      <p class="text-[10px] text-slate-400 mt-1.5">노선도·길찾기는 네이버 지도에서 열려요.</p>
     </header>
 
     <div id="keyBox"></div>
+
+    <!-- 길찾기 -->
+    <section id="routeSec" class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🧭 길찾기</h2>
+      <form id="routeForm" class="space-y-2" autocomplete="off">
+        <div class="flex items-center gap-2">
+          <div class="flex-1 space-y-2 min-w-0">
+            <input id="rFrom" list="stationList" maxlength="20" placeholder="출발역 (예: 강남)" class="w-full border border-slate-200 rounded-xl px-3 py-2 bg-white" aria-label="출발역">
+            <input id="rTo" list="stationList" maxlength="20" placeholder="도착역 (예: 판교)" class="w-full border border-slate-200 rounded-xl px-3 py-2 bg-white" aria-label="도착역">
+          </div>
+          <button type="button" onclick="swapRoute()" aria-label="출발·도착 바꾸기" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-600 font-bold shrink-0">⇅</button>
+        </div>
+        <datalist id="stationList"></datalist>
+        <p id="rMsg" class="text-xs text-rose-600 hidden"></p>
+        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl">경로 보기 (구글 지도)</button>
+      </form>
+      <div id="recent" class="flex flex-wrap gap-1.5 mt-2"></div>
+      <div id="routeLive" class="mt-3"></div>
+      <p class="text-[10px] text-slate-400 mt-2">경로·소요시간·환승은 구글 지도에서 대중교통 기준으로 보여줘요. 아래엔 출발역 실시간 도착을 같이 띄워줘요.</p>
+    </section>
 
     <section class="card p-4">
       <div class="flex justify-between items-center mb-2">
@@ -231,6 +250,39 @@
     setInterval(() => { if (document.visibilityState === 'visible') refresh(false); }, 20000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - loadedAt > 10000) refresh(false); });
 
+    // ---------- 길찾기 ----------
+    const ROUTE_KEY = 'argon_subway_routes_v1';
+    let routes = load(ROUTE_KEY, []);   // 최근 경로 [{ from, to }]
+    function renderRoutes() {
+      const names = [...new Set([...favs.map(f => f.name), ...routes.flatMap(r => [r.from, r.to])])];
+      document.getElementById('stationList').innerHTML = names.map(n => `<option value="${esc(label(n))}">`).join('');
+      document.getElementById('recent').innerHTML = routes.map((r, i) => `<span class="inline-flex items-center text-[11px] font-bold rounded-full bg-slate-100 text-slate-600"><button type="button" onclick="useRoute(${i})" class="pl-2.5 pr-1 py-1">${esc(label(r.from))} → ${esc(label(r.to))}</button><button type="button" onclick="dropRoute(${i})" aria-label="최근 경로 지우기" class="pr-2 pl-1 py-1 text-slate-400">✕</button></span>`).join('');
+    }
+    function swapRoute() { const a = document.getElementById('rFrom'), b = document.getElementById('rTo'); [a.value, b.value] = [b.value, a.value]; }
+    function useRoute(i) { const r = routes[i]; if (!r) return; document.getElementById('rFrom').value = label(r.from); document.getElementById('rTo').value = label(r.to); go(r.from, r.to); }
+    function dropRoute(i) { routes.splice(i, 1); save(ROUTE_KEY, routes); renderRoutes(); }
+    function go(from, to) {
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(label(from))}&destination=${encodeURIComponent(label(to))}&travelmode=transit`;
+      routes = [{ from, to }, ...routes.filter(r => !(r.from === from && r.to === to))].slice(0, 5); save(ROUTE_KEY, routes); renderRoutes();
+      window.open(url, '_blank', 'noopener');
+      showLive(from);
+    }
+    async function showLive(name) {
+      const box = document.getElementById('routeLive');
+      if (favs.some(f => f.name === name)) { box.innerHTML = ''; return; }   // 즐겨찾기에 있으면 아래에서 보임
+      box.innerHTML = `<p class="text-xs font-bold text-slate-500 mb-1">🚉 ${esc(label(name))} 지금 도착</p><div class="skel" style="height:56px"></div>`;
+      try { data[name] = await fetchStation(name); } catch (e) { data[name] = { error: e.message }; }
+      box.innerHTML = `<p class="text-xs font-bold text-slate-500 mb-1">🚉 출발역 지금 도착 <button type="button" onclick="addFav('${esc(name)}','')" class="ml-1 text-indigo-600">⭐ 즐겨찾기에 추가</button></p>` + stationCard({ id: 0, name, tag: '' });
+    }
+    document.getElementById('routeForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = document.getElementById('rMsg'), from = clean(document.getElementById('rFrom').value), to = clean(document.getElementById('rTo').value);
+      const bad = n => !n || !/^[가-힣0-9A-Za-z()·.]{1,20}$/.test(n);
+      if (bad(from) || bad(to)) { msg.textContent = '출발역과 도착역을 넣어주세요.'; msg.classList.remove('hidden'); return; }
+      if (from === to) { msg.textContent = '출발역과 도착역이 같아요.'; msg.classList.remove('hidden'); return; }
+      msg.classList.add('hidden'); go(from, to);
+    });
+
     function addFav(name, tag) {
       const msg = document.getElementById('addMsg'), n = clean(name);
       if (!n || !/^[가-힣0-9A-Za-z()·.]{1,20}$/.test(n)) { msg.textContent = '역 이름을 확인해 주세요. (예: 강남, 판교)'; msg.classList.remove('hidden'); return; }
@@ -238,7 +290,8 @@
       msg.classList.add('hidden');
       favs.push({ id: Math.max(Date.now(), ...favs.map(f => f.id + 1)), name: n, tag: tag || '' }); save(FAV_KEY, favs);
       document.getElementById('addName').value = '';
-      delete data[n]; render(); refresh(true);
+      delete data[n]; render(); renderRoutes(); refresh(true);
+      if (document.getElementById('routeLive').innerHTML.includes(label(n))) document.getElementById('routeLive').innerHTML = '';
     }
     function removeFav(id) { favs = favs.filter(f => f.id !== id); save(FAV_KEY, favs); if (!favs.length) editing = false; render(); }
     function toggleEdit() { editing = !editing; render(); }
@@ -253,7 +306,7 @@
       document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
     }
     document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
-    render(); refresh(false);
+    render(); renderRoutes(); refresh(false);
     // 즐겨찾기가 없어도 실시간 키가 있는지 한 번 확인 (서울역 조회)
     if (!favs.length) fetchStation('서울').then(j => { if (j.demo) { demo = true; renderKeyBox(); } }).catch(() => {});
   </script>
