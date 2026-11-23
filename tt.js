@@ -22,6 +22,15 @@
   }
   // '24:26' → '00:26'
   const disp = t => { const h = Number(t.slice(0, 2)); return h >= 24 ? String(h - 24).padStart(2, '0') + t.slice(2) : t; };
+  // 열차번호로 시간표 찾기 (코레일 열차는 시간표에 'K4599'처럼 붙어 있음)
+  const normNo = n => String(n || '').replace(/\D/g, '');
+  function findTrain(tt, no) {
+    no = normNo(no); if (!no || !tt || !tt.lines) return null;
+    for (const L of tt.lines) for (const D of L.dirs) { const t = D.trains.find(x => normNo(x[3]) === no); if (t) return { time: t[0], line: L.line, dir: D.name }; }
+    return null;
+  }
+  // 실시간 열차가 시간표보다 몇 분 늦나: (지금 + 남은 시간) - 시간표 시각
+  function delayOf(sched, leftSec, at) { return Math.round(nowMins(at) + (leftSec || 0) / 60 - minsOf(sched)); }
   const mem = {};
   async function load(station, week) {
     const k = `argon_tt_${station}_${week}`;
@@ -33,5 +42,5 @@
     if (!j.needKey) { mem[k] = j; try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), j })); } catch (e) {} }
     return j;
   }
-  window.ArgonTT = { disp, dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
+  window.ArgonTT = { normNo, findTrain, delayOf, disp, dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
 })();
