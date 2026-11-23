@@ -343,7 +343,7 @@
         options: { maintainAspectRatio: false, animation: false, interaction: { mode: 'nearest', intersect: true },
           plugins: { legend: { display: false }, tooltip: { callbacks: { title: c => `${dayLabel(c[0].raw.x)} ${hm(c[0].raw.x)}`, label: c => c.dataset.type === 'scatter' ? ` 💊 ${c.dataset.label}${c.raw.d ? ` ${c.raw.d}` : ''}` : ` ${c.raw.y.toFixed(1)}℃` } } },
           scales: {
-            x: { type: 'linear', min: x0, max: now, grid: { color: grid }, ticks: { color: tick, stepSize: stepH * 36e5, autoSkip: true, maxRotation: 0, callback: v => { const d = new Date(v); return d.getHours() === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : range > 72 ? '' : `${d.getHours()}시`; } } },
+            x: { type: 'linear', min: x0, max: now, grid: { color: grid }, afterBuildTicks: sc => { const t = []; for (let v = x0; v <= now; v += stepH * 36e5) t.push({ value: v }); sc.ticks = t; }, ticks: { color: tick, autoSkip: false, maxRotation: 0, callback: v => { const d = new Date(v); return d.getHours() === 0 ? `${d.getMonth() + 1}/${d.getDate()}` : `${d.getHours()}시`; } } },
             y: { min: Math.floor(ymin * 2) / 2, max: Math.ceil(ymax * 2) / 2, grid: { color: grid }, ticks: { color: tick, stepSize: 0.5, callback: v => `${v.toFixed(1)}℃` } }
           } }
       });
