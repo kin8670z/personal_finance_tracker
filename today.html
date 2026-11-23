@@ -92,8 +92,7 @@
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
-    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 영어</span></a>
-    <a href="./japanese.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗾 <span>여행 일본어</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
   </nav>
   <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
@@ -338,12 +337,12 @@
     function renderPhrase() {
       const box = document.getElementById('phrase'); if (!window.EN_DECK) { box.classList.add('hidden'); return; }
       const rows = [
-        { c: pickOfDay(EN_DECK, x => ({ t: x[0], ko: x[1] }), 0), lang: 'en-US', page: './english.html', flag: '🇺🇸', s: streakOf('argon_english_v1') },
-        window.JA_DECK && { c: pickOfDay(JA_DECK, x => ({ t: x[0], r: x[1], p: x[2], ko: x[3] }), 11), lang: 'ja-JP', page: './japanese.html', flag: '🇯🇵', s: streakOf('argon_japanese_v1') }
+        { c: pickOfDay(EN_DECK, x => ({ t: x[0], ko: x[1] }), 0), lang: 'en-US', page: './english.html', q: 'lang=en&', flag: '🇺🇸', s: streakOf('argon_english_v1') },
+        window.JA_DECK && { c: pickOfDay(JA_DECK, x => ({ t: x[0], r: x[1], p: x[2], ko: x[3] }), 11), lang: 'ja-JP', page: './english.html', q: 'lang=ja&', flag: '🇯🇵', s: streakOf('argon_japanese_v1') }
       ].filter(Boolean);
-      box.innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗣️ 오늘의 한 문장</h2><div class="space-y-2.5">${rows.map(({ c, lang, page, flag, s }) => `<div class="flex items-center gap-3">
+      box.innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗣️ 오늘의 한 문장</h2><div class="space-y-2.5">${rows.map(({ c, lang, page, q, flag, s }) => `<div class="flex items-center gap-3">
           <span role="button" tabindex="0" onclick="sayPhrase(${JSON.stringify(c.t).replace(/"/g, '&quot;')}, '${lang}')" aria-label="듣기" class="cursor-pointer w-10 h-10 rounded-full flex items-center justify-center text-white shrink-0" style="background:#4f46e5">🔊</span>
-          <a href="${page}?card=${encodeURIComponent(c.id)}" class="min-w-0 flex-1"><span class="block text-[10px] font-bold text-slate-400">${flag} ${esc(c.cat)}${s ? ` · 🔥 ${s}일 연속` : ''}</span><span class="block text-base font-extrabold text-slate-900">${esc(c.t)}</span>${c.p ? `<span class="block text-[11px] font-bold text-indigo-500">${esc(c.p)}</span>` : ''}<span class="block text-xs text-slate-500">${esc(c.ko)}</span></a>
+          <a href="${page}?${q}card=${encodeURIComponent(c.id)}" class="min-w-0 flex-1"><span class="block text-[10px] font-bold text-slate-400">${flag} ${esc(c.cat)}${s ? ` · 🔥 ${s}일 연속` : ''}</span><span class="block text-base font-extrabold text-slate-900">${esc(c.t)}</span>${c.p ? `<span class="block text-[11px] font-bold text-indigo-500">${esc(c.p)}</span>` : ''}<span class="block text-xs text-slate-500">${esc(c.ko)}</span></a>
         </div>`).join('')}</div>`;
     }
     function sayPhrase(t, lang) {

@@ -14,6 +14,8 @@
     let st = Object.assign({ srs: {}, days: {}, custom: [], set: {} }, load(KEY, {}));
     st.set = Object.assign({ cat: 'all', order: 'seq', rate: 0.85, gap: 2, repeat: 2, koFirst: false, hide: false, voice: '' }, st.set);
     const persist = () => save(KEY, st);
+    // 언어를 바꿔 들어오면(?cat=) 보던 상황 그대로
+    { const qc = new URLSearchParams(location.search).get('cat'); if (qc && (qc === 'all' || qc === 'review' || qc === 'my' || L.deck.some(c => c.id === qc))) { st.set.cat = qc; persist(); } }
 
     // 일본어: 히라가나 읽기 + 한글 발음 줄
     // 글자가 이미 히라가나뿐이면(すみません。) 읽기 줄은 생략하고 한글 발음만
