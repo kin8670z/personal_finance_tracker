@@ -190,6 +190,18 @@
     </div>
   </div>
 
+  <div id="warnModal" class="hidden fixed inset-0 z-[60] bg-black/40 items-end sm:items-center justify-center p-3" onclick="if (event.target === this) closeWarn(false)">
+    <div class="card bg-white w-full max-w-sm p-5" role="alertdialog" aria-labelledby="warnTitle">
+      <h2 id="warnTitle" class="text-base font-extrabold text-amber-700">⚠️ 복용 안내와 달라요</h2>
+      <ul id="warnList" class="text-sm text-slate-700 mt-2 space-y-1.5 list-disc pl-4"></ul>
+      <p class="text-[11px] text-slate-400 mt-3">일반적인 기준이에요. 의사·약사가 다르게 안내했다면 그대로 기록해도 돼요.</p>
+      <div class="flex gap-2 mt-4">
+        <button type="button" onclick="closeWarn(false)" class="flex-1 py-2.5 rounded-xl bg-indigo-600 text-white font-extrabold">취소</button>
+        <button type="button" onclick="closeWarn(true)" class="flex-1 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold">그래도 기록</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const KEY = 'argon_fever_v1', KIDS = 'argon_kid_v1';
     const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -290,13 +302,30 @@
     document.getElementById('tVal').addEventListener('input', tLabel);
     document.getElementById('tVal').addEventListener('focus', e => e.target.select());
 
+    // 복용 안내(일반 기준)에 어긋나는지 검사 → 경고 문구 목록
+    const MAX24 = { A: 5, B: 4 };
+    function medIssues(kidId, key, t) {
+      const g = MEDS[key].g; if (g === 'O') return [];
+      const H = 36e5, ms = logsOf(kidId).filter(l => l.type === 'med' && MEDS[l.med] && MEDS[l.med].g !== 'O');
+      const near = (l, h) => Math.abs(t - l.t) < h * H, out = [], gname = g === 'A' ? '아세트아미노펜' : '이부프로펜 계열';
+      const same = ms.filter(l => MEDS[l.med].g === g && near(l, MEDS[key].gap)).sort((a, b) => Math.abs(t - a.t) - Math.abs(t - b.t))[0];
+      if (same) out.push(`같은 ${gname}을 ${dur(Math.abs(t - same.t))} ${same.t <= t ? '전' : '뒤'}(${hm(same.t)})에 먹었어요. ${MEDS[key].gap}시간 간격이 필요해요${same.t <= t ? ` → ${hm(same.t + MEDS[key].gap * H)} 이후` : ''}.`);
+      if (g === 'B' && same && same.med !== key) out.push('이부프로펜과 덱시부프로펜은 같은 계열이라 번갈아 먹이면 안 돼요.');
+      const cross = ms.filter(l => MEDS[l.med].g !== g && near(l, 2)).sort((a, b) => Math.abs(t - a.t) - Math.abs(t - b.t))[0];
+      if (cross) out.push(`다른 해열제(${MEDS[cross.med].name})를 ${dur(Math.abs(t - cross.t))} ${cross.t <= t ? '전' : '뒤'}에 먹었어요. 교차 복용은 최소 2시간 간격이에요${cross.t <= t ? ` → ${hm(cross.t + 2 * H)} 이후` : ''}.`);
+      const n24 = ms.filter(l => MEDS[l.med].g === g && l.t <= t && t - l.t < 24 * H).length;
+      if (n24 >= MAX24[g]) out.push(`최근 24시간 동안 ${gname}을 이미 ${n24}번 먹었어요. 하루 최대 ${MAX24[g]}번이 일반 기준이에요.`);
+      return out;
+    }
+    function entryTime() { const w = document.getElementById('when').value, t = w ? new Date(w).getTime() : Date.now(); return isFinite(t) ? t : Date.now(); }
+
     function renderMeds() {
       const ms = medStatus(logsOf(kid().id)), now = Date.now();
       document.getElementById('medBtns').innerHTML = Object.entries(MEDS).map(([k, m]) => `<span role="button" tabindex="0" onclick="pickMed('${k}')" class="cursor-pointer rounded-xl px-3 py-2 border-2 ${med === k ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-white'}">
         <span class="block text-sm font-extrabold" style="color:${m.color}">${m.g === 'A' ? '▲' : m.g === 'B' ? '◆' : '●'} ${m.name}</span><span class="block text-[10px] font-bold text-slate-400">${m.ex}</span></span>`).join('');
-      let hint = '';
-      if (ms && MEDS[med].g !== 'O') { const x = ms.groups[MEDS[med].g]; if (now < x.ready) hint = `⏳ 일반 기준으로는 ${dur(x.ready - now)} 뒤(${hm(x.ready)})부터예요. 의사 지시가 있으면 그에 따르세요.`; }
-      const el = document.getElementById('medHint'); el.textContent = hint; el.className = `text-[11px] font-bold mt-2 ${hint ? 'text-amber-600' : 'text-slate-500'}`;
+      const iss = medIssues(kid().id, med, entryTime()), el = document.getElementById('medHint');
+      el.innerHTML = iss.length ? iss.map(x => `⚠️ ${esc(x)}`).join('<br>') : MEDS[med].g === 'O' ? '' : '✅ 복용 간격 괜찮아요 (일반 기준)';
+      el.className = `text-[11px] font-bold mt-2 leading-relaxed rounded-lg px-2.5 py-1.5 ${iss.length ? 'bg-amber-50 text-amber-700' : MEDS[med].g === 'O' ? 'hidden' : 'bg-emerald-50 text-emerald-700'}`;
       const lastDose = [...logsOf(kid().id)].reverse().find(l => l.type === 'med' && l.med === med && l.dose);
       document.getElementById('mDose').placeholder = lastDose ? `지난번 ${lastDose.dose}` : '예: 5';
     }
@@ -306,18 +335,29 @@
 
     const localDT = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     function setNow() { document.getElementById('when').value = localDT(new Date()); }
-    function addLog() {
+    function addLog(force) {
       const w = document.getElementById('when').value, t = w ? new Date(w).getTime() : Date.now(), memo = document.getElementById('memo').value.trim(), k = kid();
       if (!isFinite(t) || t > Date.now() + 5 * 6e4) { document.getElementById('when').focus(); return; }
       let log = { id: Date.now(), kid: k.id, t, type: mode, memo };
       if (mode === 'temp') { const v = tVal(); if (!isFinite(v) || v < 34 || v > 43) { document.getElementById('tVal').focus(); return; } log.temp = v; }
-      if (mode === 'med') { const d = document.getElementById('mDose').value.trim(); log.med = med; if (d) log.dose = `${d}${document.getElementById('mUnit').value}`; }
+      if (mode === 'med') {
+        const iss = medIssues(k.id, med, t);
+        if (iss.length && force !== true) { showWarn(iss); return; }
+        const d = document.getElementById('mDose').value.trim(); log.med = med; if (d) log.dose = `${d}${document.getElementById('mUnit').value}`; if (iss.length) log.warn = 1;
+      }
       if (mode === 'note') { if (!note && !memo) { document.getElementById('memo').focus(); return; } log.note = note || ''; }
       st.logs.push(log); persist();
       document.getElementById('memo').value = ''; document.getElementById('mDose').value = ''; note = null; setNow();
       const b = document.getElementById('saveBtn'); b.textContent = '✓ 저장'; setTimeout(() => b.textContent = '기록', 1200);
       render();
     }
+
+    function showWarn(iss) {
+      document.getElementById('warnList').innerHTML = iss.map(x => `<li>${esc(x)}</li>`).join('');
+      const m = document.getElementById('warnModal'); m.classList.remove('hidden'); m.classList.add('flex');
+    }
+    function closeWarn(go) { const m = document.getElementById('warnModal'); m.classList.add('hidden'); m.classList.remove('flex'); if (go) addLog(true); }
+    document.getElementById('when').addEventListener('change', () => { if (mode === 'med') renderMeds(); });
 
     function setRange(h) { range = h; renderChart(); }
     function renderChart() {
@@ -351,7 +391,7 @@
 
     function line(l) {
       if (l.type === 'temp') { const [lab, tc] = level(l.temp); return `<span class="num text-base font-extrabold ${tc}">${l.temp.toFixed(1)}℃</span> <span class="text-[10px] font-bold ${tc}">${lab}</span>`; }
-      if (l.type === 'med') { const m = MEDS[l.med] || MEDS.other; return `<span class="text-sm font-extrabold" style="color:${m.color}">💊 ${m.name}</span>${l.dose ? ` <span class="text-xs font-bold text-slate-500">${esc(l.dose)}</span>` : ''}`; }
+      if (l.type === 'med') { const m = MEDS[l.med] || MEDS.other; return `<span class="text-sm font-extrabold" style="color:${m.color}">💊 ${m.name}</span>${l.dose ? ` <span class="text-xs font-bold text-slate-500">${esc(l.dose)}</span>` : ''}${l.warn ? ' <span title="복용 간격 안내와 달랐어요" class="text-[10px] font-bold text-amber-600">⚠️ 간격 주의</span>' : ''}`; }
       return `<span class="text-sm font-bold text-slate-700">${esc(l.note || '📝')}</span>`;
     }
     function renderList() {
