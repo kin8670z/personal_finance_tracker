@@ -28,13 +28,25 @@ module.exports = async (req, res) => {
       if (err.code === 'INFO-100') return send(200, { station, demo, needKey: true, badKey: true, arrivals: [] });
       return send(502, { error: err.message || '지하철 정보를 불러오지 못했어요' });
     }
+    // 5호선 등 일부 노선은 남은 시간(barvlDt)을 0으로 줘서, 열차 위치로 대략 계산 (역 사이 약 1분 50초)
+    // 2·4호선처럼 초를 주는 노선과 비교해 맞춘 값. 도착(1)·출발(2)은 메시지 그대로.
+    const estimate = a => {
+      if (Number(a.barvlDt) > 0) return null;
+      const c = String(a.arvlCd), m = a.arvlMsg2 || '';
+      if (c === '0') return 30; if (c === '3') return 90; if (c === '5') return 120; if (c === '4') return 150;
+      if (c === '1' || c === '2') return null;
+      if (/전전역/.test(m)) return 210;
+      const n = Number((/\[(\d+)\]번째/.exec(m) || [])[1]) || Number(String(a.ordkey || '').slice(2, 5)) || 0;
+      return n > 0 ? n * 110 : null;
+    };
+    const posText = a => { const m = a.arvlMsg2 || ''; const n = /\[(\d+)\]번째 전역/.exec(m); return n ? `${n[1]}정거장 전` : /전전역/.test(m) ? '2정거장 전' : /전역/.test(m) ? '전역' : ''; };
     const arrivals = (j.realtimeArrivalList || []).map(a => {
       const [lineName, color] = LINES[a.subwayId] || [a.subwayNm || '지하철', '#64748b'];
       return {
         line: a.subwayId, lineName, color, dir: a.updnLine, to: a.trainLineNm, dest: a.bstatnNm,
         msg: a.arvlMsg2, now: a.arvlMsg3, code: a.arvlCd, sec: Number(a.barvlDt) || 0,
         express: a.btrainSttus && a.btrainSttus !== '일반' ? a.btrainSttus : null, last: a.lstcarAt === '1',
-        order: a.ordkey, at: a.recptnDt
+        order: a.ordkey, at: a.recptnDt, est: estimate(a), pos: posText(a)
       };
     });
     return send(200, { station, demo, arrivals, at: new Date().toISOString() }, 'public, s-maxage=10, stale-while-revalidate=20');
