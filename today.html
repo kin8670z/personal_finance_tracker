@@ -156,17 +156,22 @@
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lotto" class="hidden card p-4"></section>
 
-    <section id="pushCard" class="card p-4">
+    <details class="card p-4">
+      <summary class="cursor-pointer text-xs font-extrabold text-slate-500">⚙️ 이 화면 설정 (아침 알림 · 시작 화면)</summary>
+      <div class="mt-3">
+    <div id="pushCard">
       <div class="flex items-center justify-between gap-3">
         <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">🔔 아침 알림 (매일 8시쯤)</p><p id="pushSub" class="text-[10px] text-slate-400">기프티콘 만료·D-Day·오늘 할 일을 아침에 알려줘요</p></div>
         <button type="button" id="pushBtn" onclick="togglePush()" role="switch" aria-checked="false" class="w-12 h-7 rounded-full relative shrink-0 transition-colors bg-slate-300"><span class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
       </div>
       <p id="pushTestRow" class="hidden mt-2 text-right"><span role="button" tabindex="0" onclick="testPush(this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">지금 테스트 알림 받아보기 →</span></p>
-    </section>
-    <section class="card p-4 flex items-center justify-between gap-3">
+    </div>
+    <div class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-100">
       <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">📲 앱을 열면 이 화면부터</p><p class="text-[10px] text-slate-400">끄면 가계부가 첫 화면이에요. 이 기기에만 적용돼요.</p></div>
       <button type="button" id="startBtn" onclick="toggleStart()" role="switch" class="w-12 h-7 rounded-full relative shrink-0 transition-colors"><span class="absolute top-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
-    </section>
+    </div>
+      </div>
+    </details>
   </div>
 
   <script src="tax-calc.js"></script>
@@ -255,6 +260,8 @@
     async function loadSubway() {
       const box = document.getElementById('subway');
       if (Commute.editing()) return;
+      if (window.ArgonTT && ArgonTT.dayType() !== '1') { box.classList.add('hidden'); return; }   // 주말·공휴일엔 출퇴근 없음
+      box.classList.remove('hidden');
       if (Commute.has()) return Commute.mount(box, commuteOpts());
       return loadFavSubway();
     }
@@ -523,6 +530,8 @@
       const open = (st.todos || []).filter(x => !x.done).sort((a, b) => (a.due || '9999').localeCompare(b.due || '9999'));
       const shop = (st.shop || []).filter(x => !x.done);
       const show = open.filter(x => !x.due || x.due <= today).slice(0, 5), later = open.length - show.length;
+      if (!show.length && !shop.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
       box.innerHTML = head('✅ 할 일', './todo.html', '전체') +
         (show.length ? `<div class="space-y-1.5">${show.map(x => `<div class="flex items-center gap-2"><span role="checkbox" tabindex="0" aria-checked="false" onclick="doneTodo(${x.id})" class="cursor-pointer w-5 h-5 rounded-md border-2 border-slate-300 shrink-0"></span><span class="flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(x.text)}</span>${x.due && x.due < today ? '<span class="text-[10px] font-bold text-rose-600 shrink-0">지남</span>' : x.due === today ? '<span class="text-[10px] font-bold text-amber-600 shrink-0">오늘</span>' : ''}</div>`).join('')}</div>`
           : `<p class="text-xs text-slate-400">오늘 할 일은 없어요 🎉</p>`) +
@@ -573,6 +582,8 @@
     // ---------- 시장 ----------
     async function loadMarket() {
       const box = document.getElementById('market'), watch = load('argon_watchlist_v1', []) || [];
+      if (window.ArgonTT && ArgonTT.dayType() !== '1') { box.classList.add('hidden'); return; }   // 주말·공휴일은 장 쉬는 날
+      box.classList.remove('hidden');
       const code = s => s.split(':')[1], kr = watch.filter(w => w.symbol.startsWith('KRX:')).map(w => code(w.symbol)), us = watch.filter(w => w.symbol.startsWith('US:')).map(w => code(w.symbol));
       try {
         const p = new URLSearchParams({ op: 'quotes', kr: kr.join(','), us: us.join(','), idx: 'KOSPI,KOSDAQ', fx: '1' });
