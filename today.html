@@ -433,9 +433,11 @@
       const third = (y, m) => { const f = new Date(y, m, 1); return new Date(y, m, 1 + ((6 - f.getDay() + 7) % 7) + 14); };
       const tr = third(t0.getFullYear(), t0.getMonth()), tk = Math.round((tr - t0) / 864e5);
       if (tk === 0 || tk === 1) lines.push(`<a href="./tomica.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800">🚗 토미카 신차 나오는 날</span><span class="text-sm font-extrabold shrink-0 ${tk ? 'text-indigo-600' : 'text-amber-600'}">${tk ? '내일!' : '오늘! 🎉'}</span></a>`);
+      const PLN = { WIN: 'PC', OSX: 'Mac', LIN: 'Linux', PS5: 'PS5', PS4: 'PS4', NS2: '스위치2', NS: '스위치', 'XBX/S': 'Xbox', XBO: 'XB1', iOS: 'iOS', DROID: '안드로이드', Quest: 'Quest', PSVR: 'PSVR', PSVR2: 'PSVR2' };
+      const badges = ps => (ps || []).map(p => `<span class="text-[9px] font-bold px-1 py-0.5 rounded ${/PS/.test(p) ? 'bg-blue-100 text-blue-700' : /NS/.test(p) ? 'bg-rose-100 text-rose-700' : /XB/.test(p) ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-700'}">${PLN[p] || esc(p)}</span>`).join(' ');
       // ⭐ 관심 게임 (7일 안)
       const fs = ((load('argon_games_v1', {}) || {}).fav || []).filter(f => f.d).map(f => ({ ...f, k: Math.round((new Date(+f.d.slice(0, 4), +f.d.slice(5, 7) - 1, +f.d.slice(8)) - t0) / 864e5) })).filter(f => f.k >= 0 && f.k <= 7).sort((a, b) => a.k - b.k);
-      fs.forEach(f => lines.push(`<a href="./games.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800 truncate">⭐ ${esc(f.t)}</span><span class="text-sm font-extrabold shrink-0 ${f.k === 0 ? 'text-amber-600' : 'text-indigo-600'}">${f.k === 0 ? '오늘 출시! 🎉' : `D-${f.k}`}</span></a>`));
+      fs.forEach(f => lines.push(`<a href="./games.html" class="flex items-center justify-between py-1"><span class="min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">⭐ ${esc(f.t)}</span><span class="flex flex-wrap gap-0.5 mt-0.5">${badges(f.p)}</span></span><span class="text-sm font-extrabold shrink-0 ${f.k === 0 ? 'text-amber-600' : 'text-indigo-600'}">${f.k === 0 ? '오늘 출시! 🎉' : `D-${f.k}`}</span></a>`));
       // 🎮 오늘 나오는 주요 게임 (게임 캘린더의 플랫폼 필터 따라감)
       const show = () => {
         const gs = todayGames || [], favT = new Set(fs.map(f => f.t.toLowerCase())), plats = ((load('argon_games_v1', {}) || {}).plats || []);
@@ -443,7 +445,7 @@
         const want = plats.flatMap(p => PL[p] || []);
         const hits = gs.filter(g => g[0] === today && g[2] && !favT.has(String(g[1]).toLowerCase()) && (!want.length || (g[3] || []).some(x => want.includes(x))));
         const all = [...lines];
-        if (hits.length) all.push(`<a href="./games.html" class="block py-1"><span class="text-xs font-extrabold text-slate-500">🎮 오늘 출시 ${hits.length}개</span><span class="block text-sm font-bold text-slate-800 truncate">${hits.slice(0, 3).map(g => esc(g[1])).join(' · ')}${hits.length > 3 ? ' …' : ''}</span></a>`);
+        if (hits.length) all.push(`<a href="./games.html" class="block py-1"><span class="text-xs font-extrabold text-slate-500">🎮 오늘 출시 ${hits.length}개</span>${hits.slice(0, 4).map(g => `<span class="flex items-center justify-between gap-2 py-0.5"><span class="text-sm font-bold text-slate-800 truncate">${esc(g[1])}</span><span class="flex flex-wrap justify-end gap-0.5 shrink-0">${badges(g[3])}</span></span>`).join('')}${hits.length > 4 ? `<span class="block text-[11px] text-slate-400">외 ${hits.length - 4}개 →</span>` : ''}</a>`);
         if (!all.length) { box.classList.add('hidden'); return; }
         box.classList.remove('hidden');
         box.innerHTML = head('🎮 게임·토미카', './games.html', '캘린더') + all.join('');
