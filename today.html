@@ -181,7 +181,7 @@
         <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">🔔 아침 알림 (매일 8시쯤)</p><p id="pushSub" class="text-[10px] text-slate-400">기프티콘 만료·D-Day·오늘 할 일을 아침에 알려줘요</p></div>
         <button type="button" id="pushBtn" onclick="togglePush()" role="switch" aria-checked="false" class="w-12 h-7 rounded-full relative shrink-0 transition-colors bg-slate-300"><span class="absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow transition-all"></span></button>
       </div>
-      <p id="pushTestRow" class="hidden mt-2 text-right"><span role="button" tabindex="0" onclick="testPush(this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">지금 테스트 알림 받아보기 →</span></p>
+      <p id="pushTestRow" class="hidden mt-2 text-right space-x-3"><span role="button" tabindex="0" onclick="localPush(this)" class="cursor-pointer text-[11px] font-bold text-slate-500">📱 폰에서 바로 띄워보기</span><span role="button" tabindex="0" onclick="testPush(this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">지금 테스트 알림 받아보기 →</span></p><p id="pushHelp" class="hidden mt-1 text-[11px] font-bold text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5"></p>
     </div>
     <div class="flex items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-100">
       <div class="min-w-0"><p class="text-xs font-extrabold text-slate-700">📲 앱을 열면 이 화면부터</p><p class="text-[10px] text-slate-400">끄면 가계부가 첫 화면이에요. 이 기기에만 적용돼요.</p></div>
@@ -763,12 +763,24 @@
       } catch (e) { pushUI(false, `알림을 켜지 못했어요 (${e.message})`); }
       finally { pushBusy = false; }
     }
+    function showPushHelp(t) { const h = document.getElementById('pushHelp'); h.textContent = t; h.classList.remove('hidden'); }
+    // 서버를 거치지 않고 이 폰에서 바로 알림 → 뜨면 폰 설정은 OK, 서버 푸시 쪽 문제
+    async function localPush(el) {
+      try {
+        if (Notification.permission !== 'granted') { showPushHelp('알림 권한이 꺼져 있어요. 폰 설정 → 애플리케이션 → (Chrome 또는 삼성 인터넷) → 알림에서 허용해 주세요.'); return; }
+        await (await navigator.serviceWorker.ready).showNotification('🔔 든든 알림 테스트', { body: '이게 보이면 폰 알림 설정은 괜찮아요', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-local' });
+        el.textContent = '띄웠어요 ✓';
+        showPushHelp('알림이 안 보이면: 폰 설정 → 애플리케이션 → (Chrome 또는 삼성 인터넷) → 알림 → 사이트 알림/personalfinancetracker 허용, 그리고 배터리 → 백그라운드 사용 제한에서 "잠자는 앱"에 없는지 확인해 주세요.');
+      } catch (e) { el.textContent = `실패: ${e.message}`; }
+      setTimeout(() => { el.textContent = '📱 폰에서 바로 띄워보기'; }, 5000);
+    }
     async function testPush(el) {
       try {
         if (window.saveBrief) saveBrief(); el.textContent = '보내는 중…';
         const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
         await new Promise(r => setTimeout(r, 400));
         await pushApi({ op: 'test', endpoint: sub.endpoint }); el.textContent = '보냈어요! 잠시 후 알림이 와요 ✓';
+        setTimeout(() => showPushHelp('10초 넘게 안 오면 왼쪽 "📱 폰에서 바로 띄워보기"를 눌러 보세요. 그것도 안 뜨면 폰 설정 문제예요.'), 10000);
       } catch (e) { el.textContent = `실패: ${e.message}`; }
       setTimeout(() => { el.textContent = '지금 테스트 알림 받아보기 →'; }, 5000);
     }

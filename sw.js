@@ -1,7 +1,7 @@
 // 든든 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v64';
+const CACHE = 'argon-shell-v65';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
 const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './timer.html', './health.html', './weather.html', './groupbuy.html', './firsts.html', './media.html', './places.html', './stash.html', './ceremony.html', './mood.html', './sleep.html', './tomica.html', './food.html', './games.html', './trip.html', './dict.html', './report.html', './car.html', './parking.html', './kidsay.html', './sticker.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './food-db.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 
@@ -86,11 +86,19 @@ async function weatherLines(place) {
     return out;
   } catch (e) { return []; }
 }
+// 푸시를 받으면 반드시 알림을 띄운다 (안 띄우면 안드로이드·iOS가 알림을 막거나 구독을 끊음)
 self.addEventListener('push', e => {
-  e.waitUntil(readBrief().then(async b => {
-    const lines = [...await weatherLines(b && b.place), ...composeBrief(b)];
+  const wait = (p, ms, d) => Promise.race([p, new Promise(r => setTimeout(() => r(d), ms))]);
+  e.waitUntil((async () => {
+    let lines = [];
+    try {
+      const b = await wait(readBrief(), 2000, null);
+      lines = [...await wait(weatherLines(b && b.place), 4500, [])];
+      try { lines.push(...composeBrief(b)); } catch (x) {}
+    } catch (x) {}
     const m = lines.length ? { title: '☀️ 든든 아침 브리핑', body: lines.join('\n') } : { title: '☀️ 좋은 아침이에요', body: '오늘 날씨랑 출근길 확인하고 가요 🚇' };
-    return self.registration.showNotification(m.title, { body: m.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-morning', renotify: true, data: { url: './today.html' } }); }));
+    return self.registration.showNotification(m.title, { body: m.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-morning', renotify: true, data: { url: './today.html' } });
+  })());
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
