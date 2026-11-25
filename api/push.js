@@ -43,7 +43,7 @@ async function send(v, endpoint) {
   const u = new URL(endpoint), enc = o => b64u(JSON.stringify(o));
   const unsigned = `${enc({ typ: 'JWT', alg: 'ES256' })}.${enc({ aud: u.origin, exp: Math.floor(Date.now() / 1000) + 12 * 3600, sub: SUBJECT })}`;
   const sig = crypto.sign('sha256', Buffer.from(unsigned), { key: v.key, dsaEncoding: 'ieee-p1363' });
-  const r = await fetch(endpoint, { method: 'POST', headers: { Authorization: `vapid t=${unsigned}.${b64u(sig)}, k=${v.pub}`, TTL: '43200', Urgency: 'normal', 'Content-Length': '0' }, signal: AbortSignal.timeout(8000) });
+  const r = await fetch(endpoint, { method: 'POST', headers: { Authorization: `vapid t=${unsigned}.${b64u(sig)}, k=${v.pub}`, TTL: '43200', Urgency: 'high', 'Content-Length': '0' }, signal: AbortSignal.timeout(8000) });
   return r.status;
 }
 function reply(res, status, body) { res.statusCode = status; res.setHeader('Content-Type', 'application/json; charset=utf-8'); res.setHeader('Cache-Control', 'no-store'); res.end(JSON.stringify(body)); }
