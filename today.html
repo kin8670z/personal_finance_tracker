@@ -90,6 +90,7 @@
     <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
     <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
     <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
@@ -146,6 +147,7 @@
     <section id="sticker" class="hidden card p-4"></section>
     <section id="kidsay" class="hidden card p-4"></section>
     <section id="habits" class="card p-4"></section>
+    <section id="food" class="hidden card p-4"></section>
 
     <section id="todo" class="card p-4"></section>
     <section id="diary" class="card p-4"></section>
@@ -472,6 +474,14 @@
       box.innerHTML = head('🌡️ 체온', './fever.html', '기록하기') + rows.map(r => `<a href="./fever.html" class="flex items-center gap-2 py-1"><span class="text-sm font-extrabold text-slate-800 w-16 truncate">${esc(r.k.name)}</span>${r.t ? `<span class="num text-lg font-extrabold ${col(r.t.temp)}">${r.t.temp.toFixed(1)}℃</span><span class="text-[11px] font-bold text-slate-400">${ago(now - r.t.t)}</span>` : ''}${r.m ? `<span class="ml-auto text-[11px] font-bold text-slate-500 truncate">💊 ${MN[r.m.med] || '약'} ${ago(now - r.m.t)}</span>` : ''}</a>`).join('');
     }
 
+    // ---------- 칼로리 (오늘 기록이 있을 때만) ----------
+    function renderFood() {
+      const box = document.getElementById('food'), f = load('argon_food_v1', {}) || {}, xs = ((f.logs || {})[ymd(new Date())] || []);
+      if (!xs.length) { box.classList.add('hidden'); return; }
+      const tot = xs.reduce((a, x) => a + Math.round(x.kcal * x.qty), 0);
+      box.classList.remove('hidden');
+      box.innerHTML = head('🍽️ 오늘 먹은 것', './food.html', '추가') + `<a href="./food.html" class="flex items-baseline gap-2"><span class="text-2xl font-extrabold text-slate-900 num">${tot.toLocaleString('ko-KR')}</span><span class="text-xs font-bold text-slate-500">kcal${f.goal ? ` / 목표 ${f.goal.toLocaleString('ko-KR')}` : ''} · ${xs.length}개</span></a>`;
+    }
     // ---------- 습관 체크 ----------
     function renderHabits() {
       const box = document.getElementById('habits'), H = window.Habits, st = H.get(), today = ymd(new Date());
@@ -641,7 +651,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
