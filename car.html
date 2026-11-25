@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>차계부 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🚗 차계부</a></h1>
+        <div id="carTabs" class="flex gap-1 shrink-0"></div>
+      </div>
+    </header>
+
+    <section id="setup" class="card p-4 hidden">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🚗 차 등록</h2>
+      <form id="carForm" class="space-y-2" autocomplete="off">
+        <input id="cName" maxlength="16" placeholder="차 이름 (예: 쏘렌토)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white" required>
+        <div class="flex gap-2"><input id="cOdo" inputmode="numeric" placeholder="지금 주행거리 km (선택)" class="num flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+          <select id="cFuel" class="border border-slate-200 rounded-lg px-2 bg-white"><option value="gas">⛽ 휘발유</option><option value="diesel">⛽ 경유</option><option value="lpg">🔵 LPG</option><option value="ev">⚡ 전기</option></select></div>
+        <div class="flex gap-2"><button class="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg">저장</button><span role="button" tabindex="0" id="cCancel" onclick="closeSetup()" class="cursor-pointer px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg">취소</span></div>
+      </form>
+    </section>
+
+    <div id="main" class="space-y-3 md:space-y-4 hidden">
+      <section id="summary" class="card p-4"></section>
+      <section id="due" class="card p-4"></section>
+
+      <section class="card p-4">
+        <div class="flex gap-1.5 mb-3">
+          <span role="button" tabindex="0" onclick="setType('fuel')" id="tFuel" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold"></span>
+          <span role="button" tabindex="0" onclick="setType('service')" id="tService" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold">🔧 정비</span>
+          <span role="button" tabindex="0" onclick="setType('etc')" id="tEtc" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold">🧾 기타</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <label class="text-[10px] font-bold text-slate-500">날짜<input id="lDate" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+          <label class="text-[10px] font-bold text-slate-500">주행거리 (km)<input id="lOdo" inputmode="numeric" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+          <label class="text-[10px] font-bold text-slate-500">금액 (원)<input id="lAmt" inputmode="numeric" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+          <label id="litWrap" class="text-[10px] font-bold text-slate-500"><span id="litLabel">주유량 (L)</span><input id="lLit" inputmode="decimal" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        </div>
+        <div id="fuelOpts" class="flex items-center gap-3 mt-2 text-xs font-bold text-slate-600"><label class="flex items-center gap-1"><input id="lFull" type="checkbox" checked class="accent-indigo-600"> 가득 채움</label><span id="unitPrice" class="text-slate-400"></span></div>
+        <div id="svcOpts" class="hidden mt-2"><div id="svcChips" class="flex flex-wrap gap-1.5"></div></div>
+        <input id="lMemo" maxlength="40" placeholder="메모 (선택) 예: 셀프주유소, 블루핸즈" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <label class="flex items-center gap-1 mt-2 text-[11px] font-bold text-slate-500"><input id="toLedger" type="checkbox" class="accent-indigo-600"> 📒 가계부에도 지출로 기록 (🚌 교통/차량)</label>
+        <button type="button" onclick="addLog()" id="saveBtn" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>
+        <p id="msg" class="text-[11px] font-bold text-rose-600 mt-1"></p>
+      </section>
+
+      <section class="card p-4">
+        <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🗒️ 기록</h2>
+        <div id="list"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const KEY = 'argon_car_v1';
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+    const km = n => Math.round(n).toLocaleString('ko-KR') + 'km';
+    const num = v => { const n = Number(String(v || '').replace(/[^\d.]/g, '')); return isFinite(n) && n > 0 ? n : null; };
+    // 소모품: [id, 이름, km 주기, 개월 주기] — 일반적인 권장 주기 (차·설명서마다 달라요)
+    const ITEMS = [['oil', '🛢️ 엔진오일', 10000, 12], ['tire', '🛞 타이어 위치교환', 10000, 12], ['wiper', '🧽 와이퍼', 0, 12], ['acf', '🌬️ 에어컨 필터', 15000, 12], ['brake', '🛑 브레이크 패드', 30000, 0], ['battery', '🔋 배터리', 0, 48], ['coolant', '💧 냉각수', 40000, 24], ['insp', '📋 자동차 검사', 0, 24]];
+    let st = Object.assign({ cars: [], logs: [], cur: null }, load(KEY, {})), type = 'fuel', svc = new Set();
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const car = () => st.cars.find(c => c.id === st.cur) || st.cars[0];
+    const logsOf = id => st.logs.filter(l => l.car === id).sort((a, b) => a.date.localeCompare(b.date) || (a.odo || 0) - (b.odo || 0));
+    const isEV = () => car() && car().fuel === 'ev';
+    const lastOdo = c => Math.max(c.odo0 || 0, ...logsOf(c.id).map(l => l.odo || 0));
+
+    // 연비: 가득→가득 사이 주행거리 / 그 사이 넣은 양
+    function efficiency(c) {
+      const fs = logsOf(c.id).filter(l => l.type === 'fuel' && l.odo && l.lit), out = [];
+      let start = null, sumL = 0;
+      fs.forEach(l => { if (start && l.full) { sumL += l.lit; const d = l.odo - start.odo; if (d > 0 && sumL > 0) out.push({ date: l.date, eff: d / sumL }); } if (l.full) { start = l; sumL = 0; } else if (start) sumL += l.lit; });
+      return out;
+    }
+    function dueList(c) {
+      const ls = logsOf(c.id), now = new Date(), odo = lastOdo(c);
+      return ITEMS.map(([id, name, everyKm, everyMo]) => {
+        const last = [...ls].reverse().find(l => l.type === 'service' && (l.items || []).includes(id));
+        if (!last) return { id, name, never: true };
+        let pctKm = 0, pctMo = 0, leftKm = null, nextDate = null;
+        if (everyKm && last.odo && odo) { leftKm = last.odo + everyKm - odo; pctKm = (odo - last.odo) / everyKm; }
+        if (everyMo) { const nd = parseD(last.date); nd.setMonth(nd.getMonth() + everyMo); nextDate = nd; pctMo = (now - parseD(last.date)) / (nd - parseD(last.date)); }
+        return { id, name, last, leftKm, nextDate, pct: Math.max(pctKm, pctMo) };
+      });
+    }
+
+    function renderTabs() {
+      document.getElementById('carTabs').innerHTML = st.cars.map(c => `<span role="button" tabindex="0" onclick="pickCar(${c.id})" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold ${car() && c.id === car().id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${esc(c.name)}</span>`).join('') + `<span role="button" tabindex="0" onclick="openSetup()" aria-label="차 추가" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold bg-slate-100 text-slate-500">＋</span>`;
+    }
+    function pickCar(id) { st.cur = id; persist(); render(); }
+
+    function renderSummary() {
+      const c = car(), ls = logsOf(c.id), y = String(new Date().getFullYear()), m = ymd(new Date()).slice(0, 7);
+      const sum = f => ls.filter(f).reduce((s, l) => s + (l.amt || 0), 0);
+      const eff = efficiency(c), lastEff = eff[eff.length - 1], avgEff = eff.length ? eff.reduce((s, x) => s + x.eff, 0) / eff.length : null;
+      const fuelY = sum(l => l.type === 'fuel' && l.date.startsWith(y)), allY = sum(l => l.date.startsWith(y));
+      const odo = lastOdo(c), fuels = ls.filter(l => l.type === 'fuel' && l.odo), first = fuels[0] || null, lastF = fuels[fuels.length - 1];
+      const perKm = first && lastF && lastF.odo > first.odo ? fuels.slice(1).reduce((a, l) => a + (l.amt || 0), 0) / (lastF.odo - first.odo) : null;
+      const unit = isEV() ? 'km/kWh' : 'km/L';
+      document.getElementById('summary').innerHTML = `
+        <div class="flex items-center justify-between"><div><p class="text-lg font-extrabold text-slate-900">🚗 ${esc(c.name)}</p><p class="text-xs font-bold text-slate-500">${odo ? `누적 ${km(odo)}` : '주행거리를 기록하면 연비를 계산해요'}</p></div>
+          <span role="button" tabindex="0" onclick="openSetup(true)" aria-label="차 정보 수정" class="cursor-pointer text-slate-400 text-sm">✎</span></div>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          <div class="rounded-xl bg-indigo-50 px-3 py-2"><p class="text-[10px] font-bold text-indigo-600">최근 연비</p><p class="text-base font-extrabold text-slate-900 num">${lastEff ? lastEff.eff.toFixed(1) : '-'}<span class="text-[10px]"> ${unit}</span></p>${avgEff ? `<p class="text-[9px] text-slate-500">평균 ${avgEff.toFixed(1)}</p>` : ''}</div>
+          <div class="rounded-xl bg-amber-50 px-3 py-2"><p class="text-[10px] font-bold text-amber-600">이번 달</p><p class="text-base font-extrabold text-slate-900 num">${(sum(l => l.date.startsWith(m)) / 1e4).toFixed(1)}<span class="text-[10px]">만원</span></p></div>
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">올해</p><p class="text-base font-extrabold text-slate-900 num">${(allY / 1e4).toFixed(0)}<span class="text-[10px]">만원</span></p><p class="text-[9px] text-slate-500">${isEV() ? '충전' : '기름값'} ${(fuelY / 1e4).toFixed(0)}만</p></div>
+        </div>
+        ${perKm ? `<p class="text-[11px] font-bold text-slate-500 mt-2">💡 1km 달리는 데 ${isEV() ? '충전비' : '기름값'} 약 ${Math.round(perKm)}원</p>` : ''}`;
+    }
+    function renderDue() {
+      const ds = dueList(car()), soon = ds.filter(d => !d.never && d.pct >= 0.85).sort((a, b) => b.pct - a.pct), ok = ds.filter(d => !d.never && d.pct < 0.85), never = ds.filter(d => d.never);
+      const row = d => { const over = d.pct >= 1; const bits = [d.leftKm != null ? (d.leftKm <= 0 ? `${km(-d.leftKm)} 지남` : `${km(d.leftKm)} 남음`) : '', d.nextDate ? `${d.nextDate.getFullYear() % 100}.${d.nextDate.getMonth() + 1}.${d.nextDate.getDate()}까지` : ''].filter(Boolean).join(' · ');
+        return `<div class="flex items-center gap-2 py-1.5"><span class="flex-1 text-sm font-bold text-slate-700">${d.name}</span><span class="text-[11px] font-bold ${over ? 'text-rose-600' : d.pct >= 0.85 ? 'text-amber-600' : 'text-slate-400'}">${over ? '⚠️ 교체 시기 ' : d.pct >= 0.85 ? '곧 · ' : ''}${bits}</span></div>`; };
+      document.getElementById('due').innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🔧 소모품 ${soon.length ? `<span class="text-xs font-extrabold text-rose-600">${soon.length}개 곧 교체</span>` : ''}</h2>
+        ${soon.map(row).join('')}${ok.map(row).join('')}
+        ${never.length ? `<p class="text-[10px] text-slate-400 mt-1">아직 기록 없음: ${never.map(d => d.name).join(', ')} — 정비 기록에서 체크하면 다음 교체 시기를 알려줘요</p>` : ''}
+        <p class="text-[10px] text-slate-400 mt-1">일반적인 권장 주기 기준이에요. 정확한 주기는 차량 설명서를 확인하세요.</p>`;
+    }
+
+    function setType(t) {
+      type = t;
+      [['fuel', 'tFuel'], ['service', 'tService'], ['etc', 'tEtc']].forEach(([k, id]) => document.getElementById(id).className = `cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold ${k === t ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}`);
+      document.getElementById('tFuel').textContent = isEV() ? '⚡ 충전' : '⛽ 주유';
+      document.getElementById('litLabel').textContent = isEV() ? '충전량 (kWh)' : '주유량 (L)';
+      document.getElementById('litWrap').classList.toggle('invisible', t !== 'fuel');
+      document.getElementById('fuelOpts').classList.toggle('hidden', t !== 'fuel');
+      document.getElementById('svcOpts').classList.toggle('hidden', t !== 'service');
+      if (t === 'service') renderSvc();
+    }
+    function renderSvc() { document.getElementById('svcChips').innerHTML = ITEMS.map(([id, name]) => `<span role="button" tabindex="0" onclick="toggleSvc('${id}')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${svc.has(id) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${name}</span>`).join(''); }
+    function toggleSvc(id) { svc.has(id) ? svc.delete(id) : svc.add(id); renderSvc(); }
+    function unitPrice() { const a = num(document.getElementById('lAmt').value), l = num(document.getElementById('lLit').value); document.getElementById('unitPrice').textContent = a && l ? `${isEV() ? 'kWh' : '리터'}당 ${Math.round(a / l).toLocaleString('ko-KR')}원` : ''; }
+    ['lAmt', 'lLit'].forEach(id => document.getElementById(id).addEventListener('input', unitPrice));
+    document.getElementById('lAmt').addEventListener('blur', e => { const n = num(e.target.value); if (n) e.target.value = n.toLocaleString('ko-KR'); });
+
+    function addLog() {
+      const c = car(), msg = document.getElementById('msg'); msg.textContent = '';
+      const log = { id: Date.now(), car: c.id, type, date: document.getElementById('lDate').value || ymd(new Date()), odo: num(document.getElementById('lOdo').value), amt: num(document.getElementById('lAmt').value), memo: document.getElementById('lMemo').value.trim() };
+      if (type === 'fuel') { log.lit = num(document.getElementById('lLit').value); log.full = document.getElementById('lFull').checked; if (!log.amt && !log.lit) { msg.textContent = '금액이나 주유량을 넣어 주세요.'; return; } }
+      if (type === 'service') { log.items = [...svc]; if (!log.items.length && !log.memo) { msg.textContent = '정비 항목을 고르거나 메모를 써 주세요.'; return; } }
+      if (type === 'etc' && !log.amt && !log.memo) { msg.textContent = '금액이나 메모를 넣어 주세요.'; return; }
+      const prevMax = Math.max(0, ...logsOf(c.id).filter(l => l.date <= log.date).map(l => l.odo || 0));
+      if (log.odo && prevMax && log.odo < prevMax) { msg.textContent = `주행거리가 이전 기록(${km(prevMax)})보다 작아요. 확인해 주세요.`; return; }
+      st.logs.push(log); persist();
+      if (document.getElementById('toLedger').checked && log.amt) toLedger(log, c);
+      ['lOdo', 'lAmt', 'lLit', 'lMemo'].forEach(id => document.getElementById(id).value = ''); svc.clear(); document.getElementById('unitPrice').textContent = '';
+      const b = document.getElementById('saveBtn'); b.textContent = '✓ 저장했어요'; setTimeout(() => b.textContent = '기록', 1200);
+      render();
+    }
+    function toLedger(l, c) {
+      try {
+        const tx = JSON.parse(localStorage.getItem('argon_tx_v3') || '[]') || [];
+        const what = l.type === 'fuel' ? (isEV() ? '충전' : '주유') : l.type === 'service' ? '정비' : '차량';
+        tx.push({ id: Date.now() + 1, createdAt: Date.now() * 1000, date: l.date, type: 'expense', category: '🚌 교통/차량', method: '신용카드', cardCompany: '', merchant: `${c.name} ${what}`, memo: l.memo || (l.items || []).map(i => ITEMS.find(x => x[0] === i)[1].replace(/^\S+ /, '')).join(', '), amount: l.amt, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: l.amt, groupId: null });
+        localStorage.setItem('argon_tx_v3', JSON.stringify(tx));
+      } catch (e) {}
+    }
+    function renderList() {
+      const c = car(), ls = logsOf(c.id).reverse(), eff = {}; efficiency(c).forEach(e => eff[e.date] = e.eff);
+      document.getElementById('list').innerHTML = ls.length ? ls.slice(0, 60).map(l => {
+        const what = l.type === 'fuel' ? `${isEV() ? '⚡' : '⛽'} ${l.lit ? `${l.lit}${isEV() ? 'kWh' : 'L'}` : (isEV() ? '충전' : '주유')}${l.full ? '' : ' (부분)'}${eff[l.date] && l.full ? ` <span class="text-[10px] text-emerald-600">${eff[l.date].toFixed(1)}${isEV() ? 'km/kWh' : 'km/L'}</span>` : ''}` : l.type === 'service' ? `🔧 ${(l.items || []).map(i => (ITEMS.find(x => x[0] === i) || [, i])[1]).join(', ') || '정비'}` : '🧾 기타';
+        return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="w-14 shrink-0 text-[11px] font-bold text-slate-500 num">${l.date.slice(2).replace(/-/g, '.')}</span>
+          <span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${what}</span><span class="block text-[10px] text-slate-400 truncate">${l.odo ? km(l.odo) : ''}${l.memo ? ` · ${esc(l.memo)}` : ''}</span></span>
+          <span class="text-sm font-extrabold text-slate-900 num shrink-0">${l.amt ? won(l.amt) : ''}</span><span role="button" tabindex="0" onclick="delLog(${l.id}, this)" aria-label="삭제" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`; }).join('') : '<p class="text-xs text-slate-400 py-1">주유·정비 기록을 남겨 보세요.</p>';
+    }
+    function delLog(id, el) { if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = '✕'; el.classList.remove('text-rose-500'); } }, 2500); return; } st.logs = st.logs.filter(l => l.id !== id); persist(); render(); }
+
+    let editingCar = null;
+    function openSetup(edit) {
+      const c = edit ? car() : null; editingCar = c ? c.id : null;
+      document.getElementById('cName').value = c ? c.name : ''; document.getElementById('cOdo').value = c && c.odo0 ? c.odo0 : ''; document.getElementById('cFuel').value = c ? c.fuel : 'gas';
+      document.getElementById('cCancel').classList.toggle('hidden', !st.cars.length);
+      document.getElementById('setup').classList.remove('hidden'); document.getElementById('cName').focus();
+    }
+    function closeSetup() { document.getElementById('setup').classList.add('hidden'); }
+    document.getElementById('carForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const v = { name: document.getElementById('cName').value.trim(), odo0: num(document.getElementById('cOdo').value), fuel: document.getElementById('cFuel').value };
+      if (!v.name) return;
+      if (editingCar) Object.assign(st.cars.find(c => c.id === editingCar), v); else { const id = Date.now(); st.cars.push({ id, ...v }); st.cur = id; }
+      persist(); closeSetup(); render();
+    });
+
+    function render() {
+      const has = st.cars.length > 0;
+      document.getElementById('main').classList.toggle('hidden', !has);
+      renderTabs(); if (!has) { openSetup(); return; }
+      renderSummary(); renderDue(); setType(type); renderList();
+      const o = document.getElementById('lOdo'); o.placeholder = lastOdo(car()) ? `지난번 ${lastOdo(car()).toLocaleString('ko-KR')}` : '예: 45210';
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ cars: [], logs: [] }, load(KEY, {})); render(); } });
+    document.getElementById('lDate').value = ymd(new Date()); render();
+  </script>
+</body>
+</html>

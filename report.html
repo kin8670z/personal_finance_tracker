@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>소비 리포트 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">📊 소비 리포트</a></h1>
+        <span class="flex items-center gap-1 shrink-0"><span role="button" tabindex="0" onclick="move(-1)" aria-label="이전 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-600">‹</span>
+          <b id="ym" class="text-sm font-extrabold text-slate-800 num w-20 text-center"></b>
+          <span role="button" tabindex="0" onclick="move(1)" aria-label="다음 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-600">›</span></span>
+      </div>
+    </header>
+    <div id="out" class="space-y-3 md:space-y-4"></div>
+  </div>
+
+  <script>
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const won = n => Math.round(n).toLocaleString('ko-KR') + '원';
+    const man = n => n >= 1e4 ? `${(n / 1e4).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}만원` : won(n);
+    const pad = n => String(n).padStart(2, '0');
+    const W = '일월화수목금토';
+    // 재미 통계: [이모지, 이름, 단위, 키워드(가게·메모), 카테고리]
+    const FUN = [
+      ['☕', '커피·카페', '잔', ['스타벅스', '커피', '카페', '이디야', '메가', '컴포즈', '빽다방', '투썸', '할리스', '폴바셋', '블루보틀', '텐퍼센트', '파스쿠찌', '공차'], '☕ 카페/간식'],
+      ['🛵', '배달', '번', ['배민', '배달의민족', '쿠팡이츠', '요기요', '배달'], null],
+      ['🏪', '편의점', '번', ['GS25', 'CU', '세븐일레븐', '이마트24', '편의점', '미니스톱'], null],
+      ['📦', '쿠팡', '번', ['쿠팡'], null],
+      ['🚕', '택시', '번', ['택시', '카카오T', '카카오 T', '타다', '우티'], null]
+    ];
+    let cur = new Date(); cur = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    const ymKey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
+    function txs() { try { return JSON.parse(localStorage.getItem('argon_tx_v3') || '[]') || []; } catch (e) { return []; } }
+    const hit = (t, keys) => { const s = `${t.merchant || ''} ${t.memo || ''}`.toUpperCase(); return keys.some(k => s.includes(k.toUpperCase())); };
+
+    function stats(ym) {
+      const today = new Date(), todayStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+      const all = txs().filter(t => (t.date || '').startsWith(ym) && t.date <= todayStr);
+      const ex = all.filter(t => t.type === 'expense'), inc = all.filter(t => t.type === 'income');
+      const sum = a => a.reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const byCat = {}, byDay = {}, byWd = [0, 0, 0, 0, 0, 0, 0], byMer = {};
+      ex.forEach(t => { const a = Number(t.amount) || 0; byCat[t.category] = (byCat[t.category] || 0) + a; byDay[t.date] = (byDay[t.date] || 0) + a;
+        const [y, m, d] = t.date.split('-').map(Number); byWd[new Date(y, m - 1, d).getDay()] += a;
+        const k = (t.merchant || '').trim(); if (k) { byMer[k] = byMer[k] || { n: 0, a: 0 }; byMer[k].n++; byMer[k].a += a; } });
+      const [y, m] = ym.split('-').map(Number), days = ym === todayStr.slice(0, 7) ? today.getDate() : new Date(y, m, 0).getDate();
+      const fun = FUN.map(([e, name, unit, keys, cat]) => { const xs = ex.filter(t => hit(t, keys) || (cat && t.category === cat)); return { e, name, unit, n: xs.length, a: sum(xs) }; }).filter(f => f.n);
+      return { all, ex, total: sum(ex), income: sum(inc), byCat, byDay, byWd, byMer, days, fun, noSpend: days - Object.keys(byDay).length };
+    }
+
+    function render() {
+      const ym = ymKey(cur), prev = new Date(cur.getFullYear(), cur.getMonth() - 1, 1);
+      document.getElementById('ym').textContent = `${cur.getFullYear() % 100}년 ${cur.getMonth() + 1}월`;
+      const s = stats(ym), p = stats(ymKey(prev)), out = document.getElementById('out');
+      if (!s.ex.length) { out.innerHTML = `<section class="card p-6 text-center"><div class="text-4xl">🧾</div><p class="text-sm font-bold text-slate-500 mt-2">이 달은 가계부 지출 기록이 없어요.</p><a href="./" class="inline-block mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-bold">📒 가계부로</a></section>`; return; }
+      const diff = p.total ? (s.total - p.total) / p.total * 100 : null;
+      const cats = Object.entries(s.byCat).sort((a, b) => b[1] - a[1]), maxCat = cats[0][1];
+      const topDay = Object.entries(s.byDay).sort((a, b) => b[1] - a[1])[0], wdMax = s.byWd.indexOf(Math.max(...s.byWd));
+      const often = Object.entries(s.byMer).sort((a, b) => b[1].n - a[1].n || b[1].a - a[1].a).slice(0, 5);
+      const chicken = 20000;
+      out.innerHTML = `
+        <section class="card p-5 text-center">
+          <p class="text-xs font-bold text-slate-500">${cur.getMonth() + 1}월에 쓴 돈${s.days < new Date(cur.getFullYear(), cur.getMonth() + 1, 0).getDate() ? ` (${s.days}일까지)` : ''}</p>
+          <p class="text-4xl font-extrabold text-slate-900 num mt-1">${won(s.total)}</p>
+          ${diff != null ? `<p class="text-sm font-extrabold mt-1 ${diff > 0 ? 'text-rose-500' : 'text-blue-500'}">지난달보다 ${diff > 0 ? '▲' : '▼'} ${Math.abs(diff).toFixed(0)}% (${man(Math.abs(s.total - p.total))} ${diff > 0 ? '더' : '덜'})</p>` : ''}
+          <div class="grid grid-cols-3 gap-2 mt-4 text-left">
+            <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">하루 평균</p><p class="text-sm font-extrabold text-slate-800 num">${man(s.total / s.days)}</p></div>
+            <div class="rounded-xl bg-emerald-50 px-3 py-2"><p class="text-[10px] font-bold text-emerald-600">무지출 데이</p><p class="text-sm font-extrabold text-slate-800">${s.noSpend}일 ${s.noSpend >= 5 ? '👏' : ''}</p></div>
+            <div class="rounded-xl bg-indigo-50 px-3 py-2"><p class="text-[10px] font-bold text-indigo-600">결제 횟수</p><p class="text-sm font-extrabold text-slate-800">${s.ex.length}번</p></div>
+          </div>
+        </section>
+
+        ${s.fun.length ? `<section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🎯 이번 달 나는…</h2><div class="grid grid-cols-2 gap-2">${s.fun.map(f => `
+          <div class="rounded-2xl bg-slate-50 px-3 py-3"><p class="text-2xl">${f.e}</p><p class="text-xs font-bold text-slate-500 mt-1">${f.name}</p><p class="text-xl font-extrabold text-slate-900">${f.n}${f.unit}</p><p class="text-[11px] font-bold text-slate-500 num">${won(f.a)}${f.a >= chicken ? ` · 🍗 치킨 ${Math.floor(f.a / chicken)}마리` : ''}</p></div>`).join('')}</div></section>` : ''}
+
+        <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🏷️ 어디에 많이 썼나</h2>
+          ${cats.slice(0, 6).map(([c, a]) => `<div class="mb-2"><div class="flex justify-between text-xs font-bold"><span class="text-slate-700">${esc(c)}</span><span class="text-slate-900 num">${won(a)} <span class="text-slate-400">${(a / s.total * 100).toFixed(0)}%</span>${p.byCat[c] ? ` <span class="${a > p.byCat[c] ? 'text-rose-500' : 'text-blue-500'}">${a > p.byCat[c] ? '▲' : '▼'}</span>` : ''}</span></div><div class="h-2 rounded-full bg-slate-100 mt-1"><div class="h-full rounded-full bg-indigo-500" style="width:${a / maxCat * 100}%"></div></div></div>`).join('')}
+        </section>
+
+        <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🔁 단골 가게</h2>
+          ${often.map(([m, v], i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="w-5 text-center text-sm font-extrabold ${i === 0 ? 'text-amber-500' : 'text-slate-400'}">${i + 1}</span><span class="flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(m)}</span><span class="text-xs font-bold text-slate-500">${v.n}번</span><span class="text-xs font-extrabold text-slate-900 num w-20 text-right">${won(v.a)}</span></div>`).join('')}
+        </section>
+
+        <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">📅 소비 습관</h2>
+          <div class="flex items-end gap-1.5 h-24">${s.byWd.map((a, i) => `<div class="flex-1 flex flex-col items-center justify-end h-full"><div class="w-full rounded-t-md ${i === wdMax ? 'bg-rose-400' : 'bg-slate-300'}" style="height:${Math.max(4, a / Math.max(...s.byWd, 1) * 100)}%"></div><span class="text-[10px] font-bold ${i === wdMax ? 'text-rose-500' : 'text-slate-400'} mt-1">${W[i]}</span></div>`).join('')}</div>
+          <p class="text-xs font-bold text-slate-600 mt-2">💸 <b>${W[wdMax]}요일</b>에 제일 많이 써요 · 제일 많이 쓴 날은 <b>${+topDay[0].slice(5, 7)}/${+topDay[0].slice(8)}</b> (${won(topDay[1])})</p>
+        </section>
+        ${s.income ? `<section class="card p-4"><p class="text-xs font-bold text-slate-600">💰 수입 ${won(s.income)} · ${s.income >= s.total ? `<span class="text-emerald-600">${man(s.income - s.total)} 남았어요 👍</span>` : `<span class="text-rose-500">${man(s.total - s.income)} 더 썼어요</span>`}</p></section>` : ''}`;
+    }
+    function move(d) { const n = new Date(cur.getFullYear(), cur.getMonth() + d, 1), now = new Date(); if (n > new Date(now.getFullYear(), now.getMonth(), 1)) return; cur = n; render(); }
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === 'argon_tx_v3') render(); });
+    render();
+  </script>
+</body>
+</html>

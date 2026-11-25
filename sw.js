@@ -1,9 +1,9 @@
 // 든든 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v30';
+const CACHE = 'argon-shell-v36';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
-const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
+const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './report.html', './car.html', './parking.html', './kidsay.html', './sticker.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
@@ -58,10 +58,29 @@ function composeBrief(b) {
     if (td.length) lines.push(`✅ 오늘 할 일 ${td.length}개: ${td.slice(0, 3).map(x => x.n).join(', ')}${td.length > 3 ? '…' : ''}`);
     if (b.shop) lines.push(`🛒 장보기 ${b.shop}개 남음`);
   }
-  return lines.length ? { title: '☀️ 든든 아침 브리핑', body: lines.join('\n') } : { title: '☀️ 좋은 아침이에요', body: '오늘 날씨랑 출근길 확인하고 가요 🚇' };
+  return lines;
+}
+// 오늘 날씨 한두 줄 (open-meteo, 4초 안에 못 받으면 생략)
+async function weatherLines(place) {
+  try {
+    const p = place && place.lat ? place : { name: '하남시', lat: 37.5393, lng: 127.2149 };
+    const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 4000);
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.lat}&longitude=${p.lng}&timezone=Asia%2FSeoul&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,weather_code&forecast_days=1`, { signal: ctl.signal });
+    clearTimeout(timer); if (!r.ok) return [];
+    const d = (await r.json()).daily, hi = Math.round(d.temperature_2m_max[0]), lo = Math.round(d.temperature_2m_min[0]), pop = d.precipitation_probability_max[0], code = d.weather_code[0];
+    const snow = [71, 73, 75, 77, 85, 86].includes(code), icon = snow ? '🌨️' : pop >= 50 ? '🌧️' : code <= 1 ? '☀️' : code <= 3 ? '⛅' : '☁️';
+    const out = [`${icon} ${p.name || '오늘'} ${lo}~${hi}℃${pop != null ? ` · ${snow ? '눈' : '비'} ${pop}%` : ''}`];
+    if (pop >= 50) out.push(snow ? '☃️ 눈 소식 있어요 — 미끄럼 조심, 우산 챙기세요' : '☂️ 비 올 확률이 높아요 — 우산 챙기세요');
+    if (lo <= -5) out.push('🥶 많이 추워요 — 패딩·장갑 챙기세요'); else if (lo <= 0) out.push('🧣 영하로 떨어져요 — 따뜻하게 입어요');
+    if (hi >= 31) out.push('🥵 많이 더워요 — 물 자주 마셔요');
+    return out;
+  } catch (e) { return []; }
 }
 self.addEventListener('push', e => {
-  e.waitUntil(readBrief().then(b => { const m = composeBrief(b); return self.registration.showNotification(m.title, { body: m.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-morning', renotify: true, data: { url: './today.html' } }); }));
+  e.waitUntil(readBrief().then(async b => {
+    const lines = [...await weatherLines(b && b.place), ...composeBrief(b)];
+    const m = lines.length ? { title: '☀️ 든든 아침 브리핑', body: lines.join('\n') } : { title: '☀️ 좋은 아침이에요', body: '오늘 날씨랑 출근길 확인하고 가요 🚇' };
+    return self.registration.showNotification(m.title, { body: m.body, icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'dd-morning', renotify: true, data: { url: './today.html' } }); }));
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();

@@ -87,9 +87,12 @@
     <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
     <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
     <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
@@ -98,6 +101,8 @@
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
@@ -131,7 +136,10 @@
     <section id="lunch" class="card p-4 hidden"></section>
     <section id="phrase" class="card p-4"></section>
     <section id="gifts" class="hidden card p-4"></section>
+    <section id="parking" class="hidden card p-4"></section>
     <section id="fever" class="hidden card p-4"></section>
+    <section id="sticker" class="hidden card p-4"></section>
+    <section id="kidsay" class="hidden card p-4"></section>
     <section id="habits" class="card p-4"></section>
 
     <section id="todo" class="card p-4"></section>
@@ -401,6 +409,32 @@
       box.innerHTML = head('🎁 곧 만료되는 기프티콘', './gift.html', '전체') + `<div class="space-y-1.5">${soon.map(x => { const n = left(x.exp); return `<a href="./gift.html?id=${x.id}" class="flex items-center gap-2"><span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600 shrink-0">${n === 0 ? '오늘까지' : `D-${n}`}</span><span class="text-sm font-bold text-slate-800 truncate">${esc(x.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${esc(x.store || '')}</span></a>`; }).join('')}</div>`;
     }
 
+    // ---------- 주차 중 ----------
+    function renderParking() {
+      const box = document.getElementById('parking'), c = (load('argon_parking_v1', {}) || {}).cur;
+      if (!c) { box.classList.add('hidden'); return; }
+      const m = Math.floor((Date.now() - c.t) / 6e4), d = m < 60 ? `${m}분` : m < 1440 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${Math.floor(m / 1440)}일`;
+      box.classList.remove('hidden');
+      box.innerHTML = head('🅿️ 주차 중', './parking.html', '자세히') + `<a href="./parking.html" class="flex items-center gap-2">${c.floor ? `<span class="px-3 py-1 rounded-xl bg-indigo-600 text-white text-xl font-extrabold">${esc(c.floor)}</span>` : ''}${c.zone ? `<span class="px-3 py-1 rounded-xl bg-amber-400 text-slate-900 text-xl font-extrabold">${esc(c.zone)}</span>` : ''}<span class="min-w-0 text-xs font-bold text-slate-500">${esc(c.place || '')}${c.memo ? ` · ${esc(c.memo)}` : ''}<br>${d} 지났어요${c.photo ? ' · 📷' : ''}</span></a>`;
+    }
+    // ---------- 칭찬 스티커 (진행 중인 판) ----------
+    function renderSticker() {
+      const box = document.getElementById('sticker'), s = load('argon_sticker_v1', { boards: [] }), kids = (load('argon_kid_v1', {}).kids || []);
+      const bs = (s.boards || []).filter(b => !b.doneAt && Object.values(s.cur || {}).includes(b.id));
+      if (!bs.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('⭐ 칭찬 스티커', './sticker.html', '붙이기') + bs.map(b => { const k = kids.find(x => x.id === b.kid), n = b.items.length;
+        return `<a href="./sticker.html" class="block py-1"><div class="flex justify-between text-xs font-bold"><span class="text-slate-700">${k && !b.title.includes(k.name) ? esc(k.name) + ' · ' : ''}${esc(b.title)}</span><span class="text-slate-500">${n}/${b.goal} · 🎁 ${esc(b.reward || '선물')}</span></div><div class="h-2 rounded-full bg-slate-100 mt-1"><div class="h-full rounded-full ${b.theme === 'santa' ? 'bg-rose-500' : 'bg-indigo-500'}" style="width:${n / b.goal * 100}%"></div></div></a>`; }).join('');
+    }
+    // ---------- 아이 어록: 몇 년 전 오늘 ----------
+    function renderKidsay() {
+      const box = document.getElementById('kidsay'), items = (load('argon_kidsay_v1', {}).items || []), t = new Date(), md = ymd(t).slice(5);
+      const hits = items.filter(x => x.date.slice(5) === md && x.date.slice(0, 4) < String(t.getFullYear()));
+      if (!hits.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🗣️ 몇 년 전 오늘', './kidsay.html', '어록') + hits.slice(0, 2).map(x => `<p class="text-sm font-extrabold text-slate-800 py-1">${x.e || '💬'} “${esc(x.text)}” <span class="text-[10px] font-bold text-slate-400">${t.getFullYear() - +x.date.slice(0, 4)}년 전</span></p>`).join('');
+    }
+
     // ---------- 체온 (최근 24시간 안에 기록 있을 때만) ----------
     function renderFever() {
       const box = document.getElementById('fever'), st = load('argon_fever_v1', { logs: [] }), kids = (load('argon_kid_v1', { kids: [] }).kids || []), now = Date.now();
@@ -582,7 +616,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderFever(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderParking(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }

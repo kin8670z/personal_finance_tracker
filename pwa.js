@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.16';
+  const VERSION = '9.22';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -89,7 +89,8 @@
           : [{ n: '크리스마스', e: '🎄', date: '2026-12-25', y: true }, { n: '새해', e: '🎆', date: '2027-01-01', y: true }, { n: '어린이날', e: '🎈', date: '2027-05-05', y: true }],
         todos: ((t && t.todos) || []).filter(x => !x.done).map(x => ({ n: x.text, due: x.due || '' })).slice(0, 50),
         shop: ((t && t.shop) || []).filter(x => !x.done).length,
-        kids: ((kd && kd.kids) || []).map(x => ({ n: x.name, b: x.birth }))
+        kids: ((kd && kd.kids) || []).map(x => ({ n: x.name, b: x.birth })),
+        place: L('argon_today_place_v1') || { name: '하남시', lat: 37.5393, lng: 127.2149 }
       };
       const rq = indexedDB.open('dd_notify', 1);
       rq.onupgradeneeded = () => rq.result.createObjectStore('kv');
@@ -100,9 +101,10 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
   // 사이드 메뉴를 카테고리로 묶기 (오늘은 맨 위 그대로, 나머지는 접었다 펴는 그룹)
   const NAV_GROUPS = [
-    ['rec', '📝', '기록', ['diary.html', 'todo.html', 'habits.html', 'kid.html', 'fever.html', 'dday.html']],
-    ['money', '💰', '자산관리', ['', 'index.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
-    ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'gift.html']],
+    ['rec', '📝', '기록', ['diary.html', 'todo.html', 'habits.html', 'dday.html']],
+    ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html']],
+    ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
+    ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'gift.html', 'parking.html', 'car.html']],
     ['trip', '✈️', '여행', ['english.html', 'fx.html']]
   ];
   function groupNav() {
