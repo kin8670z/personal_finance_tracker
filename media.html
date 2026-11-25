@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="든든">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
-  <title>책·영화 · 든든</title>
+  <title>콘텐츠 기록 · 든든</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
     try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
@@ -110,7 +110,7 @@
     <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
     <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
     <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
-    <a href="./media.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📚 <span>책·영화</span></a>
+    <a href="./media.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🍿 <span>콘텐츠 기록</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
@@ -127,7 +127,7 @@
     <header class="card p-4">
       <div class="flex items-center gap-2 min-w-0">
         <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">📚 책·영화</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🍿 콘텐츠 기록</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
         <div id="hdrRight" class="flex gap-1 shrink-0"></div>
       </div>
     </header>
@@ -181,7 +181,7 @@
     function render() {
       renderForm();
       const y = String(new Date().getFullYear()), done = st.items.filter(i => i.status === 'done' && i.date.startsWith(y)), cnt = {}; done.forEach(i => cnt[i.type] = (cnt[i.type] || 0) + 1);
-      document.getElementById('sub').textContent = done.length ? `올해 ${done.length}개 · ` + TYPES.filter(([k]) => cnt[k]).map(([k, l]) => `${l.split(' ')[0]}${cnt[k]}`).join(' ') : '책·영화·드라마 기록';
+      document.getElementById('sub').textContent = done.length ? `올해 ${done.length}개 · ` + TYPES.filter(([k]) => cnt[k]).map(([k, l]) => `${l.split(' ')[0]}${cnt[k]}`).join(' ') : '책·영화·드라마·게임 기록';
       document.getElementById('filters').innerHTML = [['all', '전체'], ['doing', '⏳ 진행 중'], ['want', '💭 찜'], ...TYPES].map(([k, l]) => `<span role="button" tabindex="0" onclick="filt='${k}';render()" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${filt === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
       const q = document.getElementById('q').value.trim();
       const xs = st.items.filter(i => (filt === 'all' || i.status === filt || i.type === filt) && (!q || (i.title + (i.review || '')).includes(q))).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
