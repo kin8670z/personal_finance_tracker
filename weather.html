@@ -173,7 +173,7 @@
     function renderPlaces() {
       const saved = load(SAVED, []) || [], list = [HOME, ...saved.filter(s => s.name !== HOME.name)];
       const cur = p => Math.abs(p.lat - place.lat) < 0.01 && Math.abs(p.lng - place.lng) < 0.01;
-      document.getElementById('places').innerHTML = list.map((p, i) => `<span role="button" tabindex="0" onclick="pick(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${cur(p) ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${i === 0 ? '🏠 ' : ''}${esc(p.name)}${i > 0 ? ` <span onclick="event.stopPropagation();unsave(${i - 1})" class="opacity-50 ml-0.5">✕</span>` : ''}</span>`).join('')
+      document.getElementById('places').innerHTML = list.map((p, i) => `<span role="button" tabindex="0" onclick="pick(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${cur(p) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${i === 0 ? '🏠 ' : ''}${esc(p.name)}${i > 0 ? ` <span onclick="event.stopPropagation();unsave(${i - 1})" class="opacity-50 ml-0.5">✕</span>` : ''}</span>`).join('')
         + (!list.some(cur) ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-white">${esc(place.name)}</span>` : '')
         + `<span role="button" tabindex="0" onclick="myPlace()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">📍 지금 위치</span><span role="button" tabindex="0" onclick="toggleSearch()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">🔍 다른 곳</span>`;
       window._places = list;

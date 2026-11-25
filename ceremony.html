@@ -180,7 +180,7 @@
     const num = v => Number(String(v || '').replace(/[^\d]/g, '')) || 0;
     function renderForm() {
       document.getElementById('dirBtns').innerHTML = [['give', '🎁 내가 냄'], ['get', '💌 받음'], ['plan', '📅 갈 예정']].map(([k, l]) => `<span role="button" tabindex="0" onclick="dir='${k}';renderForm()" class="cursor-pointer flex-1 text-center py-2 rounded-xl text-sm font-extrabold ${dir === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
-      document.getElementById('kinds').innerHTML = KINDS.map(k => `<span role="button" tabindex="0" onclick="kind='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${kind === k ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${k}</span>`).join('');
+      document.getElementById('kinds').innerHTML = KINDS.map(k => `<span role="button" tabindex="0" onclick="kind='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${kind === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${k}</span>`).join('');
       document.getElementById('quickAmt').innerHTML = AMTS.map(a => `<span role="button" tabindex="0" onclick="document.getElementById('fAmt').value='${a.toLocaleString('ko-KR')}'" class="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-100 text-xs font-bold text-slate-600">${a / 10000}만</span>`).join('');
       document.getElementById('ledgerWrap').classList.toggle('hidden', dir !== 'give');
       document.getElementById('people').innerHTML = [...new Set(st.items.map(i => i.person))].map(p => `<option value="${esc(p)}">`).join('');

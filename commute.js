@@ -105,7 +105,7 @@
         <span class="seg flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-bold">${[['dep', '출발'], ['arr', '도착']].map(([k, l]) => `<span role="button" tabindex="0" onclick="Commute.setBasis('${k}')" class="cursor-pointer px-2 py-0.5 rounded-md ${S.basis === k ? 'bg-indigo-600 text-white' : 'text-slate-500'}">${l} 기준</span>`).join('')}</span>
         <input type="time" id="cmTime" value="${nowSel ? mm2t(T().nowMins()) : mm2t(S.time)}" onchange="Commute.setTime(this.value)" class="border border-slate-200 rounded-lg px-2 py-0.5 bg-white text-sm num" style="font-size:14px!important">
         <span role="button" tabindex="0" onclick="Commute.setTime(null)" class="cursor-pointer px-2 py-0.5 rounded-lg text-[11px] font-bold ${nowSel ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-500'}">지금</span>
-        <span class="seg flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-bold ml-auto">${['1', '2', '3'].map(w => `<span role="button" tabindex="0" onclick="Commute.setWeek('${w}')" class="cursor-pointer px-1.5 py-0.5 rounded-md ${week === w ? 'bg-slate-700 text-white' : 'text-slate-500'}">${T().WEEK[w]}</span>`).join('')}</span>
+        <span class="seg flex bg-slate-100 rounded-lg p-0.5 text-[11px] font-bold ml-auto">${['1', '2', '3'].map(w => `<span role="button" tabindex="0" onclick="Commute.setWeek('${w}')" class="cursor-pointer px-1.5 py-0.5 rounded-md ${week === w ? 'bg-indigo-600 text-white' : 'text-slate-500'}">${T().WEEK[w]}</span>`).join('')}</span>
       </div>` : '';
     let body;
     if (bad) body = `<p class="text-xs text-rose-600">${esc(label(bad.from))} → ${esc(label(bad.to))} 바로 가는 열차를 시간표에서 못 찾았어요. ⚙️에서 환승역이나 역 이름을 확인해 주세요.</p>`;

@@ -168,7 +168,7 @@
     const persist = () => save(KEY, st);
     function renderCats() {
       document.getElementById('cats').innerHTML = `<span role="button" tabindex="0" onclick="onlyAgain=!onlyAgain;render()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${onlyAgain ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600'}">😋 또 갈 곳</span>` + CATS.filter(c => st.items.some(i => i.cat === c)).map(c => `<span role="button" tabindex="0" onclick="cat=cat==='${c}'?null:'${c}';render()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${cat === c ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${c}</span>`).join('');
-      document.getElementById('fCats').innerHTML = CATS.map(c => `<span role="button" tabindex="0" onclick="fCat='${c}';renderCats()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${fCat === c ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${c}</span>`).join('');
+      document.getElementById('fCats').innerHTML = CATS.map(c => `<span role="button" tabindex="0" onclick="fCat='${c}';renderCats()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${fCat === c ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${c}</span>`).join('');
       document.getElementById('fStars').innerHTML = [1, 2, 3, 4, 5].map(n => `<span role="button" tabindex="0" onclick="fStar=${n};renderCats()" class="cursor-pointer ${n <= fStar ? '' : 'opacity-25 grayscale'}">⭐</span>`).join('');
     }
     function openForm(id) {
