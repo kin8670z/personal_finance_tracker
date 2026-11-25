@@ -30,7 +30,8 @@ function parse(html, page) {
     const img = (blk.match(/class=["']car-pic["'][^>]*>\s*<img[^>]+src=["']([^"']+)["']/i) || [])[1] || '';
     const gimmick = strip((blk.match(/class=["']mark-action["'][^>]*>([\s\S]*?)<\/p>/i) || [])[1] || '');
     const jan = (blk.match(/takaratomymall\.jp\/shop\/g\/g(\d{13})/) || [])[1] || '';
-    out.push({ no, name, img: img ? abs(img, page) : '', gimmick: gimmick.slice(0, 60), jan, page });
+    const clean = (gimmick && name.endsWith(gimmick) ? name.slice(0, -gimmick.length) : name).replace(/\s+(?:サスペンション|\S*(?:開閉|可動|回転|上下|伸縮|取り外し|積み下ろし|積み降ろし|旋回|分割|飾り台付き|スタンド付き))(?:[\s/／、・]+\S*)*$/, '').trim() || name;
+    out.push({ no, name: clean, img: img ? abs(img, page) : '', gimmick: gimmick.slice(0, 60), jan, page });
   }
   return out;
 }
