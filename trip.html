@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>여행·숙소 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🧳 여행·숙소</a></h1>
+        <span role="button" tabindex="0" onclick="openTrip()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold bg-indigo-600 text-white shrink-0">＋ 여행</span>
+      </div>
+      <div id="tripTabs" class="flex flex-wrap gap-1.5 mt-2"></div>
+    </header>
+
+    <section id="tripForm" class="card p-4 hidden">
+      <h2 id="tripFormTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">새 여행</h2>
+      <div class="flex gap-2"><input id="fEmoji" maxlength="2" value="✈️" aria-label="이모지" class="w-12 text-center border border-slate-200 rounded-lg px-1 py-2 bg-white">
+        <input id="fName" maxlength="20" placeholder="여행 이름 (예: 제주 가족여행)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white"></div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <label class="text-[10px] font-bold text-slate-500">출발<input id="fStart" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">돌아오는 날<input id="fEnd" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+      </div>
+      <input id="fBudget" inputmode="numeric" placeholder="여행 예산 (선택, 원)" class="num w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <div class="flex gap-2 mt-3"><button type="button" onclick="saveTrip()" class="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg">저장</button><span role="button" tabindex="0" onclick="closeForms()" class="cursor-pointer px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg">취소</span></div>
+      <p id="tripDel" class="hidden text-right mt-2"><span role="button" tabindex="0" onclick="delTrip(this)" class="cursor-pointer text-[11px] font-bold text-rose-500">이 여행 삭제</span></p>
+    </section>
+
+    <div id="main" class="space-y-3 md:space-y-4"></div>
+
+    <section id="stayForm" class="card p-4 hidden">
+      <h2 id="stayFormTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🏨 숙소 추가</h2>
+      <input id="sName" maxlength="40" placeholder="숙소 이름 (예: 신라호텔 제주)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <label class="text-[10px] font-bold text-slate-500">체크인<input id="sIn" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">시간<input id="sInT" type="time" value="15:00" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">체크아웃<input id="sOut" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">시간<input id="sOutT" type="time" value="11:00" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <label class="text-[10px] font-bold text-slate-500">총 금액 (원)<input id="sPrice" inputmode="numeric" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">결제<select id="sPay" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><option value="paid">✅ 결제 완료</option><option value="partial">💳 일부 결제 (잔금 현장)</option><option value="onsite">🏨 현장 결제</option></select></label>
+      </div>
+      <label id="sPaidWrap" class="hidden block text-[10px] font-bold text-slate-500 mt-2">미리 낸 금액 (원)<input id="sPaid" inputmode="numeric" class="num w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+      <input id="sAddr" maxlength="80" placeholder="주소 (선택) — 지도 바로가기" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <input id="sBook" maxlength="40" placeholder="예약처·예약번호 (선택)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <input id="sTel" inputmode="tel" maxlength="20" placeholder="숙소 전화 (선택)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      </div>
+      <input id="sMemo" maxlength="80" placeholder="메모 (선택) 예: 조식 포함, 주차 무료, 와이파이 비번" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <label id="sLedgerWrap" class="flex items-center gap-1 mt-2 text-[11px] font-bold text-slate-600"><input id="sLedger" type="checkbox" checked class="accent-indigo-600"> 📒 가계부에도 기록 (✈️ 여행 · 숙소, 낸 금액 중 아직 안 적은 만큼)</label>
+      <div class="flex gap-2 mt-3"><button type="button" onclick="saveStay()" class="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg">저장</button><span role="button" tabindex="0" onclick="closeForms()" class="cursor-pointer px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg">취소</span></div>
+      <p id="sMsg" class="text-[11px] font-bold text-rose-600 mt-1"></p>
+    </section>
+  </div>
+
+  <script>
+    const KEY = 'argon_trip_v1', TX = 'argon_tx_v3';
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const parseD = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const at = (d, t) => { const x = parseD(d); const [h, m] = (t || '00:00').split(':').map(Number); x.setHours(h, m); return x; };
+    const days = (a, b) => Math.round((parseD(b) - parseD(a)) / 864e5);
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const num = v => { const n = Number(String(v || '').replace(/[^\d]/g, '')); return n > 0 ? n : 0; };
+    const md = s => { const d = parseD(s); return `${d.getMonth() + 1}/${d.getDate()}(${'일월화수목금토'[d.getDay()]})`; };
+    const SUBS = [['숙소', '🏨'], ['교통', '🚗'], ['식비', '🍽️'], ['관광', '🎡'], ['쇼핑', '🛍️'], ['기타', '🧾']];
+    let st = Object.assign({ trips: [], stays: [], cur: null }, load(KEY, {})), editTrip = null, editStay = null;
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const trip = () => st.trips.find(t => t.id === st.cur) || pickDefault();
+    function pickDefault() {   // 진행 중 → 가장 가까운 예정 → 최근 다녀온 여행
+      const t = ymd(new Date()), ts = st.trips;
+      return ts.find(x => x.start <= t && t <= x.end) || ts.filter(x => x.start > t).sort((a, b) => a.start.localeCompare(b.start))[0] || ts.slice().sort((a, b) => b.end.localeCompare(a.end))[0] || null;
+    }
+    const staysOf = id => st.stays.filter(s => s.trip === id).sort((a, b) => a.in.localeCompare(b.in));
+    const txOf = id => (load(TX, []) || []).filter(t => t.type === 'expense' && t.category === '✈️ 여행' && t.trip === id);
+
+    function renderTabs() {
+      const cur = trip();
+      document.getElementById('tripTabs').innerHTML = st.trips.slice().sort((a, b) => b.start.localeCompare(a.start)).map(t => `<span role="button" tabindex="0" onclick="pick(${t.id})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${cur && t.id === cur.id ? 'bg-sky-600 text-white' : 'bg-slate-100 text-slate-600'}">${esc(t.emoji || '✈️')} ${esc(t.name)}</span>`).join('');
+    }
+    function pick(id) { st.cur = id; persist(); render(); }
+
+    function heroHTML(t) {
+      const today = ymd(new Date()), n = days(t.start, t.end);
+      let big, sub;
+      if (today < t.start) { const d = days(today, t.start); big = d === 1 ? '내일 출발!' : `D-${d}`; sub = `${md(t.start)} 출발`; }
+      else if (today <= t.end) { const d = days(t.start, today) + 1; big = `여행 ${d}일째`; sub = today === t.end ? '오늘 돌아와요' : `돌아오기까지 ${days(today, t.end)}일`; }
+      else { big = '다녀왔어요'; sub = `${days(t.end, today)}일 전`; }
+      return `<div class="text-center"><div class="text-4xl">${esc(t.emoji || '✈️')}</div><p class="text-lg font-extrabold text-slate-900 mt-1">${esc(t.name)} <span role="button" tabindex="0" onclick="openTrip(${t.id})" aria-label="여행 수정" class="cursor-pointer text-xs text-slate-400">✎</span></p>
+        <p class="text-3xl font-extrabold text-sky-600 mt-1">${big}</p><p class="text-xs font-bold text-slate-500">${sub} · ${md(t.start)} ~ ${md(t.end)} · ${n ? `${n}박 ${n + 1}일` : '당일'}</p></div>`;
+    }
+    function stayHTML(s) {
+      const now = new Date(), cin = at(s.in, s.inT), cout = at(s.out, s.outT), nights = Math.max(1, days(s.in, s.out));
+      let badge, cls;
+      if (now < cin) { const d = days(ymd(now), s.in); badge = d === 0 ? `오늘 ${s.inT} 체크인` : d === 1 ? `내일 ${s.inT} 체크인` : `체크인 D-${d}`; cls = d <= 1 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'; }
+      else if (now < cout) { const h = Math.floor((cout - now) / 36e5); badge = h < 24 ? `체크아웃까지 ${h}시간 ${Math.floor((cout - now) / 6e4) % 60}분` : `숙박 중 · ${ymd(now) === s.out ? '오늘' : md(s.out)} ${s.outT} 체크아웃`; cls = 'bg-emerald-100 text-emerald-700'; }
+      else { badge = '체크아웃 완료'; cls = 'bg-slate-100 text-slate-400'; }
+      const prog = now >= cin && now < cout ? Math.round((now - cin) / (cout - cin) * 100) : null;
+      const due = s.pay === 'onsite' ? s.price : s.pay === 'partial' ? Math.max(0, s.price - (s.paid || 0)) : 0;
+      const q = encodeURIComponent(s.addr || s.name);
+      return `<div class="rounded-2xl border border-slate-200 p-3.5 ${now >= cout ? 'opacity-60' : ''}">
+        <div class="flex items-start justify-between gap-2"><p class="text-base font-extrabold text-slate-900 min-w-0">🏨 ${esc(s.name)}</p><span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${cls}">${badge}</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">체크인</p><p class="text-sm font-extrabold text-slate-800">${md(s.in)} ${esc(s.inT)}</p></div>
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">체크아웃</p><p class="text-sm font-extrabold text-slate-800">${md(s.out)} ${esc(s.outT)}</p></div>
+        </div>
+        ${prog != null ? `<div class="h-1.5 rounded-full bg-slate-100 mt-2"><div class="h-full rounded-full bg-emerald-500" style="width:${prog}%"></div></div>` : ''}
+        <p class="text-sm font-bold text-slate-700 mt-2">${nights}박 · ${s.price ? `<b class="text-slate-900">${won(s.price)}</b> <span class="text-[11px] text-slate-400">(1박 ${won(s.price / nights)})</span>` : '금액 미입력'}
+          ${s.pay === 'paid' ? '<span class="text-[10px] font-bold text-emerald-600">✅ 결제 완료</span>' : `<span class="text-[10px] font-bold text-rose-600">🏨 현장 결제 ${won(due)}</span>`}</p>
+        ${s.book ? `<p class="text-[11px] text-slate-500 mt-1">🔖 ${esc(s.book)}</p>` : ''}
+        ${s.memo ? `<p class="text-[11px] text-slate-600 mt-1">📝 ${esc(s.memo)}</p>` : ''}
+        <div class="flex flex-wrap gap-1.5 mt-2 text-[11px] font-bold">
+          <a href="https://map.naver.com/p/search/${q}" target="_blank" rel="noopener" class="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700">🗺️ 지도</a>
+          ${s.tel ? `<a href="tel:${esc(s.tel.replace(/[^\d+]/g, ''))}" class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-700">📞 전화</a>` : ''}
+          ${s.txId ? '<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-600">📒 가계부 연동</span>' : ''}
+          <span role="button" tabindex="0" onclick="openStay(${s.id})" class="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 ml-auto">수정</span>
+          <span role="button" tabindex="0" onclick="delStay(${s.id}, this)" class="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-100 text-slate-400">삭제</span>
+        </div></div>`;
+    }
+    function costHTML(t) {
+      const tx = txOf(t.id), by = {}; tx.forEach(x => { const k = x.sub || '기타'; by[k] = (by[k] || 0) + (Number(x.amount) || 0); });
+      const spent = Object.values(by).reduce((a, b) => a + b, 0);
+      const due = staysOf(t.id).reduce((a, s) => a + (s.pay === 'onsite' ? s.price : s.pay === 'partial' ? Math.max(0, s.price - (s.paid || 0)) : 0), 0);
+      const total = spent + due, max = Math.max(1, ...Object.values(by));
+      return `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">💸 여행 비용</h2>
+        <div class="flex items-end justify-between"><p class="text-2xl font-extrabold text-slate-900 num">${won(total)}</p>${t.budget ? `<p class="text-xs font-bold ${total > t.budget ? 'text-rose-600' : 'text-slate-500'}">예산 ${won(t.budget)} · ${total > t.budget ? `${won(total - t.budget)} 초과` : `${won(t.budget - total)} 남음`}</p>` : ''}</div>
+        ${t.budget ? `<div class="h-2 rounded-full bg-slate-100 mt-1"><div class="h-full rounded-full ${total > t.budget ? 'bg-rose-500' : 'bg-sky-500'}" style="width:${Math.min(100, total / t.budget * 100)}%"></div></div>` : ''}
+        <div class="mt-3 space-y-1.5">${SUBS.filter(([k]) => by[k]).map(([k, e]) => `<div><div class="flex justify-between text-xs font-bold"><span class="text-slate-700">${e} ${k}</span><span class="text-slate-900 num">${won(by[k])}</span></div><div class="h-1.5 rounded-full bg-slate-100 mt-0.5"><div class="h-full rounded-full bg-sky-400" style="width:${by[k] / max * 100}%"></div></div></div>`).join('')}
+          ${due ? `<div class="flex justify-between text-xs font-bold"><span class="text-rose-600">🏨 현장 결제 예정</span><span class="text-rose-600 num">${won(due)}</span></div>` : ''}</div>
+        ${!tx.length ? `<p class="text-[11px] text-slate-400 mt-2">가계부에서 카테고리를 <b>✈️ 여행</b>으로 고르고 이 여행을 선택하면 식비·교통도 여기 모여요.</p>` : ''}
+        <a href="./" class="inline-block mt-2 text-[11px] font-bold text-indigo-600">📒 가계부에 여행 지출 기록하기 →</a>`;
+    }
+
+    function render() {
+      renderTabs(); const t = trip(), box = document.getElementById('main');
+      if (!t) { box.innerHTML = `<section class="card p-6 text-center"><div class="text-5xl">🧳</div><p class="text-sm font-extrabold text-slate-800 mt-2">다가오는 여행을 등록해 볼까요?</p><p class="text-xs text-slate-500 mt-1">숙소 체크인·체크아웃, 남은 날, 여행 비용을 한눈에 볼 수 있어요.</p><button type="button" onclick="openTrip()" class="mt-3 px-5 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">＋ 여행 만들기</button></section>`; return; }
+      const ss = staysOf(t.id);
+      box.innerHTML = `<section class="card p-5">${heroHTML(t)}</section>
+        <section class="card p-4"><div class="flex items-center justify-between mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🏨 숙소 <span class="text-xs font-bold text-slate-400">${ss.length ? `${ss.reduce((a, s) => a + Math.max(1, days(s.in, s.out)), 0)}박` : ''}</span></h2><span role="button" tabindex="0" onclick="openStay()" class="cursor-pointer text-xs font-extrabold text-indigo-600">＋ 숙소 추가</span></div>
+          <div class="space-y-2">${ss.map(stayHTML).join('') || '<p class="text-xs text-slate-400">예약한 숙소를 추가해 보세요.</p>'}</div></section>
+        <section class="card p-4">${costHTML(t)}</section>`;
+    }
+
+    // ---------- 여행 ----------
+    function closeForms() { ['tripForm', 'stayForm'].forEach(id => document.getElementById(id).classList.add('hidden')); }
+    function openTrip(id) {
+      closeForms(); editTrip = id || null; const t = id ? st.trips.find(x => x.id === id) : null;
+      document.getElementById('tripFormTitle').textContent = t ? '여행 수정' : '새 여행';
+      document.getElementById('fEmoji').value = t ? t.emoji : '✈️'; document.getElementById('fName').value = t ? t.name : '';
+      document.getElementById('fStart').value = t ? t.start : ''; document.getElementById('fEnd').value = t ? t.end : '';
+      document.getElementById('fBudget').value = t && t.budget ? t.budget.toLocaleString('ko-KR') : '';
+      document.getElementById('tripDel').classList.toggle('hidden', !t);
+      const f = document.getElementById('tripForm'); f.classList.remove('hidden'); f.scrollIntoView({ behavior: 'smooth', block: 'start' }); document.getElementById('fName').focus();
+    }
+    function saveTrip() {
+      const v = { emoji: document.getElementById('fEmoji').value.trim() || '✈️', name: document.getElementById('fName').value.trim(), start: document.getElementById('fStart').value, end: document.getElementById('fEnd').value || document.getElementById('fStart').value, budget: num(document.getElementById('fBudget').value) };
+      if (!v.name || !v.start) { document.getElementById(v.name ? 'fStart' : 'fName').focus(); return; }
+      if (v.end < v.start) [v.start, v.end] = [v.end, v.start];
+      if (editTrip) Object.assign(st.trips.find(t => t.id === editTrip), v); else { const id = Date.now(); st.trips.push({ id, ...v }); st.cur = id; }
+      persist(); closeForms(); render();
+    }
+    function delTrip(el) {
+      if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '숙소 기록도 지워져요. 한 번 더 누르면 삭제 (가계부 내역은 남아요)'; return; }
+      st.stays = st.stays.filter(s => s.trip !== editTrip); st.trips = st.trips.filter(t => t.id !== editTrip); st.cur = null;
+      el.dataset.sure = ''; el.textContent = '이 여행 삭제'; persist(); closeForms(); render();
+    }
+
+    // ---------- 숙소 ----------
+    document.getElementById('sPay').addEventListener('change', e => document.getElementById('sPaidWrap').classList.toggle('hidden', e.target.value !== 'partial'));
+    ['sPrice', 'sPaid'].forEach(id => document.getElementById(id).addEventListener('blur', e => { const n = num(e.target.value); e.target.value = n ? n.toLocaleString('ko-KR') : ''; }));
+    function openStay(id) {
+      closeForms(); const t = trip(); if (!t) return openTrip();
+      editStay = id || null; const s = id ? st.stays.find(x => x.id === id) : null, last = staysOf(t.id).slice(-1)[0];
+      document.getElementById('stayFormTitle').textContent = s ? '🏨 숙소 수정' : '🏨 숙소 추가';
+      const set = (k, v) => document.getElementById(k).value = v;
+      set('sName', s ? s.name : ''); set('sIn', s ? s.in : (last ? last.out : t.start)); set('sOut', s ? s.out : t.end); set('sInT', s ? s.inT : '15:00'); set('sOutT', s ? s.outT : '11:00');
+      set('sPrice', s && s.price ? s.price.toLocaleString('ko-KR') : ''); set('sPay', s ? s.pay : 'paid'); set('sPaid', s && s.paid ? s.paid.toLocaleString('ko-KR') : '');
+      set('sAddr', s ? s.addr || '' : ''); set('sBook', s ? s.book || '' : ''); set('sTel', s ? s.tel || '' : ''); set('sMemo', s ? s.memo || '' : '');
+      document.getElementById('sPaidWrap').classList.toggle('hidden', (s ? s.pay : 'paid') !== 'partial');
+      document.getElementById('sLedger').checked = true;
+      document.getElementById('sMsg').textContent = '';
+      const f = document.getElementById('stayForm'); f.classList.remove('hidden'); f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    function saveStay() {
+      const g = k => document.getElementById(k).value.trim(), msg = document.getElementById('sMsg');
+      const v = { name: g('sName'), in: g('sIn'), out: g('sOut'), inT: g('sInT') || '15:00', outT: g('sOutT') || '11:00', price: num(g('sPrice')), pay: g('sPay'), paid: num(g('sPaid')), addr: g('sAddr'), book: g('sBook'), tel: g('sTel'), memo: g('sMemo') };
+      if (!v.name) { msg.textContent = '숙소 이름을 넣어 주세요.'; return; }
+      if (!v.in || !v.out || v.out <= v.in) { msg.textContent = '체크아웃 날짜가 체크인보다 뒤여야 해요.'; return; }
+      const t = trip(); let s;
+      if (editStay) { s = st.stays.find(x => x.id === editStay); Object.assign(s, v); }
+      else { s = { id: Date.now(), trip: t.id, ...v }; st.stays.push(s); }
+      const paidNow = v.pay === 'paid' ? v.price : v.pay === 'partial' ? v.paid : 0;
+      const done = s.ledgerAmt != null ? s.ledgerAmt : (s.txId ? paidNow : 0);   // 이미 가계부에 적은 금액
+      if (document.getElementById('sLedger').checked && paidNow > done) { const id = toLedger(s, t, paidNow - done, done > 0); if (id) { s.txId = s.txId || id; s.ledgerAmt = paidNow; } }
+      persist(); closeForms(); render();
+    }
+    function toLedger(s, t, amount, rest) {
+      try {
+        const tx = load(TX, []) || [], id = Date.now() + 7;
+        tx.push({ id, createdAt: Date.now() * 1000, date: ymd(new Date()), type: 'expense', category: '✈️ 여행', sub: '숙소', trip: t.id, method: '신용카드', cardCompany: '', merchant: s.name, memo: `${t.name} ${md(s.in)}~${md(s.out)}${rest ? ' 잔금' : ''}`, amount, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: amount, groupId: null });
+        localStorage.setItem(TX, JSON.stringify(tx)); return id;
+      } catch (e) { return null; }
+    }
+    function delStay(id, el) {
+      if (el.dataset.sure !== '1') { el.dataset.sure = '1'; el.textContent = '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = '삭제'; el.classList.remove('text-rose-500'); } }, 2500); return; }
+      st.stays = st.stays.filter(s => s.id !== id); persist(); render();
+    }
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY || e.key === TX) { st = Object.assign({ trips: [], stays: [] }, load(KEY, {})); render(); } });
+    setInterval(() => { if (document.visibilityState === 'visible' && !document.querySelector('#tripForm:not(.hidden), #stayForm:not(.hidden)')) render(); }, 60000);
+    render();
+  </script>
+</body>
+</html>
