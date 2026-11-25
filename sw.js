@@ -1,7 +1,7 @@
 // 든든 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v60';
+const CACHE = 'argon-shell-v62';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
 const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './health.html', './weather.html', './groupbuy.html', './firsts.html', './media.html', './places.html', './stash.html', './ceremony.html', './mood.html', './sleep.html', './tomica.html', './food.html', './games.html', './trip.html', './dict.html', './report.html', './car.html', './parking.html', './kidsay.html', './sticker.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './food-db.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 

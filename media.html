@@ -160,13 +160,16 @@
     function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
     const KEY = 'argon_media_v1';
     const TYPES = [['book', '📚 책'], ['movie', '🎬 영화'], ['drama', '📺 드라마'], ['anime', '🧸 애니'], ['show', '🎭 공연·전시'], ['game', '🎮 게임']];
-    const STAT = [['done', '다 봤어요'], ['doing', '보는 중'], ['want', '보고 싶어요']];
+    // 종류마다 동사: 책은 읽다, 게임은 하다, 나머지는 보다
+    const VERB = { book: ['다 읽었어요', '읽는 중', '읽고 싶어요'], game: ['다 했어요', '하는 중', '하고 싶어요'] }, SEE = ['다 봤어요', '보는 중', '보고 싶어요'];
+    const stLabel = (t, k) => (VERB[t] || SEE)[['done', 'doing', 'want'].indexOf(k)];
+    const STAT = [['done'], ['doing'], ['want']];
     let st = Object.assign({ items: [] }, load(KEY, {})), type = 'book', status = 'done', star = 4, filt = 'all';
     const persist = () => save(KEY, st);
     const tLabel = k => (TYPES.find(t => t[0] === k) || [, ''])[1];
     function renderForm() {
       document.getElementById('types').innerHTML = TYPES.map(([k, l]) => `<span role="button" tabindex="0" onclick="type='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${type === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
-      document.getElementById('fStatus').innerHTML = STAT.map(([k, l]) => `<span role="button" tabindex="0" onclick="status='${k}';renderForm()" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-bold ${status === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+      document.getElementById('fStatus').innerHTML = STAT.map(([k]) => [k, stLabel(type, k)]).map(([k, l]) => `<span role="button" tabindex="0" onclick="status='${k}';renderForm()" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-bold ${status === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
       document.getElementById('fStars').innerHTML = status === 'want' ? '' : [1, 2, 3, 4, 5].map(n => `<span role="button" tabindex="0" onclick="star=${n};renderForm()" class="cursor-pointer ${n <= star ? '' : 'opacity-25 grayscale'}">⭐</span>`).join('');
     }
     function addItem() {
@@ -179,12 +182,12 @@
       renderForm();
       const y = String(new Date().getFullYear()), done = st.items.filter(i => i.status === 'done' && i.date.startsWith(y)), cnt = {}; done.forEach(i => cnt[i.type] = (cnt[i.type] || 0) + 1);
       document.getElementById('sub').textContent = done.length ? `올해 ${done.length}개 · ` + TYPES.filter(([k]) => cnt[k]).map(([k, l]) => `${l.split(' ')[0]}${cnt[k]}`).join(' ') : '책·영화·드라마 기록';
-      document.getElementById('filters').innerHTML = [['all', '전체'], ['doing', '보는 중'], ['want', '보고 싶은 것'], ...TYPES].map(([k, l]) => `<span role="button" tabindex="0" onclick="filt='${k}';render()" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${filt === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+      document.getElementById('filters').innerHTML = [['all', '전체'], ['doing', '⏳ 진행 중'], ['want', '💭 찜'], ...TYPES].map(([k, l]) => `<span role="button" tabindex="0" onclick="filt='${k}';render()" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${filt === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
       const q = document.getElementById('q').value.trim();
       const xs = st.items.filter(i => (filt === 'all' || i.status === filt || i.type === filt) && (!q || (i.title + (i.review || '')).includes(q))).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
       document.getElementById('list').innerHTML = xs.map(i => `<div class="flex items-start gap-2 py-2 border-b border-slate-100"><span class="text-xl">${tLabel(i.type).split(' ')[0]}</span>
-        <span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900">${esc(i.title)} ${i.star ? `<span class="text-[11px]">${'⭐'.repeat(i.star)}</span>` : ''}</span>${i.review ? `<span class="block text-xs text-slate-600">“${esc(i.review)}”</span>` : ''}<span class="block text-[10px] text-slate-400">${md(i.date)} · ${STAT.find(s => s[0] === i.status)[1]}</span></span>
-        ${i.status !== 'done' ? `<span role="button" tabindex="0" onclick="finish(${i.id})" class="cursor-pointer text-[10px] font-bold text-indigo-600 px-1">다 봤어요</span>` : ''}<span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.items = st.items.filter(x => x.id !== ${i.id}); persist(); render(); })" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') || '<p class="text-xs text-slate-400 py-1">아직 기록이 없어요.</p>';
+        <span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900">${esc(i.title)} ${i.star ? `<span class="text-[11px]">${'⭐'.repeat(i.star)}</span>` : ''}</span>${i.review ? `<span class="block text-xs text-slate-600">“${esc(i.review)}”</span>` : ''}<span class="block text-[10px] text-slate-400">${md(i.date)} · ${stLabel(i.type, i.status)}</span></span>
+        ${i.status !== 'done' ? `<span role="button" tabindex="0" onclick="finish(${i.id})" class="cursor-pointer text-[10px] font-bold text-indigo-600 px-1">${stLabel(i.type, 'done')}</span>` : ''}<span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.items = st.items.filter(x => x.id !== ${i.id}); persist(); render(); })" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') || '<p class="text-xs text-slate-400 py-1">아직 기록이 없어요.</p>';
     }
     document.getElementById('q').addEventListener('input', render);
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
