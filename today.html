@@ -94,6 +94,7 @@
     <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
     <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
     <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
     <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
     <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
     <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
@@ -157,6 +158,7 @@
     <section id="fever" class="hidden card p-4"></section>
     <section id="sticker" class="hidden card p-4"></section>
     <section id="kidsay" class="hidden card p-4"></section>
+    <section id="timer" class="hidden card p-4"></section>
     <section id="health" class="hidden card p-4"></section>
     <section id="sleep" class="hidden card p-4"></section>
     <section id="mood" class="hidden card p-4"></section>
@@ -542,6 +544,20 @@
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
 
+    // ---------- ⏱️ 타이머: 돌고 있을 때만 (1초마다 갱신) ----------
+    let timerTick = null;
+    function renderTimer() {
+      const box = document.getElementById('timer'), t = load('timer_state', null);
+      if (!t || t.done) { box.classList.add('hidden'); if (timerTick) { clearInterval(timerTick); timerTick = null; } return; }
+      const left = Math.max(0, t.running ? t.endAt - Date.now() : t.left), s = Math.ceil(left / 1000), ph = t.phase === 'focus' ? ['💪 집중', 'text-indigo-600', 'bg-indigo-500'] : t.phase === 'rest' ? ['☕ 휴식', 'text-emerald-600', 'bg-emerald-500'] : ['⏲️ 타이머', 'text-amber-600', 'bg-amber-500'];
+      const fmt = `${Math.floor(s / 3600) ? Math.floor(s / 3600) + ':' : ''}${String(Math.floor(s % 3600 / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`, end = new Date(t.endAt);
+      box.classList.remove('hidden');
+      box.innerHTML = head('⏱️ 타이머', './timer.html', '열기') + `<a href="./timer.html" class="flex items-center justify-between gap-3"><span><span class="block text-sm font-extrabold ${ph[1]}">${t.running && !left ? '⏰ 바뀔 시간이에요 · ' : ''}${ph[0]}${t.mode === 'int' ? ` · ${t.cycle}번째` : ''}${t.running ? '' : ' · 일시정지'}</span>${t.running ? `<span class="block text-[11px] font-bold text-slate-500">${end.getHours()}:${String(end.getMinutes()).padStart(2, '0')}에 ${t.phase === 'focus' ? '휴식' : t.phase === 'rest' ? '집중' : '끝'}</span>` : ''}</span><span class="text-3xl font-extrabold num text-slate-900">${fmt}</span></a>
+        <div class="h-1.5 rounded-full bg-slate-100 mt-2 overflow-hidden"><div class="h-full rounded-full ${ph[2]}" style="width:${(100 * (1 - left / (t.total || 1))).toFixed(1)}%"></div></div>`;
+      if (t.running && !timerTick) timerTick = setInterval(renderTimer, 1000);
+      if (!t.running && timerTick) { clearInterval(timerTick); timerTick = null; }
+    }
+
     // ---------- 🩹 아플 때: 아직 안 나은 기록이 있을 때만 ----------
     function renderHealth() {
       const box = document.getElementById('health'), eps = (load('argon_health_v1', {}).eps || []).filter(e => !e.end), ks = (load('argon_kid_v1', {}).kids || []), today = ymd(new Date());
@@ -763,7 +779,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
