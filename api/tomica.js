@@ -25,8 +25,8 @@ function parse(html, page) {
   const out = [], seen = new Set();
   for (const blk of html.split(/class=["']lineup-box["']/).slice(1)) {
     const nm = blk.match(/class=["'][^"']*CarName[^"']*["'][^>]*>([\s\S]*?)<\/p>/i); if (!nm) continue;
-    const t = strip(nm[1]), m = t.match(/No\.\s*(\d{1,3})\s*(.+)/); if (!m) continue;
-    const no = +m[1], name = m[2].trim(); if (seen.has(no)) continue; seen.add(no);
+    const t = strip(nm[1].split(/<br|<span|<small/i)[0]), m = t.match(/No\.\s*(\d{1,3})\s*(.+)/); if (!m) continue;
+    const no = +m[1], name = m[2].trim().replace(/\s*[:：].*$/, '').slice(0, 60); if (seen.has(no)) continue; seen.add(no);
     const img = (blk.match(/class=["']car-pic["'][^>]*>\s*<img[^>]+src=["']([^"']+)["']/i) || [])[1] || '';
     const gimmick = strip((blk.match(/class=["']mark-action["'][^>]*>([\s\S]*?)<\/p>/i) || [])[1] || '');
     const jan = (blk.match(/takaratomymall\.jp\/shop\/g\/g(\d{13})/) || [])[1] || '';
