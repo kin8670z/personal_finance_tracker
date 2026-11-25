@@ -18,13 +18,13 @@ module.exports = async (req, res) => {
   const key = process.env.MFDS_KEY;
   if (!key) return send(res, 200, { needKey: true, items: [] }, 60);
   if (!q) return send(res, 400, { error: '검색어가 필요해요' });
-  let lastErr = '';
+  let lastErr = ''; const errs = [];
   for (const ep of EP) {
     try {
       const url = `${ep}?serviceKey=${encodeURIComponent(key)}&pageNo=1&numOfRows=40&type=json&FOOD_NM_KR=${encodeURIComponent(q)}`;
       const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
       const text = await r.text();
-      if (!r.ok) { lastErr = `HTTP ${r.status} ${text.slice(0, 120).replace(key, '***')}`; continue; }
+      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***')}`; errs.push(lastErr); continue; }
       let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***'); continue; }
       const body = j.body || (j.response && j.response.body) || {}, head = j.header || (j.response && j.response.header) || {};
       if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; continue; }
@@ -44,6 +44,7 @@ module.exports = async (req, res) => {
       return send(res, 200, { items: out, total: body.totalCount || out.length });
     } catch (e) { lastErr = e.message; }
   }
-  console.error('mfds', lastErr);
+  console.error('mfds', errs.join(' | '));
+  if (p.get('debug') === '1') return send(res, 502, { errs }, 0);
   return send(res, 502, { error: '식약처 DB에 연결하지 못했어요', detail: /SERVICE_KEY|등록되지|unregistered/i.test(lastErr) ? '키가 아직 활성화 전일 수 있어요 (승인 후 1~2시간)' : lastErr.slice(0, 160) });
 };
