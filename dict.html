@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>사전 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./dict.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">📖 사전</a></h1>
+      </div>
+      <div id="tabs" class="flex flex-wrap gap-1.5 mt-3"></div>
+      <form id="sForm" class="flex gap-2 mt-2" autocomplete="off">
+        <input id="q" type="search" enterkeyhint="search" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2.5 bg-white text-base" autocapitalize="off" spellcheck="false">
+        <button class="px-4 bg-indigo-600 text-white font-extrabold rounded-xl shrink-0">찾기</button>
+      </form>
+      <div id="recent" class="flex flex-wrap gap-1.5 mt-2"></div>
+    </header>
+
+    <section id="result" class="card p-4 hidden"></section>
+
+    <section class="card p-4">
+      <div role="button" tabindex="0" onclick="toggleBook()" class="cursor-pointer flex justify-between items-center"><h2 class="text-sm md:text-base font-extrabold text-slate-900">⭐ 내 단어장 <span id="bookCount" class="text-xs font-bold text-slate-400"></span></h2><span id="bookArrow" class="text-xs font-bold text-slate-400">펼치기 ▾</span></div>
+      <div id="book" class="hidden mt-2"></div>
+    </section>
+    <p class="text-[10px] text-slate-400 text-center px-4">출처: Free Dictionary API · 위키낱말사전 · 표준국어대사전 · Jisho · 위키백과 (CC BY-SA 등 각 출처 라이선스)</p>
+  </div>
+
+  <script>
+    const KEY = 'argon_dict_v1';
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const TABS = [['en', '🇺🇸 영어', '영어 단어 (예: apple)'], ['ko', '🇰🇷 국어', '우리말 (예: 사과, 고즈넉하다)'], ['ja', '🇯🇵 일본어', '일본어·영어 (예: ねこ, 猫, cat)'], ['hanja', '漢 한자', '한자 (예: 學, 愛)'], ['wiki', '📚 백과', '궁금한 것 (예: 고래, 크리스마스)']];
+    let st = Object.assign({ recent: [], book: [] }, load(KEY, {})), tab = new URLSearchParams(location.search).get('src') || st.tab || 'en', last = null, bookOpen = false;
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const cache = {};
+
+    function renderTabs() {
+      document.getElementById('tabs').innerHTML = TABS.map(([k, l]) => `<span role="button" tabindex="0" onclick="setTab('${k}')" class="cursor-pointer px-3 py-1.5 rounded-full text-sm font-extrabold ${k === tab ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+      document.getElementById('q').placeholder = TABS.find(t => t[0] === tab)[2];
+      const rs = st.recent.filter(r => r.tab === tab).slice(0, 8);
+      document.getElementById('recent').innerHTML = rs.map(r => `<span role="button" tabindex="0" onclick="search('${esc(r.q).replace(/'/g, "\\'")}')" class="cursor-pointer px-2 py-0.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold text-slate-500">${esc(r.q)}</span>`).join('');
+    }
+    function setTab(k) { tab = k; st.tab = k; persist(); renderTabs(); const q = document.getElementById('q').value.trim(); if (q) search(q); else document.getElementById('result').classList.add('hidden'); }
+    // 글자 보고 사전 고르기 (영어 탭인데 한글을 치면 국어로 등)
+    function guess(q) {
+      if (/[぀-ヿ]/.test(q)) return 'ja';
+      if (tab === 'en' && /[가-힣]/.test(q)) return 'ko';
+      if ((tab === 'en' || tab === 'ko') && /^[一-鿿]{1,2}$/.test(q)) return 'hanja';
+      return tab;
+    }
+
+    async function search(q) {
+      q = String(q || '').trim(); if (!q) return;
+      const g = guess(q); if (g !== tab) { tab = g; st.tab = g; }
+      document.getElementById('q').value = q;
+      st.recent = [{ tab, q }, ...st.recent.filter(r => !(r.tab === tab && r.q === q))].slice(0, 40); persist(); renderTabs();
+      const box = document.getElementById('result'); box.classList.remove('hidden'); box.innerHTML = '<p class="text-sm text-slate-400">찾는 중…</p>';
+      const k = tab + '|' + q;
+      try {
+        const j = cache[k] || await fetch(`/api/dict?src=${tab}&q=${encodeURIComponent(q)}`).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j; });
+        if (tab === 'en' && !j.notFound && !j.audio && !j._fd) {   // 발음·영영 뜻은 브라우저에서 바로 (서버에선 막힐 때가 있어서)
+          try { const d = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q.toLowerCase())}`).then(r => r.ok ? r.json() : null);
+            if (Array.isArray(d) && d.length) { const ph = d.flatMap(x => x.phonetics || []);
+              j.audio = (ph.find(p => p.audio && /-us\./.test(p.audio)) || ph.find(p => p.audio) || {}).audio || '';
+              j.phonetic = j.phonetic || (d.find(x => x.phonetic) || {}).phonetic || (ph.find(p => p.text) || {}).text || '';
+              const ms = []; d.forEach(x => (x.meanings || []).forEach(m => ms.push({ pos: m.partOfSpeech, defs: (m.definitions || []).slice(0, 4).map(df => ({ def: df.definition, ex: df.example || '' })), syn: (m.synonyms || []).slice(0, 6) })));
+              if (ms.length) j.meanings = ms.slice(0, 6); } } catch (e) {}
+          j._fd = 1;
+        }
+        cache[k] = j; last = { tab, q, j }; renderResult();
+      } catch (e) { box.innerHTML = `<p class="text-sm text-rose-600">${esc(e.message)}</p>`; }
+    }
+    const star = () => { const on = st.book.some(b => b.tab === last.tab && b.q === last.q); return `<span role="button" tabindex="0" onclick="toggleStar()" aria-label="단어장에 담기" aria-pressed="${on}" class="cursor-pointer text-2xl ${on ? '' : 'opacity-30 grayscale'}">⭐</span>`; };
+    function brief() {
+      const { tab: t, j } = last;
+      if (t === 'en') return (j.ko[0] && j.ko[0].def) || (j.meanings[0] && j.meanings[0].defs[0] && j.meanings[0].defs[0].def) || '';
+      if (t === 'ko') return (j.items[0] || {}).def || '';
+      if (t === 'ja') return `${j.items[0].reading} · ${(j.items[0].senses[0] || {}).def || ''}`;
+      if (t === 'hanja') { const h = j.langs.find(l => l.hanja); return h ? `${h.hanja.훈} ${h.hanja.음}` : (j.langs[0].senses[0] || {}).def || ''; }
+      return j.desc || j.extract.slice(0, 60);
+    }
+    function toggleStar() {
+      const i = st.book.findIndex(b => b.tab === last.tab && b.q === last.q);
+      if (i >= 0) st.book.splice(i, 1); else st.book.unshift({ tab: last.tab, q: last.q, brief: brief().slice(0, 80), t: Date.now() });
+      persist(); renderResult(); renderBook();
+    }
+    function speak(text, lang) { try { const u = new SpeechSynthesisUtterance(text); u.lang = lang; u.rate = 0.9; speechSynthesis.cancel(); speechSynthesis.speak(u); } catch (e) {} }
+    function playAudio(url, word) { const a = new Audio(url); a.play().catch(() => speak(word, 'en-US')); }
+
+    function renderResult() {
+      const box = document.getElementById('result'), { tab: t, q, j } = last;
+      if (j.notFound) { box.innerHTML = `<p class="text-sm font-bold text-slate-600">'${esc(q)}' 결과가 없어요 🤔</p><p class="text-xs text-slate-400 mt-1">${t === 'en' ? '철자를 확인하거나 기본형(예: running → run)으로 찾아보세요.' : t === 'wiki' ? '다른 말로 바꿔서 찾아보세요.' : '맞춤법이나 기본형(예: 먹었다 → 먹다)으로 찾아보세요.'}</p>${t !== 'wiki' ? `<span role="button" tabindex="0" onclick="setTab('wiki')" class="cursor-pointer inline-block mt-2 text-xs font-bold text-indigo-600">📚 백과에서 찾기 →</span>` : ''}`; return; }
+      let h = '';
+      if (t === 'en') {
+        h = `<div class="flex items-start justify-between gap-2"><div><p class="text-2xl font-extrabold text-slate-900">${esc(j.word)}</p><p class="text-sm text-slate-500">${esc(j.phonetic)} <span role="button" tabindex="0" onclick="${j.audio ? `playAudio('${esc(j.audio)}', '${esc(j.word)}')` : `speak('${esc(j.word)}', 'en-US')`}" aria-label="발음 듣기" class="cursor-pointer ml-1">🔊</span></p></div>${star()}</div>
+          ${j.ko.length ? `<div class="mt-2 rounded-xl bg-indigo-50 px-3 py-2">${j.ko.map((s, i) => `<p class="text-sm font-bold text-slate-800">${i + 1}. ${s.pos ? `<span class="text-[10px] text-indigo-500">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>`).join('')}</div>` : ''}
+          ${j.meanings.map(m => `<p class="text-xs font-extrabold text-indigo-600 mt-3">${esc(m.pos)}</p>${m.defs.map(d => `<p class="text-sm text-slate-700 mt-1">• ${esc(d.def)}</p>${d.ex ? `<p class="text-xs text-slate-500 italic ml-3">“${esc(d.ex)}” <span role="button" tabindex="0" onclick="speak('${esc(d.ex).replace(/'/g, "\\'")}', 'en-US')" class="cursor-pointer not-italic">🔊</span></p>` : ''}`).join('')}${m.syn.length ? `<p class="text-[11px] text-slate-500 mt-1">비슷한 말: ${m.syn.map(s => `<span role="button" tabindex="0" onclick="search('${esc(s)}')" class="cursor-pointer text-indigo-600 font-bold">${esc(s)}</span>`).join(', ')}</p>` : ''}`).join('')}`;
+      } else if (t === 'ko') {
+        h = `<div class="flex items-start justify-between gap-2"><p class="text-2xl font-extrabold text-slate-900">${esc(q)} <span role="button" tabindex="0" onclick="speak('${esc(q)}', 'ko-KR')" aria-label="읽어주기" class="cursor-pointer text-base">🔊</span></p>${star()}</div>
+          ${j.items.map((it, i) => `<div class="mt-2"><p class="text-sm text-slate-800"><b class="text-indigo-600">${i + 1}.</b> ${it.word !== q ? `<b>${esc(it.word)}${it.sup ? `<sup>${esc(it.sup)}</sup>` : ''}</b> ` : ''}${it.pos ? `<span class="text-[10px] font-bold px-1 py-0.5 rounded bg-slate-100 text-slate-500">${esc(it.pos)}</span> ` : ''}${esc(it.def)}</p>${it.ex ? `<p class="text-xs text-slate-500 ml-4">예) ${esc(it.ex)}</p>` : ''}</div>`).join('')}
+          ${(j.others || []).length ? `<p class="text-[11px] text-slate-500 mt-3">다른 언어: ${j.others.map(o => `${esc(o.lang)} — ${esc(o.senses[0].def)}`).join(' · ')}</p>` : ''}
+          <p class="text-[10px] text-slate-400 mt-3">출처: ${esc(j.src)}</p>`;
+      } else if (t === 'ja') {
+        h = `<div class="flex justify-end">${star()}</div>` + j.items.map(it => `<div class="py-2 border-b border-slate-100"><p class="text-xl font-extrabold text-slate-900">${esc(it.word)} <span class="text-sm font-bold text-slate-500">${it.reading !== it.word ? esc(it.reading) : ''}</span> <span role="button" tabindex="0" onclick="speak('${esc(it.reading || it.word)}', 'ja-JP')" class="cursor-pointer text-base">🔊</span>${it.common ? ' <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 align-middle">자주 씀</span>' : ''}${it.jlpt ? ` <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-100 text-indigo-600 align-middle">${esc(it.jlpt.replace('jlpt-', '').toUpperCase())}</span>` : ''}</p>
+          ${it.senses.map((s, i) => `<p class="text-sm text-slate-700">${i + 1}. ${s.pos ? `<span class="text-[10px] text-slate-400">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>`).join('')}</div>`).join('') + `<p class="text-[10px] text-slate-400 mt-2">뜻은 영어로 나와요 (Jisho)</p>`;
+      } else if (t === 'hanja') {
+        h = `<div class="flex items-start justify-between gap-2"><p class="text-5xl font-extrabold text-slate-900">${esc(q)}</p>${star()}</div>` + j.langs.map(l => `<p class="text-xs font-extrabold text-indigo-600 mt-3">${esc(l.lang)}</p>${l.hanja ? `<div class="mt-1 rounded-xl bg-amber-50 px-3 py-2"><p class="text-lg font-extrabold text-slate-900">${esc(l.hanja.훈)} <span class="text-amber-600">${esc(l.hanja.음)}</span></p><p class="text-[11px] font-bold text-slate-500">${[l.hanja.부수 && `부수 ${esc(l.hanja.부수)}`, l.hanja.획 && `총 ${esc(l.hanja.획)}획`, l.hanja.간체 && l.hanja.간체 !== q && `간체 ${esc(l.hanja.간체)}`].filter(Boolean).join(' · ')}</p></div>` : ''}${l.senses.map(s => `<p class="text-sm text-slate-700 mt-0.5">${s.pos ? `<span class="text-[10px] text-slate-400">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>${s.ex ? `<p class="text-xs text-slate-500 ml-3">${esc(s.ex)}</p>` : ''}`).join('')}`).join('');
+      } else {
+        h = `<div class="flex items-start justify-between gap-2"><div><p class="text-xl font-extrabold text-slate-900">${esc(j.title)}</p>${j.desc ? `<p class="text-xs font-bold text-slate-500">${esc(j.desc)}</p>` : ''}</div>${star()}</div>
+          ${j.img ? `<img src="${esc(j.img)}" alt="${esc(j.title)}" class="mt-2 rounded-xl max-h-56 mx-auto">` : ''}
+          <p class="text-sm text-slate-700 leading-relaxed mt-2">${esc(j.extract)} <span role="button" tabindex="0" onclick="speak(last.j.extract, 'ko-KR')" aria-label="읽어주기" class="cursor-pointer">🔊</span></p>
+          ${j.url ? `<a href="${esc(j.url)}" target="_blank" rel="noopener" class="inline-block mt-2 text-xs font-bold text-indigo-600">위키백과에서 더 보기 →</a>` : ''}
+          ${j.more.length ? `<p class="text-[11px] text-slate-500 mt-2">혹시 이거? ${j.more.map(m => `<span role="button" tabindex="0" onclick="search('${esc(m).replace(/'/g, "\\'")}')" class="cursor-pointer text-indigo-600 font-bold">${esc(m)}</span>`).join(', ')}</p>` : ''}`;
+      }
+      box.innerHTML = h;
+    }
+
+    function toggleBook() { bookOpen = !bookOpen; document.getElementById('book').classList.toggle('hidden', !bookOpen); document.getElementById('bookArrow').textContent = bookOpen ? '접기 ▴' : '펼치기 ▾'; renderBook(); }
+    function renderBook() {
+      document.getElementById('bookCount').textContent = st.book.length ? `${st.book.length}개` : '';
+      if (!bookOpen) return;
+      const lab = k => (TABS.find(t => t[0] === k) || [, ''])[1].split(' ')[0];
+      document.getElementById('book').innerHTML = st.book.length ? st.book.map((b, i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-sm">${lab(b.tab)}</span><span role="button" tabindex="0" onclick="tab='${b.tab}';search('${esc(b.q).replace(/'/g, "\\'")}');scrollTo({top:0,behavior:'smooth'})" class="cursor-pointer flex-1 min-w-0"><b class="text-sm text-slate-800">${esc(b.q)}</b> <span class="text-xs text-slate-500 truncate">${esc(b.brief)}</span></span><span role="button" tabindex="0" onclick="st.book.splice(${i},1);persist();renderBook()" aria-label="빼기" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') : '<p class="text-xs text-slate-400">검색 결과에서 ⭐를 누르면 여기에 모여요.</p>';
+    }
+    document.getElementById('sForm').addEventListener('submit', e => { e.preventDefault(); document.getElementById('q').blur(); search(document.getElementById('q').value); });
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    renderTabs(); renderBook();
+    const q0 = new URLSearchParams(location.search).get('q'); if (q0) search(q0);
+  </script>
+</body>
+</html>
