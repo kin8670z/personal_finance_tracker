@@ -29,11 +29,13 @@ function parse(html, page) {
   while ((m = re.exec(body))) {
     const no = +m[2], name = strip(m[3]).replace(/^[\s　]+/, '');
     if (!name || seen.has(no)) continue;
-    // 앞뒤 1500자 안의 이미지 중 상품 사진(.jpg/.png, 로고·아이콘 제외)
-    const win = body.slice(Math.max(0, m.index - 1500), m.index + 1500), imgs = [...win.matchAll(/<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))["']/gi)].map(x => x[1]).filter(u => !/logo|icon|btn|bnr|banner|arrow|common/i.test(u));
-    const near = imgs.length ? imgs[Math.min(imgs.length - 1, Math.floor(imgs.length / 2))] : '';
-    const after = strip(body.slice(m.index + m[0].length, m.index + m[0].length + 400)).replace(new RegExp(`No\\.\\s*${no}\\s*` + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'), '').trim();
-    const gimmick = (after.match(/^([^。]*?(?:サスペンション|開閉|可動|回転|上下|伸縮|取り外し|連結)[^No]*?)(?=No\.|購入|$)/) || [])[1] || '';
+    // 사진: 이 페이지에 images/012.jpg 같은 번호 사진이 있으면 그것, 없으면 제목 바로 뒤에 나오는 첫 상품 사진
+    const p3 = String(no).padStart(3, '0'), byNo = body.match(new RegExp(`src=["']([^"']*/${p3}(?:_\\d+)*\\.(?:jpg|jpeg|png|webp))["']`, 'i'));
+    const nextImg = body.slice(m.index, m.index + 2500).match(/<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))["']/i);
+    const near = (byNo && byNo[1]) || (nextImg && !/logo|icon|btn|bnr|banner|arrow|common/i.test(nextImg[1]) ? nextImg[1] : '');
+    const after = strip(body.slice(m.index + m[0].length, m.index + m[0].length + 600).replace(/<[^>]*$/, ''));
+    const gm = after.replace(name, '').match(/((?:サスペンション|[^\s/]*(?:開閉|可動|回転|上下|伸縮|取り外し|連結|点灯))(?:\s*\/\s*[^\s/]*(?:開閉|可動|回転|上下|伸縮|取り外し|連結|サスペンション))*)/);
+    const gimmick = gm ? gm[1] : '';
     seen.add(no); out.push({ no, name, img: near ? abs(near, page) : '', gimmick: gimmick.slice(0, 60).trim(), page });
   }
   return out;
