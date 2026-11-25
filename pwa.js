@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.49';
+  const VERSION = '9.50';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -107,7 +107,7 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
   // 사이드 메뉴를 카테고리로 묶기 (오늘은 맨 위 그대로, 나머지는 접었다 펴는 그룹)
   const NAV_GROUPS = [
-    ['rec', '📝', '기록', ['diary.html', 'mood.html', 'todo.html', 'habits.html', 'food.html', 'sleep.html', 'health.html', 'dday.html']],
+    ['rec', '📝', '기록', ['diary.html', 'mood.html', 'todo.html', 'habits.html', 'food.html', 'timer.html', 'sleep.html', 'health.html', 'dday.html']],
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html', 'firsts.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'ceremony.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
     ['life', '🚇', '생활', ['weather.html', 'subway.html', 'lunch.html', 'places.html', 'gift.html', 'groupbuy.html', 'parking.html', 'stash.html', 'car.html']],
