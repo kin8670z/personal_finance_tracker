@@ -154,7 +154,7 @@
     <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
-    <section id="lotto" class="card p-4"><div class="skel" style="height:60px"></div></section>
+    <section id="lotto" class="hidden card p-4"></section>
 
     <section id="pushCard" class="card p-4">
       <div class="flex items-center justify-between gap-3">
@@ -595,20 +595,27 @@
 
     // ---------- 로또 ----------
     function nextDraw(now) { const d = new Date(now); const add = (6 - d.getDay() + 7) % 7; d.setDate(d.getDate() + add); d.setHours(20, 35, 0, 0); if (d < now) d.setDate(d.getDate() + 7); return d; }
+    // 로또: 추첨일(토요일)이고 그 회차 번호를 산 기록이 있을 때만
     async function loadLotto() {
-      const box = document.getElementById('lotto'), mine = load('argon_lotto_v1', []);
+      const box = document.getElementById('lotto'), mine = load('argon_lotto_v1', []), now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const round = Math.floor((today - new Date(2002, 11, 7)) / (7 * 864e5)) + 1;   // 1회 2002-12-07(토)부터 매주
+      const tickets = now.getDay() === 6 ? mine.filter(m => String(m.target) === String(round)) : [];
+      if (!tickets.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      const ball = (n, hit) => `<span class="w-6 h-6 rounded-full inline-flex items-center justify-center text-[10px] font-extrabold text-white ${hit === false ? 'opacity-30' : ''}" style="background:${n <= 10 ? '#eab308' : n <= 20 ? '#3b82f6' : n <= 30 ? '#ef4444' : n <= 40 ? '#64748b' : '#22c55e'}">${n}</span>`;
+      const mineHTML = (win, bonus) => tickets.map((m, i) => { const c = win ? m.nums.filter(n => win.has(n)).length : null, b = win && m.nums.includes(bonus);
+        const rank = c === 6 ? '🥇 1등!' : c === 5 && b ? '🥈 2등!' : c === 5 ? '🥉 3등' : c === 4 ? '4등' : c === 3 ? '5등' : '';
+        return `<div class="flex items-center gap-1 mt-1.5 flex-wrap"><span class="text-[10px] font-bold text-slate-400 w-4">${'ABCDE'[i] || i + 1}</span>${m.nums.map(n => ball(n, win ? win.has(n) : undefined)).join('')}${c != null ? `<span class="text-[11px] font-extrabold ml-1 ${rank ? 'text-rose-600' : 'text-slate-400'}">${c}개${rank ? ` · ${rank}` : ''}</span>` : ''}</div>`; }).join('');
+      box.innerHTML = head(`🍀 로또 ${round}회 · 오늘 추첨`, './lotto.html', '자세히') + `<p class="text-xs font-bold text-slate-600">내 번호 ${tickets.length}게임 · 추첨 저녁 8:35</p>` + mineHTML(null);
       try {
         const r = await fetch('./api/lotto'); if (!r.ok) throw 0;
-        const j = await r.json(), L = j.latest; if (!L) throw 0;
-        const now = new Date(), nd = nextDraw(now), days = Math.round((new Date(nd.getFullYear(), nd.getMonth(), nd.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
-        const nextNo = L.no + 1, games = mine.filter(m => String(m.target) === String(nextNo)).length;
-        const lastMine = mine.filter(m => String(m.target) === String(L.no));
-        const win = new Set(L.nums), best = lastMine.length ? Math.max(...lastMine.map(m => m.nums.filter(n => win.has(n)).length)) : null;
-        const ball = n => `<span class="w-6 h-6 rounded-full inline-flex items-center justify-center text-[10px] font-extrabold text-white" style="background:${n <= 10 ? '#eab308' : n <= 20 ? '#3b82f6' : n <= 30 ? '#ef4444' : n <= 40 ? '#64748b' : '#22c55e'}">${n}</span>`;
-        box.innerHTML = head('🍀 로또', './lotto.html', '번호 뽑기') + `<p class="text-xs font-bold text-slate-600">${nextNo}회 추첨 <b class="text-indigo-600">${days === 0 ? '오늘 저녁 8:35' : `D-${days}`}</b> · 내 번호 ${games ? `${games}게임` : '아직 없음'}</p>
-          <div class="flex items-center gap-1 mt-2 flex-wrap">${L.nums.map(ball).join('')}<span class="text-xs font-bold text-slate-400 mx-0.5">+</span>${ball(L.bonus)}</div>
-          <p class="text-[10px] text-slate-400 mt-1">${L.no}회 당첨번호${best != null ? ` · 내 번호 최고 ${best}개 맞음` : ''}</p>`;
-      } catch (e) { box.innerHTML = head('🍀 로또', './lotto.html', '번호 뽑기') + `<p class="text-xs text-slate-500">당첨번호를 불러오지 못했어요.</p>`; }
+        const L = (await r.json()).latest;
+        if (L && L.no === round) {   // 추첨 끝: 당첨번호랑 맞춰보기
+          const win = new Set(L.nums);
+          box.innerHTML = head(`🍀 로또 ${round}회 결과`, './lotto.html', '자세히') + `<div class="flex items-center gap-1 flex-wrap">${L.nums.map(n => ball(n)).join('')}<span class="text-xs font-bold text-slate-400 mx-0.5">+</span>${ball(L.bonus)}</div><p class="text-[10px] text-slate-400 mt-1 mb-1">당첨번호 · 아래는 내 번호</p>` + mineHTML(win, L.bonus);
+        }
+      } catch (e) {}
     }
 
 
