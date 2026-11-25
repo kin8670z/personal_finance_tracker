@@ -20,23 +20,17 @@ async function get(url) {
 const strip = s => String(s || '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n)).replace(/\s+/g, ' ').trim();
 const abs = (u, page) => { try { return new URL(u, BASE + page).href; } catch (e) { return ''; } };
 
-// 한 페이지 → 상품 목록. "No.12 이름" 이 나오는 블록마다 가장 가까운 상품 이미지를 붙인다
+// 한 페이지 → 상품 목록. 공식 페이지는 <div class="lineup-box"> 마다 CarName·car-pic·mark-action·쇼핑몰 링크(JAN)가 있다
 function parse(html, page) {
-  const body = html.replace(/<script[\s\S]*?<\/script>/gi, '').replace(/<style[\s\S]*?<\/style>/gi, '');
   const out = [], seen = new Set();
-  const re = /<(h[2-5]|p|div|span|li|dt|dd)[^>]*>\s*(?:<[^>]+>\s*)*No\.\s*(\d{1,3})\s*([^<]{2,80})/gi;
-  let m;
-  while ((m = re.exec(body))) {
-    const no = +m[2], name = strip(m[3]).replace(/^[\s　]+/, '');
-    if (!name || seen.has(no)) continue;
-    // 사진: 이 페이지에 images/012.jpg 같은 번호 사진이 있으면 그것, 없으면 제목 바로 뒤에 나오는 첫 상품 사진
-    const p3 = String(no).padStart(3, '0'), byNo = body.match(new RegExp(`src=["']([^"']*/${p3}(?:_\\d+)*\\.(?:jpg|jpeg|png|webp))["']`, 'i'));
-    const nextImg = body.slice(m.index, m.index + 2500).match(/<img[^>]+src=["']([^"']+\.(?:jpg|jpeg|png|webp))["']/i);
-    const near = (byNo && byNo[1]) || (nextImg && !/logo|icon|btn|bnr|banner|arrow|common/i.test(nextImg[1]) ? nextImg[1] : '');
-    const after = strip(body.slice(m.index + m[0].length, m.index + m[0].length + 600).replace(/<[^>]*$/, ''));
-    const gm = after.replace(name, '').match(/((?:サスペンション|[^\s/]*(?:開閉|可動|回転|上下|伸縮|取り外し|連結|点灯))(?:\s*\/\s*[^\s/]*(?:開閉|可動|回転|上下|伸縮|取り外し|連結|サスペンション))*)/);
-    const gimmick = gm ? gm[1] : '';
-    seen.add(no); out.push({ no, name, img: near ? abs(near, page) : '', gimmick: gimmick.slice(0, 60).trim(), page });
+  for (const blk of html.split(/class=["']lineup-box["']/).slice(1)) {
+    const nm = blk.match(/class=["'][^"']*CarName[^"']*["'][^>]*>([\s\S]*?)<\/p>/i); if (!nm) continue;
+    const t = strip(nm[1]), m = t.match(/No\.\s*(\d{1,3})\s*(.+)/); if (!m) continue;
+    const no = +m[1], name = m[2].trim(); if (seen.has(no)) continue; seen.add(no);
+    const img = (blk.match(/class=["']car-pic["'][^>]*>\s*<img[^>]+src=["']([^"']+)["']/i) || [])[1] || '';
+    const gimmick = strip((blk.match(/class=["']mark-action["'][^>]*>([\s\S]*?)<\/p>/i) || [])[1] || '');
+    const jan = (blk.match(/takaratomymall\.jp\/shop\/g\/g(\d{13})/) || [])[1] || '';
+    out.push({ no, name, img: img ? abs(img, page) : '', gimmick: gimmick.slice(0, 60), jan, page });
   }
   return out;
 }
