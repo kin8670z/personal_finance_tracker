@@ -1,9 +1,9 @@
 // 든든 서비스 워커: 홈 화면 앱 설치 + 오프라인일 때 마지막 화면 보여주기
 // 항상 네트워크를 먼저 쓰고(최신 버전 유지), 안 될 때만 저장해 둔 화면을 꺼낸다.
 // 시세 API(/api/)와 외부 사이트 요청은 건드리지 않는다.
-const CACHE = 'argon-shell-v43';
+const CACHE = 'argon-shell-v44';
 const CDN = ['cdn.tailwindcss.com', 'cdn.jsdelivr.net'];
-const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './food.html', './games.html', './trip.html', './dict.html', './report.html', './car.html', './parking.html', './kidsay.html', './sticker.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './food-db.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
+const SHELL = ['./', './index.html', './stocks.html', './assets.html', './lotto.html', './subway.html', './today.html', './tomica.html', './food.html', './games.html', './trip.html', './dict.html', './report.html', './car.html', './parking.html', './kidsay.html', './sticker.html', './fever.html', './kid.html', './fx.html', './habits.html', './habits-core.js', './food-db.js', './gift.html', './todo.html', './diary.html', './lunch.html', './dday.html', './english.html', './english-deck.js', './japanese.html', './japanese-deck.js', './lang-study.js', './quotes.js', './tax.html', './tax-calc.js', './tt.js', './theme.css', './commute.js', './pwa.js', './sync.js', './manifest.json', './icons/icon-192.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).catch(() => {}).then(() => self.skipWaiting()));
@@ -54,6 +54,7 @@ function composeBrief(b) {
     (b.ddays || []).map(x => [x, dd(x.date, x.y)]).filter(([, k]) => [0, 1, 3, 7, 30, 100].includes(k)).sort((a, b) => a[1] - b[1]).slice(0, 3)
       .forEach(([x, k]) => lines.push(`${x.e} ${x.n} ${k === 0 ? 'D-DAY 🎉' : tag(k)}`));
     (b.kids || []).forEach(x => { const [, m, d] = x.b.split('-'); const k = dd(`2000-${m}-${d}`, true); if ([0, 1, 7].includes(k)) lines.push(`🎂 ${x.n} 생일 ${k === 0 ? '오늘! 🎉' : tag(k)}`); });
+    if (b.tomica && t.getDay() === 6 && t.getDate() >= 15 && t.getDate() <= 21) lines.push('🚗 오늘은 토미카 신차 나오는 날!');
     (b.games || []).forEach(g => { const k = dd(g.d); if ([0, 1, 7].includes(k)) lines.push(`🎮 ${g.t} ${k === 0 ? '오늘 출시! 🎉' : `D-${k}`}`); });
     if (b.trip) {
       (b.trip.trips || []).forEach(t => { const k = dd(t.s); if ([0, 1, 3, 7].includes(k)) lines.push(`${t.e || '✈️'} ${t.n} ${k === 0 ? '오늘 출발! 🧳' : `D-${k}`}`); });
