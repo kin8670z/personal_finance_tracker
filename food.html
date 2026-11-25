@@ -220,9 +220,28 @@
       if (q) list = allFoods().filter(f => (f[0] + f[4]).replace(/\s/g, '').includes(q)).slice(0, 40);
       else if (!cat || cat === '★') { const fs = frequent(); list = fs.length ? fs.map(f => [f.name, f.kcal, f.unit || '', '', '']) : FOOD_DB.filter(f => ['쌀밥', '김밥', '라면', '아메리카노', '카페라떼', '바나나', '사과', '삼각김밥'].includes(f[0])); }
       else list = allFoods().filter(f => f[3] === cat);
-      document.getElementById('pick').innerHTML = list.map(f => `<div role="button" tabindex="0" onclick='choose(${JSON.stringify(f).replace(/'/g, "&#39;")})' class="cursor-pointer flex items-center justify-between py-2 border-b border-slate-100 ${sel && sel[0] === f[0] ? 'bg-indigo-50 px-1.5 rounded-lg' : ''}"><span class="text-sm font-bold text-slate-800">${esc(f[0])} <span class="text-[11px] text-slate-400">${esc(f[2])}</span></span><span class="text-sm font-extrabold text-slate-600 num">${fmt(f[1])} kcal</span></div>`).join('') +
+      const mf = q.length >= 2 ? mfdsHTML(q) : '';
+      document.getElementById('pick').innerHTML = mf + list.map(f => `<div role="button" tabindex="0" onclick='choose(${JSON.stringify(f).replace(/'/g, "&#39;")})' class="cursor-pointer flex items-center justify-between py-2 border-b border-slate-100 ${sel && sel[0] === f[0] ? 'bg-indigo-50 px-1.5 rounded-lg' : ''}"><span class="text-sm font-bold text-slate-800">${esc(f[0])} <span class="text-[11px] text-slate-400">${esc(f[2])}</span></span><span class="text-sm font-extrabold text-slate-600 num">${fmt(f[1])} kcal</span></div>`).join('') +
         `<div class="py-3"><p class="text-[11px] font-bold text-slate-500 mb-1">✍️ 목록에 없으면 직접 넣기</p><div class="flex gap-2"><input id="cName" placeholder="이름" value="${esc(q)}" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><input id="cKcal" inputmode="numeric" placeholder="kcal" class="num w-20 border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><button type="button" onclick="addCustom()" class="px-3 bg-slate-700 text-white text-sm font-bold rounded-lg">추가</button></div><p class="text-[10px] text-slate-400 mt-1">포장지 영양정보의 '총 내용량 ○○kcal'를 넣으면 정확해요. 다음부터 '내 음식'에 나와요.</p></div>`;
       renderPortion();
+    }
+    // 🏷️ 식약처 식품영양성분DB (제품·음식 수만 개) — 검색어 2글자 이상일 때
+    const mfCache = {};
+    function mfdsHTML(q) {
+      const c = mfCache[q];
+      if (c === undefined) { mfCache[q] = null; fetch('/api/food?q=' + encodeURIComponent(q)).then(r => r.json()).then(j => { mfCache[q] = j; if (document.getElementById('fq').value.trim().replace(/\s/g, '') === q) renderPick(); }).catch(() => { mfCache[q] = { error: 1 }; }); }
+      if (!c) return `<p class="text-[11px] font-bold text-slate-400 py-1">🏷️ 식약처 DB 찾는 중…</p>`;
+      if (c.needKey || c.error) return c.needKey ? '' : `<p class="text-[11px] font-bold text-slate-400 py-1">🏷️ 식약처 DB에 연결하지 못했어요${c.detail ? ` (${esc(c.detail)})` : ''}</p>`;
+      if (!c.items.length) return `<p class="text-[11px] font-bold text-slate-400 py-1">🏷️ 식약처 DB: 결과 없음</p>`;
+      return `<p class="text-[11px] font-extrabold text-emerald-600 pt-1">🏷️ 식약처 DB ${c.total > c.items.length ? `(${c.items.length}/${c.total}개)` : ''}</p>` + c.items.slice(0, 15).map(it => { const f = mfItem(it);
+        return `<div role="button" tabindex="0" onclick='choose(${JSON.stringify(f).replace(/'/g, "&#39;")})' class="cursor-pointer flex items-center justify-between gap-2 py-2 border-b border-slate-100 ${sel && sel[0] === f[0] && sel[2] === f[2] ? 'bg-indigo-50 px-1.5 rounded-lg' : ''}"><span class="min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${esc(it.name)}</span><span class="block text-[10px] text-slate-400 truncate">${esc([it.maker, f[2]].filter(Boolean).join(' · '))}</span></span><span class="text-sm font-extrabold text-slate-600 num shrink-0">${fmt(f[1])} kcal</span></div>`; }).join('') + '<p class="text-[11px] font-extrabold text-slate-400 pt-3">📋 기본 목록</p>';
+    }
+    // 기준량(보통 100g)당 kcal → 제품 전체 중량을 알면 1개(전체) 기준으로
+    function mfItem(it) {
+      const g = s => { const m = String(s || '').match(/([\d.]+)\s*(g|ml|mL)/); return m ? { n: +m[1], u: m[2].toLowerCase() } : null; };
+      const per = g(it.per), w = g(it.weight);
+      if (per && w && per.u === w.u && per.n > 0 && w.n > 0 && w.n <= 3000) return [it.name, Math.round(it.kcal * w.n / per.n), `1개(${w.n}${w.u})`, '식약처', ''];
+      return [it.name, it.kcal, it.per || '100g', '식약처', ''];
     }
     function choose(f) { sel = f; qty = 1; renderPick(); }
     function renderPortion() {

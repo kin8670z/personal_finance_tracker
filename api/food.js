@@ -21,11 +21,12 @@ module.exports = async (req, res) => {
   let lastErr = ''; const errs = [];
   for (const ep of EP) {
     try {
-      const url = `${ep}?serviceKey=${encodeURIComponent(key)}&pageNo=1&numOfRows=40&type=json&FOOD_NM_KR=${encodeURIComponent(q)}`;
+      const k = /%[0-9A-F]{2}/i.test(key) ? key : encodeURIComponent(key);   // Encoding 키를 넣었어도 그대로
+      const url = `${ep}?serviceKey=${k}&pageNo=1&numOfRows=40&type=json&FOOD_NM_KR=${encodeURIComponent(q)}`;
       const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
       const text = await r.text();
-      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***')}`; errs.push(lastErr); continue; }
-      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***'); continue; }
+      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***').replace(k, '***')}`; errs.push(lastErr); continue; }
+      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***').replace(k, '***'); continue; }
       const body = j.body || (j.response && j.response.body) || {}, head = j.header || (j.response && j.response.header) || {};
       if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; continue; }
       let items = body.items; if (items && items.item) items = items.item; if (!Array.isArray(items)) items = items ? [items] : [];
