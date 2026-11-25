@@ -507,7 +507,7 @@
       const old = x => x.date && x.date.slice(5) === mdk && x.date.slice(0, 4) < y, lines = [];
       (load('argon_kidsay_v1', {}).items || []).filter(old).slice(0, 2).forEach(x => lines.push(`<a href="./kidsay.html" class="block text-sm font-extrabold text-slate-800 py-1">${x.e || '💬'} “${esc(x.text)}” <span class="text-[10px] font-bold text-slate-400">${ago(x.date)}</span></a>`));
       (load('argon_firsts_v1', {}).items || []).filter(old).slice(0, 2).forEach(x => lines.push(`<a href="./firsts.html" class="block text-sm font-extrabold text-slate-800 py-1">🌟 처음 ${esc(x.title)} <span class="text-[10px] font-bold text-slate-400">${ago(x.date)}</span></a>`));
-      (load('argon_media_v1', {}).items || []).filter(x => x.status === 'done' && old(x)).slice(0, 2).forEach(x => lines.push(`<a href="./media.html" class="block text-sm font-bold text-slate-700 py-1">📚 ${esc(x.title)} ${x.star ? '⭐'.repeat(x.star) : ''} <span class="text-[10px] font-bold text-slate-400">${ago(x.date)} 봤어요</span></a>`));
+      (load('argon_media_v1', {}).items || []).filter(x => x.status === 'done' && old(x)).slice(0, 2).forEach(x => lines.push(`<a href="./media.html" class="block text-sm font-bold text-slate-700 py-1">📚 ${esc(x.title)} ${x.star ? '⭐'.repeat(x.star) : ''} <span class="text-[10px] font-bold text-slate-400">${ago(x.date)} ${x.type === 'book' ? '읽었어요' : x.type === 'game' ? '했어요' : '봤어요'}</span></a>`));
       if (!lines.length) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
       box.innerHTML = head('📅 몇 년 전 오늘', './kidsay.html', '추억') + lines.join('');
