@@ -176,7 +176,7 @@
       return `<div class="flex items-start gap-2 py-2 border-b border-slate-100 ${past ? 'opacity-60' : ''}">
         <span role="button" tabindex="0" onclick='toggleFav(${JSON.stringify(g.title).replace(/'/g, "&#39;")}, ${g.y})' aria-label="관심 게임" aria-pressed="${fav}" class="cursor-pointer text-lg leading-none mt-0.5 ${fav ? '' : 'opacity-25 grayscale'}">⭐</span>
         <span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900">${name}${g.region ? ` <span class="text-[9px] font-bold text-slate-400">${esc(g.region)}</span>` : ''}</span>
-          <span class="flex flex-wrap items-center gap-1 mt-0.5">${badgeRow(g)}<span class="text-[10px] text-slate-500">${esc(TYPE[g.type] || g.type || '')}${g.genre ? ` · ${esc(g.genre)}` : ''}</span></span>
+          <span class="flex flex-wrap items-center gap-1 mt-0.5">${badgeRow(g)}<span class="text-[10px] text-slate-500">${esc((g.type || '').split(/\s*[\/,]\s*/).map(t => TYPE[t] || t).join('·'))}${g.genre ? ` · ${esc(g.genre)}` : ''}</span></span>
           <span class="block text-[10px] text-slate-400 truncate">${esc(g.pub && g.pub !== g.dev ? `${g.dev} / ${g.pub}` : g.dev || '')}</span></span></div>`;
     }
 
