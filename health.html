@@ -132,12 +132,13 @@
       </div>
     </header>
     <section id="form" class="card p-4 hidden">
-      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🩹 어디가 아파요?</h2>
+      <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🩹 어디가 아파요?</h2>
       <div id="whoBtns" class="flex flex-wrap gap-1.5"></div>
       <div id="parts" class="flex flex-wrap gap-1.5 mt-2"></div>
       <input id="fPart" maxlength="16" placeholder="직접 쓰기 (예: 왼쪽 옆구리)" class="hidden w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
       <label class="block text-[10px] font-bold text-slate-500 mt-3">⏱️ 언제부터<input id="fStart" type="datetime-local" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
       <div class="flex flex-wrap gap-1.5 mt-1.5"><span id="quickStart" class="contents"></span></div>
+      <label id="endWrap" class="hidden block text-[10px] font-bold text-slate-500 mt-2">😌 나은 때<input id="fEnd" type="datetime-local" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
       <p class="text-[10px] font-bold text-slate-500 mt-3">어떻게 아파요 (여러 개)</p>
       <div id="syms" class="flex flex-wrap gap-1.5 mt-1"></div>
       <div class="mt-3"><p class="text-[10px] font-bold text-slate-500">통증 <span id="painVal" class="text-indigo-600"></span></p><input id="fPain" type="range" min="0" max="10" value="5" class="w-full accent-indigo-600"><div class="flex justify-between text-[9px] font-bold text-slate-400"><span>0 안 아픔</span><span>5 신경 쓰임</span><span>10 못 참음</span></div></div>
@@ -146,7 +147,7 @@
       <p id="flag" class="hidden text-[11px] font-bold text-rose-600 bg-rose-50 rounded-lg px-2.5 py-1.5 mt-2"></p>
       <div class="flex gap-2 mt-2">
         <button type="button" onclick="closeForm()" class="px-4 py-2.5 bg-slate-100 text-slate-600 font-extrabold rounded-xl">취소</button>
-        <button type="button" onclick="saveEp()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록 시작</button>
+        <button type="button" id="saveBtn" onclick="saveEp()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록 시작</button>
       </div>
     </section>
     <div id="live" class="space-y-3 md:space-y-4"></div>
@@ -187,12 +188,21 @@
     // 같은 분에 여러 번 남기면 나중 것 (>=)
     const lastPain = e => { const l = (e.logs || []).reduce((a, x) => !a || x.t >= a.t ? x : a, null); return l ? l.pain : null; };
     // ---------- 새로 기록 ----------
-    function openForm() {
-      who = 'me'; part = PARTS[0]; syms = []; ['fCause', 'fNote', 'fPart'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('fStart').value = local(new Date()); document.getElementById('fPain').value = 5;
+    let editId = null;
+    function openForm(id) {
+      const e = id ? st.eps.find(x => x.id === id) : null; editId = e ? e.id : null;
+      const first = e && (e.logs || [])[0];
+      who = e ? (e.who || 'me') : 'me'; syms = e ? (e.syms || []).slice() : [];
+      part = e ? (PARTS.includes(e.part) ? e.part : '✏️ 직접') : PARTS[0];
+      document.getElementById('fPart').value = e && !PARTS.includes(e.part) ? e.part.replace(/^✏️\s/, '') : '';
+      document.getElementById('fCause').value = e ? e.cause || '' : ''; document.getElementById('fNote').value = first ? first.note || '' : '';
+      document.getElementById('fStart').value = e ? e.start : local(new Date()); document.getElementById('fPain').value = first ? first.pain : 5;
+      document.getElementById('endWrap').classList.toggle('hidden', !(e && e.end)); document.getElementById('fEnd').value = e && e.end ? e.end : '';
+      document.getElementById('formTitle').textContent = e ? `✏️ ${e.part} 고치기` : '🩹 어디가 아파요?';
+      document.getElementById('saveBtn').textContent = e ? '저장' : '기록 시작';
       renderForm(); document.getElementById('form').classList.remove('hidden'); scrollTo({ top: 0, behavior: 'smooth' });
     }
-    function closeForm() { document.getElementById('form').classList.add('hidden'); }
+    function closeForm() { document.getElementById('form').classList.add('hidden'); editId = null; }
     function setWho(w) { who = w; renderForm(); }
     function setPart(i) { part = PARTS[i]; renderForm(); if (part === '✏️ 직접') document.getElementById('fPart').focus(); }
     function togSym(i) { const s = SYMS[i]; syms = syms.includes(s) ? syms.filter(x => x !== s) : [...syms, s]; renderForm(); }
@@ -210,7 +220,13 @@
     document.getElementById('fPain').addEventListener('input', () => { document.getElementById('painVal').textContent = document.getElementById('fPain').value + ' / 10'; });
     function saveEp() {
       const p = part === '✏️ 직접' ? '✏️ ' + (document.getElementById('fPart').value.trim() || '기타') : part, start = document.getElementById('fStart').value || local(new Date()), pain = +document.getElementById('fPain').value, note = document.getElementById('fNote').value.trim();
-      st.eps.push({ id: Date.now(), who, part: p, start, end: null, syms: syms.slice(), cause: document.getElementById('fCause').value.trim(), logs: [{ t: local(new Date()), pain, note, syms: syms.slice() }], treats: [] });
+      const cause = document.getElementById('fCause').value.trim(), e = editId && st.eps.find(x => x.id === editId);
+      if (e) {
+        Object.assign(e, { who, part: p, start, syms: syms.slice(), cause });
+        if (e.end) e.end = document.getElementById('fEnd').value || e.end;
+        e.logs = e.logs || []; if (e.logs[0]) Object.assign(e.logs[0], { pain, note }); else e.logs.push({ t: start, pain, note, syms: syms.slice() });
+      } else st.eps.push({ id: Date.now(), who, part: p, start, end: null, syms: syms.slice(), cause, logs: [{ t: local(new Date()), pain, note, syms: syms.slice() }], treats: [] });
+      editId = null;
       persist(); closeForm(); render();
     }
     // ---------- 진행 중 카드 ----------
@@ -223,10 +239,11 @@
         ${(e.treats || []).map(t => `<text x="${X(t.t).toFixed(1)}" y="59" font-size="9" text-anchor="middle">${t.ic}</text>`).join('')}</svg>`;
     }
     function timeline(e) {
-      const ev = [...(e.logs || []).map(l => ({ t: l.t, k: 'log', l })), ...(e.treats || []).map(t => ({ t: t.t, k: 'tr', x: t }))].sort((a, b) => b.t.localeCompare(a.t));
+      const ev = [...(e.logs || []).map((l, i) => ({ t: l.t, k: 'log', l, i })), ...(e.treats || []).map((t, i) => ({ t: t.t, k: 'tr', x: t, i }))].sort((a, b) => b.t.localeCompare(a.t));
+      const ed = v => `<span role="button" tabindex="0" onclick="${v.k === 'log' ? 'openLog' : 'openTreat'}(${e.id}, ${v.i})" class="cursor-pointer text-[11px] text-slate-400 px-1 shrink-0">✏️</span>`;
       return ev.map(v => v.k === 'log'
-        ? `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700"><b class="${painCls(v.l.pain)}">통증 ${v.l.pain}</b>${(v.l.syms || []).length ? ` · ${v.l.syms.map(s => s.replace(/^\S+\s/, '')).join(', ')}` : ''}${v.l.note ? `<br><span class="text-slate-500">${esc(v.l.note)}</span>` : ''}</span></div>`
-        : `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700">${v.x.ic} <b>${esc(v.x.kind)}</b>${v.x.note ? ` · ${esc(v.x.note)}` : ''}</span></div>`).join('');
+        ? `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700"><b class="${painCls(v.l.pain)}">통증 ${v.l.pain}</b>${(v.l.syms || []).length ? ` · ${v.l.syms.map(s => s.replace(/^\S+\s/, '')).join(', ')}` : ''}${v.l.note ? `<br><span class="text-slate-500">${esc(v.l.note)}</span>` : ''}</span>${ed(v)}</div>`
+        : `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700">${v.x.ic} <b>${esc(v.x.kind)}</b>${v.x.note ? ` · ${esc(v.x.note)}` : ''}</span>${ed(v)}</div>`).join('');
     }
     function liveCard(e) {
       const lp = lastPain(e), firstP = (e.logs || [])[0] ? e.logs[0].pain : null, todayLogged = (e.logs || []).some(l => l.t.slice(0, 10) === ymd(new Date()));
@@ -246,48 +263,57 @@
           <span role="button" tabindex="0" onclick="heal(${e.id})" class="cursor-pointer text-center py-2 rounded-xl bg-emerald-50 text-xs font-extrabold text-emerald-700">😌 나았어요</span>
         </div>
         <details class="mt-2"><summary class="cursor-pointer text-[11px] font-bold text-slate-500">🕐 흐름 보기 (${(e.logs || []).length + (e.treats || []).length})</summary><div class="mt-1">${timeline(e)}</div></details>
-        <div class="flex items-center gap-3 mt-2"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 병원에 보여줄 요약 복사</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '정말 지울까요?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div>
+        <div class="flex items-center gap-3 mt-2"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 병원에 보여줄 요약 복사</span><span role="button" tabindex="0" onclick="openForm(${e.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">✏️ 고치기</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '정말 지울까요?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div>
       </section>`;
     }
     // ---------- 상태·치료 기록 시트 ----------
     let sheetSyms = [];
-    function openLog(id) {
-      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; sheetSyms = (e.logs.slice(-1)[0] || {}).syms || e.syms || [];
-      const lp = lastPain(e) ?? 5;
-      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">📝 ${esc(e.part)} 지금 상태</h3>
-        <p class="text-[10px] font-bold text-slate-500 mt-3">통증 <span id="sPainVal" class="text-indigo-600">${lp} / 10</span> <span class="text-slate-400">(지난번 ${lp})</span></p>
+    let sheetIdx = null;
+    // idx 있으면 그 기록 고치기, 없으면 새 상태
+    function openLog(id, idx) {
+      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; sheetIdx = idx ?? null;
+      const L = idx != null ? e.logs[idx] : null; sheetSyms = L ? (L.syms || []).slice() : ((e.logs.slice(-1)[0] || {}).syms || e.syms || []).slice();
+      const lp = L ? L.pain : (lastPain(e) ?? 5);
+      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">${L ? '✏️' : '📝'} ${esc(e.part)} ${L ? '상태 고치기' : '지금 상태'}</h3>
+        <p class="text-[10px] font-bold text-slate-500 mt-3">통증 <span id="sPainVal" class="text-indigo-600">${lp} / 10</span>${L ? '' : ` <span class="text-slate-400">(지난번 ${lp})</span>`}</p>
         <input id="sPain" type="range" min="0" max="10" value="${lp}" oninput="document.getElementById('sPainVal').textContent=this.value+' / 10'" class="w-full accent-indigo-600">
         <div id="sSyms" class="flex flex-wrap gap-1.5 mt-2"></div>
-        <textarea id="sNote" rows="2" maxlength="300" placeholder="메모 (선택) 예: 아침보다 덜함, 걷기는 괜찮음" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"></textarea>
-        <button type="button" onclick="saveLog()" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>`;
+        <textarea id="sNote" rows="2" maxlength="300" placeholder="메모 (선택) 예: 아침보다 덜함, 걷기는 괜찮음" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">${L ? esc(L.note || '') : ''}</textarea>
+        <label class="block text-[10px] font-bold text-slate-500 mt-2">언제<input id="sTime" type="datetime-local" value="${L ? L.t : local(new Date())}" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <div class="flex gap-2 mt-2">${L && e.logs.length > 1 ? `<button type="button" onclick="sure(this, '지울까요?', delLog)" class="px-4 py-2.5 bg-rose-50 text-rose-600 font-extrabold rounded-xl">삭제</button>` : ''}<button type="button" onclick="saveLog()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">${L ? '저장' : '기록'}</button></div>`;
       renderSheetSyms(); document.getElementById('sheet').classList.remove('hidden');
     }
+    function delLog() { const e = st.eps.find(x => x.id === sheetFor); if (!e || sheetIdx == null) return; e.logs.splice(sheetIdx, 1); persist(); closeSheet(); render(); }
     function renderSheetSyms() { document.getElementById('sSyms').innerHTML = SYMS.map((s, i) => `<span role="button" tabindex="0" onclick="togSheetSym(${i})" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${sheetSyms.includes(s) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${s}</span>`).join(''); }
     function togSheetSym(i) { const s = SYMS[i]; sheetSyms = sheetSyms.includes(s) ? sheetSyms.filter(x => x !== s) : [...sheetSyms, s]; renderSheetSyms(); }
     function saveLog() {
       const e = st.eps.find(x => x.id === sheetFor); if (!e) return;
-      e.logs = e.logs || []; e.logs.push({ t: local(new Date()), pain: +document.getElementById('sPain').value, note: document.getElementById('sNote').value.trim(), syms: sheetSyms.slice() });
+      const v = { t: document.getElementById('sTime').value || local(new Date()), pain: +document.getElementById('sPain').value, note: document.getElementById('sNote').value.trim(), syms: sheetSyms.slice() };
+      e.logs = e.logs || []; if (sheetIdx != null && e.logs[sheetIdx]) Object.assign(e.logs[sheetIdx], v); else e.logs.push(v);
       sheetSyms.forEach(s => { if (!e.syms.includes(s)) e.syms.push(s); }); persist(); closeSheet(); render();
     }
     let trKind = 0;
-    function openTreat(id) {
-      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; trKind = 0;
-      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">💊 ${esc(e.part)} 병원·약·관리</h3>
+    function openTreat(id, idx) {
+      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; sheetIdx = idx ?? null;
+      const X = idx != null ? (e.treats || [])[idx] : null; trKind = X ? Math.max(0, TREATS.findIndex(t => t[1] === X.kind)) : 0;
+      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">${X ? '✏️' : '💊'} ${esc(e.part)} 병원·약·관리${X ? ' 고치기' : ''}</h3>
         <div id="trKinds" class="flex flex-wrap gap-1.5 mt-3"></div>
-        <input id="trNote" maxlength="60" placeholder="" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
-        <label class="block text-[10px] font-bold text-slate-500 mt-2">언제<input id="trTime" type="datetime-local" value="${local(new Date())}" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
-        <button type="button" onclick="saveTreat()" class="w-full mt-3 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>`;
+        <input id="trNote" maxlength="60" placeholder="" value="${X ? esc(X.note || '') : ''}" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <label class="block text-[10px] font-bold text-slate-500 mt-2">언제<input id="trTime" type="datetime-local" value="${X ? X.t : local(new Date())}" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <div class="flex gap-2 mt-3">${X ? `<button type="button" onclick="sure(this, '지울까요?', delTreat)" class="px-4 py-2.5 bg-rose-50 text-rose-600 font-extrabold rounded-xl">삭제</button>` : ''}<button type="button" onclick="saveTreat()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">${X ? '저장' : '기록'}</button></div>`;
       renderTr(); document.getElementById('sheet').classList.remove('hidden');
     }
+    function delTreat() { const e = st.eps.find(x => x.id === sheetFor); if (!e || sheetIdx == null) return; e.treats.splice(sheetIdx, 1); persist(); closeSheet(); render(); }
     function renderTr() {
       document.getElementById('trKinds').innerHTML = TREATS.map(([ic, k], i) => `<span role="button" tabindex="0" onclick="trKind=${i};renderTr()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${trKind === i ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${ic} ${k}</span>`).join('');
       document.getElementById('trNote').placeholder = ['병원 이름·진단 (예: OO정형외과, 요추 염좌)', '약 이름 (예: 이부프로펜 1알)', '어디에 붙였는지', '몇 분', '몇 분', '어디서·몇 회차', '어떤 동작', '메모', '메모'][trKind];
     }
     function saveTreat() {
       const e = st.eps.find(x => x.id === sheetFor); if (!e) return; const [ic, kind] = TREATS[trKind];
-      e.treats = e.treats || []; e.treats.push({ t: document.getElementById('trTime').value || local(new Date()), ic, kind, note: document.getElementById('trNote').value.trim() }); persist(); closeSheet(); render();
+      const v = { t: document.getElementById('trTime').value || local(new Date()), ic, kind, note: document.getElementById('trNote').value.trim() };
+      e.treats = e.treats || []; if (sheetIdx != null && e.treats[sheetIdx]) Object.assign(e.treats[sheetIdx], v); else e.treats.push(v); persist(); closeSheet(); render();
     }
-    function closeSheet() { document.getElementById('sheet').classList.add('hidden'); sheetFor = null; }
+    function closeSheet() { document.getElementById('sheet').classList.add('hidden'); sheetFor = null; sheetIdx = null; }
     function heal(id) { const e = st.eps.find(x => x.id === id); if (!e) return; e.end = local(new Date()); persist(); render(); }
     function reopen(id) { const e = st.eps.find(x => x.id === id); if (!e) return; e.end = null; persist(); render(); }
     // ---------- 병원용 요약 ----------
@@ -306,7 +332,7 @@
       const q = document.getElementById('q').value.trim(), past = st.eps.filter(e => e.end && (!q || (e.part + (e.syms || []).join(' ') + (e.cause || '')).includes(q))).sort((a, b) => b.start.localeCompare(a.start));
       document.getElementById('past').innerHTML = past.map(e => `<details class="border-b border-slate-100 py-1.5"><summary class="cursor-pointer flex items-center gap-2"><span class="w-16 shrink-0 text-[11px] font-bold text-slate-500 num">${e.start.slice(2, 10).replace(/-/g, '.')}</span><span class="flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(e.part)}${e.who !== 'me' ? ` <span class="text-[11px] text-slate-400">${esc(whoName(e.who))}</span>` : ''}</span><span class="text-[11px] font-bold text-slate-500 shrink-0">${since(e.start, new Date(e.end))}</span></summary>
         <pre class="whitespace-pre-wrap text-[11px] text-slate-600 bg-slate-50 rounded-lg p-2 mt-1 font-sans">${esc(summary(e))}</pre>
-        <div class="flex gap-3 mt-1"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 요약 복사</span><span role="button" tabindex="0" onclick="reopen(${e.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">↩ 다시 아파요</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div></details>`).join('') || '<p class="text-xs text-slate-400 py-1">나은 기록이 여기 모여요. 같은 데가 또 아프면 몇 번째인지도 알려줘요.</p>';
+        <div class="flex gap-3 mt-1"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 요약 복사</span><span role="button" tabindex="0" onclick="openForm(${e.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">✏️ 고치기</span><span role="button" tabindex="0" onclick="reopen(${e.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">↩ 다시 아파요</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div></details>`).join('') || '<p class="text-xs text-slate-400 py-1">나은 기록이 여기 모여요. 같은 데가 또 아프면 몇 번째인지도 알려줘요.</p>';
       const y = String(new Date().getFullYear()), yc = st.eps.filter(e => e.start.startsWith(y)).length;
       document.getElementById('sub').textContent = live.length ? `지금 아픈 곳 ${live.length} · 올해 ${yc}번` : `괜찮아요 · 올해 ${yc}번 기록`;
     }
