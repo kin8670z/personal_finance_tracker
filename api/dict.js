@@ -73,21 +73,35 @@ async function en(q) {
   if (!meanings.length && !ko.length) return null;
   return { word: (e[0] && e[0].word) || q, phonetic: (e.find(x => x.phonetic) || {}).phonetic || (phon.find(p => p.text) || {}).text || '', audio, ko, meanings: meanings.slice(0, 6) };
 }
-// 많이 쓰는 뜻 먼저: 표준국어대사전은 등재 번호 순이라, 위키낱말사전(흔한 뜻 위주)과 비슷한 뜻을 올리고
-// 옛 제도·전문 분야·방언 같은 뜻은 내린다
+// 많이 쓰는 뜻 먼저: 표준국어대사전은 등재 번호 순이라, 위키낱말사전(흔한 뜻이 앞에 옴) 순서에 맞춰 다시 정렬하고
+// 어근·접사·준말, 옛 제도·전문 분야 뜻은 뒤로
 const RARE = /조선 시대|고려 시대|신라|백제|고구려|옛날|예전에|불교|유학|성리학|한의학|도교|기독교|천주교|가톨릭|벼슬|관아|관직|군직|궁중|임금|왕실|제사|역사|법률|의학|약학|화학|물리|수학|광물|건설|음악|인명|지명|책 이름/;
-const bigrams = s => { const t = String(s).replace(/[^가-힣a-z0-9]/gi, ''), out = new Set(); for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2)); return out; };
-function similar(a, b) { const A = bigrams(a), B = bigrams(b); if (!A.size || !B.size) return 0; let n = 0; A.forEach(x => { if (B.has(x)) n++; }); return n / Math.min(A.size, B.size); }
+const FUNC = /^‘[^’]+’의 (어근|준말|잘못|방언|옛말|본말|비표준어)|뜻을 더하는 (접미사|접두사)|줄어든 (말|형태)|^‘[^’]+’(와|과|에|를|을) /;
+const STOP = new Set(['따위','사람','하는','있는','것을','하여','이르','르는','에서','으로']);
+const bigrams = s => { const t = String(s).replace(/〈[^〉]*〉|『[^』]*』/g, '').replace(/[^가-힣a-z0-9]/gi, ''), out = new Set(); for (let i = 0; i < t.length - 1; i++) { const b = t.slice(i, i + 2); if (!STOP.has(b)) out.add(b); } return out; };
+const chars = s => new Set(String(s).replace(/〈[^〉]*〉|『[^』]*』|\([^)]*\)/g, '').replace(/[^가-힣]/g, '').replace(/[의를을이가에은는와과로도]/g, ''));
+function ov(A, B, cap) { if (!A.size || !B.size) return 0; let n = 0; A.forEach(x => { if (B.has(x)) n++; }); return n / Math.min(A.size, B.size, cap); }
+function sim(a, b) { return Math.max(ov(bigrams(a), bigrams(b), 12), ov(chars(a), chars(b), 15) * 0.6); }
 function rank(items, common) {
+  const used = new Set(), order = new Map();
+  // 위키낱말사전에 나온 순서(흔한 뜻)대로 가장 비슷한 표준국어대사전 뜻을 하나씩 짝지음
+  common.forEach((c, ci) => {
+    let best = -1, bs = 0;
+    items.forEach((it, i) => { if (used.has(i)) return; const s = sim(it.def, c); if (s > bs) { bs = s; best = i; } });
+    if (best >= 0 && bs >= 0.25) {
+      used.add(best); order.set(best, ci);
+      // 거의 같은 뜻이 하나 더 있으면 (예: 사과 = 잘못을 빎) 바로 뒤에
+      items.forEach((it, i) => { if (!used.has(i) && sim(it.def, c) >= bs * 0.8) { used.add(i); order.set(i, ci + 0.5); } });
+    }
+  });
+  // 낮을수록 위: 위키낱말사전 순서 ≒ 흔한 순서, 짝이 없는 뜻은 등재 번호 + 1.5
   return items.map((it, i) => {
-    let sc = 0;
-    const sim = Math.max(0, ...common.map(c => similar(it.def, c)));
-    sc += sim * 10;
-    if (it.type && it.type !== '일반어') sc -= 6;            // 방언·북한어·옛말
-    if (RARE.test(it.def)) sc -= 3;
-    if (/과의 (한해|두해|여러해)살이|과의 (낙엽|상록)|과의 (곤충|물고기|새)/.test(it.def) && sim < 0.3) sc -= 1;
-    return { it, sc, i };
-  }).sort((a, b) => b.sc - a.sc || a.i - b.i).map(x => ({ ...x.it, common: x.sc >= 2 }));
+    let k = order.has(i) ? order.get(i) : ((+it.sup || 1) - 1) + 1.5;
+    if (it.type && it.type !== '일반어') k += 30;
+    if (FUNC.test(it.def) || /어근|접사|품사 없음/.test(it.pos)) k += 100;
+    if (RARE.test(it.def)) k += 5;
+    return { it, k, i };
+  }).sort((a, b) => a.k - b.k || a.i - b.i).map(x => ({ ...x.it, common: order.has(x.i) && x.k < 30 }));
 }
 async function ko(q) {
   const key = process.env.STDICT_KEY;
