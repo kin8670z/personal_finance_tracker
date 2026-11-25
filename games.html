@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>게임 출시 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./games.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🎮 <span>게임 출시</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🎮 게임 출시</a></h1>
+        <span class="flex items-center gap-1 shrink-0"><span role="button" tabindex="0" onclick="move(-1)" aria-label="이전 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-600">‹</span>
+          <b id="ym" class="text-sm font-extrabold text-slate-800 num w-24 text-center"></b>
+          <span role="button" tabindex="0" onclick="move(1)" aria-label="다음 달" class="cursor-pointer w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center font-bold text-slate-600">›</span></span>
+      </div>
+      <div id="plats" class="flex flex-wrap gap-1.5 mt-3"></div>
+      <div class="flex flex-wrap items-center gap-1.5 mt-2">
+        <span id="majorBtn" role="button" tabindex="0" onclick="toggle('major')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold"></span>
+        <span id="newBtn" role="button" tabindex="0" onclick="toggle('onlyNew')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold"></span>
+        <span id="tbaBtn" role="button" tabindex="0" onclick="toggleTba()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold"></span>
+        <input id="q" type="search" placeholder="🔍 게임 이름 (영어)" class="flex-1 min-w-[8rem] border border-slate-200 rounded-lg px-2 py-1 bg-white text-sm">
+      </div>
+    </header>
+
+    <section id="favs" class="card p-4 hidden"></section>
+    <section id="list" class="card p-4"><p class="text-sm text-slate-400">불러오는 중…</p></section>
+    <p class="text-[10px] text-slate-400 text-center px-4">출처: 영어 위키백과 “List of video games released in …” (CC BY-SA) · 출시일은 바뀔 수 있어요</p>
+  </div>
+
+  <script>
+    const KEY = 'argon_games_v1';
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const W = '일월화수목금토';
+    // 위키백과 플랫폼 약어 → 버튼 묶음
+    const PLAT = [['PC', ['WIN', 'OSX', 'LIN']], ['PS5', ['PS5']], ['PS4', ['PS4']], ['스위치2', ['NS2']], ['스위치', ['NS']], ['Xbox', ['XBX/S', 'XBO']], ['모바일', ['iOS', 'DROID']], ['VR', ['Quest', 'PSVR', 'PSVR2']]];
+    const LABEL = { WIN: 'PC', OSX: 'Mac', LIN: 'Linux', PS5: 'PS5', PS4: 'PS4', NS2: '스위치2', NS: '스위치', 'XBX/S': 'Xbox', XBO: 'XB1', iOS: 'iOS', DROID: '안드로이드', Quest: 'Quest', PSVR: 'PSVR', PSVR2: 'PSVR2', Luna: 'Luna', GEN: '메가드라이브' };
+    const TYPE = { Original: '신작', Remaster: '리마스터', Remake: '리메이크', Port: '이식', Expansion: '확장팩', Compilation: '합본', 'Early access': '앞서 해보기', 'Full release': '정식 출시', DLC: 'DLC', Collection: '합본' };
+    let st = Object.assign({ fav: [], plats: [], major: true, onlyNew: false }, load(KEY, {}));
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    let cur = new Date(); cur = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    let tba = false; const data = {};   // 연도 → games
+
+    async function year(y) {
+      if (data[y]) return data[y];
+      try { const c = JSON.parse(sessionStorage.getItem('games_' + y) || 'null'); if (c && Date.now() - c.t < 6 * 36e5) return (data[y] = c.g); } catch (e) {}
+      const r = await fetch(`/api/games?y=${y}`), j = await r.json(); if (!r.ok) throw new Error(j.error || r.status);
+      const g = (j.games || []).map(a => ({ date: a[0], title: a[1], linked: !!a[2], plats: a[3] || [], type: a[4], genre: a[5], dev: a[6], pub: a[7], region: a[8], approx: a[9], y }));
+      data[y] = g; try { sessionStorage.setItem('games_' + y, JSON.stringify({ t: Date.now(), g })); } catch (e) {}
+      return g;
+    }
+    const key = g => g.title.toLowerCase();
+    const isFav = g => st.fav.some(f => f.k === key(g));
+    function pass(g) {
+      if (st.major && !g.linked && !isFav(g)) return false;
+      if (st.onlyNew && !/Original|Full release/.test(g.type || '')) return false;
+      if (st.plats.length) { const want = PLAT.filter(p => st.plats.includes(p[0])).flatMap(p => p[1]); if (!g.plats.some(x => want.includes(x))) return false; }
+      return true;
+    }
+    function badgeRow(g) {
+      return g.plats.map(p => `<span class="text-[9px] font-bold px-1 py-0.5 rounded ${/PS/.test(p) ? 'bg-blue-100 text-blue-700' : /NS/.test(p) ? 'bg-rose-100 text-rose-700' : /XB/.test(p) ? 'bg-emerald-100 text-emerald-700' : p === 'WIN' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-500'}">${esc(LABEL[p] || p)}</span>`).join(' ');
+    }
+    function row(g, today) {
+      const past = g.date && g.date < today, fav = isFav(g);
+      const name = g.linked ? `<a href="https://en.wikipedia.org/wiki/${encodeURIComponent(g.title.replace(/ /g, '_'))}" target="_blank" rel="noopener" class="hover:underline">${esc(g.title)}</a>` : esc(g.title);
+      return `<div class="flex items-start gap-2 py-2 border-b border-slate-100 ${past ? 'opacity-60' : ''}">
+        <span role="button" tabindex="0" onclick='toggleFav(${JSON.stringify(g.title).replace(/'/g, "&#39;")}, ${g.y})' aria-label="관심 게임" aria-pressed="${fav}" class="cursor-pointer text-lg leading-none mt-0.5 ${fav ? '' : 'opacity-25 grayscale'}">⭐</span>
+        <span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900">${name}${g.region ? ` <span class="text-[9px] font-bold text-slate-400">${esc(g.region)}</span>` : ''}</span>
+          <span class="flex flex-wrap items-center gap-1 mt-0.5">${badgeRow(g)}<span class="text-[10px] text-slate-500">${esc((g.type || '').split(/\s*[\/,]\s*/).map(t => TYPE[t] || t).join('·'))}${g.genre ? ` · ${esc(g.genre)}` : ''}</span></span>
+          <span class="block text-[10px] text-slate-400 truncate">${esc(g.pub && g.pub !== g.dev ? `${g.dev} / ${g.pub}` : g.dev || '')}</span></span></div>`;
+    }
+
+    async function render() {
+      document.getElementById('ym').textContent = tba ? '날짜 미정' : `${cur.getFullYear()}년 ${cur.getMonth() + 1}월`;
+      document.getElementById('plats').innerHTML = PLAT.map(([n]) => `<span role="button" tabindex="0" onclick="togglePlat('${n}')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${st.plats.includes(n) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${n}</span>`).join('');
+      const chip = (on, t) => `cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${on ? 'bg-amber-400 text-slate-900' : 'bg-slate-100 text-slate-600'}`;
+      document.getElementById('majorBtn').className = chip(st.major); document.getElementById('majorBtn').textContent = '🔥 주요 게임만';
+      document.getElementById('newBtn').className = chip(st.onlyNew); document.getElementById('newBtn').textContent = '🆕 신작만';
+      document.getElementById('tbaBtn').className = chip(tba); document.getElementById('tbaBtn').textContent = '❓ 날짜 미정';
+      const box = document.getElementById('list'), q = document.getElementById('q').value.trim().toLowerCase(), today = ymd(new Date());
+      let gs;
+      try { gs = await year(cur.getFullYear()); } catch (e) { box.innerHTML = `<p class="text-sm text-rose-600">${esc(e.message)}</p>`; return; }
+      let list;
+      if (q) {   // 검색은 올해·내년 전체에서
+        const more = await year(cur.getFullYear() + 1).catch(() => []);
+        list = [...gs, ...more].filter(g => g.title.toLowerCase().includes(q)).slice(0, 80);
+        box.innerHTML = `<h2 class="text-sm font-extrabold text-slate-900 mb-1">🔍 '${esc(q)}' ${list.length}개</h2>` + (list.map(g => `<p class="text-[11px] font-bold text-indigo-600 mt-2">${g.date ? `${+g.date.slice(5, 7)}/${+g.date.slice(8)} (${g.y})` : esc(approxText(g))}</p>` + row(g, today)).join('') || '<p class="text-xs text-slate-400">없어요. 영어 이름으로 찾아보세요.</p>');
+        renderFavs(); return;
+      }
+      if (tba) {
+        list = gs.filter(g => !g.date && !/^\d{4}-\d{2}$/.test(g.approx)).filter(pass);
+        box.innerHTML = `<h2 class="text-sm font-extrabold text-slate-900 mb-1">❓ ${cur.getFullYear()}년 날짜 미정 ${list.length}개</h2>` + list.map(g => row(g, today) .replace('<span class="block text-[10px] text-slate-400 truncate">', `<span class="block text-[10px] text-slate-400 truncate">${esc(approxText(g))} · `)).join('');
+        renderFavs(); return;
+      }
+      const ym = `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}`;
+      list = gs.filter(g => (g.date || '').startsWith(ym) || g.approx === ym).filter(pass);
+      const all = gs.filter(g => (g.date || '').startsWith(ym) || g.approx === ym).length;
+      const byDay = {}; list.forEach(g => (byDay[g.date || 'zz'] = byDay[g.date || 'zz'] || []).push(g));
+      const days = Object.keys(byDay).sort();
+      box.innerHTML = `<p class="text-[11px] font-bold text-slate-500 mb-1">${list.length}개${list.length < all ? ` <span class="text-slate-400">(전체 ${all}개 중 · 🔥 주요 게임만 끄면 다 보여요)</span>` : ''}</p>` + (days.map(d => {
+        const lab = d === 'zz' ? '📅 이달 중 (날짜 미정)' : (() => { const x = new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8)); return `${x.getMonth() + 1}/${x.getDate()} (${W[x.getDay()]})${d === today ? ' · 오늘 🎉' : ''}`; })();
+        return `<div ${d === today ? 'id="todayRow"' : ''} class="mt-3 ${d === today ? 'rounded-xl ring-2 ring-amber-300 px-2' : ''}"><p class="text-xs font-extrabold ${d === today ? 'text-amber-600' : 'text-indigo-600'}">${lab} <span class="text-slate-400 font-bold">${byDay[d].length}</span></p>${byDay[d].map(g => row(g, today)).join('')}</div>`;
+      }).join('') || '<p class="text-sm text-slate-400 py-2">조건에 맞는 게임이 없어요.</p>');
+      renderFavs();
+    }
+    function approxText(g) { const a = g.approx || '미정'; if (/^\d{4}-\d{2}$/.test(a)) return `${+a.slice(5)}월 중`; return a === '미정' ? `${g.y}년 (미정)` : `${a} (${g.y})`; }
+
+    // ⭐ 관심 게임: 목록을 다시 읽을 때 날짜가 바뀌었으면 따라감
+    function renderFavs() {
+      const box = document.getElementById('favs'), today = ymd(new Date());
+      st.fav.forEach(f => { const g = (data[f.y] || []).find(x => key(x) === f.k) || (data[f.y + 1] || []).find(x => key(x) === f.k); if (g) { f.d = g.date; f.a = g.approx; f.p = g.plats; f.y = g.y; } });
+      persist(); if (window.saveBrief) saveBrief();
+      const fs = st.fav.filter(f => !f.d || f.d >= ymd(new Date(Date.now() - 30 * 864e5))).sort((a, b) => (a.d || '9999').localeCompare(b.d || '9999'));
+      if (!fs.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      const dd = d => Math.round((new Date(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8)) - new Date(new Date().toDateString())) / 864e5);
+      box.innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">⭐ 관심 게임</h2>` + fs.map(f => { const k = f.d ? dd(f.d) : null;
+        return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900 truncate">${esc(f.t)}</span><span class="block text-[10px] text-slate-500">${f.d ? `${f.d.replace(/-/g, '.')}` : esc(approxText({ approx: f.a, y: f.y }))} · ${(f.p || []).map(p => LABEL[p] || p).join(', ')}</span></span>
+          <span class="text-sm font-extrabold shrink-0 ${k === 0 ? 'text-amber-600' : k != null && k < 0 ? 'text-slate-400' : 'text-indigo-600'}">${k == null ? '미정' : k === 0 ? '오늘 출시! 🎉' : k < 0 ? '출시됨' : `D-${k}`}</span>
+          <span role="button" tabindex="0" onclick='toggleFav(${JSON.stringify(f.t).replace(/'/g, "&#39;")}, ${f.y})' aria-label="관심 해제" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`; }).join('');
+    }
+    function toggleFav(title, y) {
+      const k = title.toLowerCase(), i = st.fav.findIndex(f => f.k === k);
+      if (i >= 0) st.fav.splice(i, 1); else { const g = (data[y] || []).find(x => key(x) === k) || {}; st.fav.push({ k, t: title, y, d: g.date || '', a: g.approx || '', p: g.plats || [] }); }
+      persist(); render();
+    }
+    function togglePlat(n) { const i = st.plats.indexOf(n); i >= 0 ? st.plats.splice(i, 1) : st.plats.push(n); persist(); render(); }
+    function toggle(k) { st[k] = !st[k]; persist(); render(); }
+    function toggleTba() { tba = !tba; render(); }
+    function move(d) { tba = false; cur = new Date(cur.getFullYear(), cur.getMonth() + d, 1); render(); }
+    let qt; document.getElementById('q').addEventListener('input', () => { clearTimeout(qt); qt = setTimeout(render, 250); });
+
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    render().then(() => { const t = document.getElementById('todayRow'); if (t) t.scrollIntoView({ block: 'center' }); });
+  </script>
+</body>
+</html>
