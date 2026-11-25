@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.42';
+  const VERSION = '9.43';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -109,7 +109,7 @@
     ['rec', '📝', '기록', ['diary.html', 'mood.html', 'todo.html', 'habits.html', 'food.html', 'sleep.html', 'dday.html']],
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html', 'firsts.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'ceremony.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
-    ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'places.html', 'gift.html', 'groupbuy.html', 'parking.html', 'stash.html', 'car.html']],
+    ['life', '🚇', '생활', ['weather.html', 'subway.html', 'lunch.html', 'places.html', 'gift.html', 'groupbuy.html', 'parking.html', 'stash.html', 'car.html']],
     ['hobby', '🎮', '취미', ['games.html', 'tomica.html', 'media.html']],
     ['trip', '✈️', '여행·공부', ['trip.html', 'fx.html', 'english.html', 'dict.html']]
   ];

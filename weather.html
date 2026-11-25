@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>날씨 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📚 <span>책·영화</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🌤️ 날씨</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <button type="button" onclick="loadAll(true)" aria-label="새로고침" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 shrink-0">🔄</button>
+      </div>
+      <div id="places" class="flex flex-wrap gap-1.5 mt-3"></div>
+      <div id="searchBox" class="hidden mt-2">
+        <div class="flex gap-1.5"><input id="sq" placeholder="도시·동네 이름 (예: 제주, 오사카)" class="flex-1 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"><button type="button" onclick="searchPlace()" class="px-3 py-1.5 bg-indigo-600 text-white text-sm font-extrabold rounded-lg">찾기</button></div>
+        <div id="sres" class="mt-1"></div>
+      </div>
+    </header>
+    <section id="now" class="card p-4"><div class="skel" style="height:150px"></div></section>
+    <section id="sun" class="card p-4 hidden"></section>
+    <section id="hourly" class="card p-4 hidden"></section>
+    <section id="week" class="card p-4 hidden"></section>
+    <section id="air" class="card p-4 hidden"></section>
+    <p class="text-center text-[10px] text-slate-400 pb-2">날씨 Open-Meteo (기상청 등 여러 모델 종합) · 미세먼지는 예측 모델 값이라 에어코리아 측정값과 다를 수 있어요</p>
+  </div>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const W = '일월화수목금토';
+    const head = (title, right) => `<div class="flex items-center justify-between gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">${title}</h2>${right || ''}</div>`;
+    const HOME = { name: '하남시', lat: 37.5393, lng: 127.2149 };
+    const TODAY_PLACE = 'argon_today_place_v1', SAVED = 'argon_weather_places_v1';
+    let place = load(TODAY_PLACE, HOME), data = null, air = null;
+    // 날씨 코드 → 아이콘·설명 (밤엔 달)
+    const WMO = (c, day = 1) => c === 0 ? [day ? '☀️' : '🌙', '맑음'] : c <= 2 ? [day ? '🌤️' : '☁️', '구름 조금'] : c === 3 ? ['☁️', '흐림'] : c <= 48 ? ['🌫️', '안개'] : c <= 57 ? ['🌦️', '이슬비'] : c <= 67 ? ['🌧️', '비'] : c <= 77 ? ['🌨️', '눈'] : c <= 82 ? ['🌧️', '소나기'] : c <= 86 ? ['🌨️', '눈 소나기'] : ['⛈️', '뇌우'];
+    const pmGrade = (v, fine) => { const t = fine ? [15, 35, 75] : [30, 80, 150]; return v == null ? ['-', 'text-slate-400', 'bg-slate-50'] : v <= t[0] ? ['좋음', 'text-sky-600', 'bg-sky-50'] : v <= t[1] ? ['보통', 'text-emerald-600', 'bg-emerald-50'] : v <= t[2] ? ['나쁨', 'text-amber-600', 'bg-amber-50'] : ['매우 나쁨', 'text-rose-600', 'bg-rose-50']; };
+    const uvGrade = v => v == null ? ['-', 'text-slate-400'] : v < 3 ? ['낮음', 'text-emerald-600'] : v < 6 ? ['보통', 'text-amber-600'] : v < 8 ? ['높음', 'text-orange-600'] : v < 11 ? ['매우 높음', 'text-rose-600'] : ['위험', 'text-purple-600'];
+    const DIRS = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+    const windDir = d => DIRS[Math.round(((d % 360) + 360) % 360 / 45) % 8] + '풍';
+    const windWord = v => v < 2 ? '고요' : v < 4 ? '약함' : v < 9 ? '약간 강함' : v < 14 ? '강함' : '매우 강함';
+    const hm = s => s ? s.slice(11, 16) : '-';
+    const dur = sec => `${Math.floor(sec / 3600)}시간 ${Math.round(sec % 3600 / 60)}분`;
+    const dayName = (s, i) => { const d = new Date(s + 'T00:00'); return i === 0 ? '오늘' : i === 1 ? '내일' : W[d.getDay()]; };
+    // 달 모양 (2000-01-06 18:14 UTC 삭 기준, 삭망월 29.53일)
+    function moon(d = new Date()) {
+      const age = (((d - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % 29.530588853 + 29.530588853) % 29.530588853;
+      const i = Math.floor((age / 29.530588853) * 8 + 0.5) % 8;
+      return { age, ic: ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][i], name: ['삭 (달이 안 보여요)', '초승달', '상현달', '차오르는 달', '보름달', '기우는 달', '하현달', '그믐달'][i], full: Math.round((age < 14.77 ? 14.77 - age : 29.53 - age + 14.77)) };
+    }
+    // 장소 칩: 오늘 화면 장소 + 하남시 + 저장한 곳 + 현재 위치·검색
+    function renderPlaces() {
+      const saved = load(SAVED, []) || [], list = [HOME, ...saved.filter(s => s.name !== HOME.name)];
+      const cur = p => Math.abs(p.lat - place.lat) < 0.01 && Math.abs(p.lng - place.lng) < 0.01;
+      document.getElementById('places').innerHTML = list.map((p, i) => `<span role="button" tabindex="0" onclick="pick(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${cur(p) ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${i === 0 ? '🏠 ' : ''}${esc(p.name)}${i > 0 ? ` <span onclick="event.stopPropagation();unsave(${i - 1})" class="opacity-50 ml-0.5">✕</span>` : ''}</span>`).join('')
+        + (!list.some(cur) ? `<span class="px-2.5 py-1 rounded-full text-xs font-bold bg-slate-700 text-white">${esc(place.name)}</span>` : '')
+        + `<span role="button" tabindex="0" onclick="myPlace()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">📍 지금 위치</span><span role="button" tabindex="0" onclick="toggleSearch()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700">🔍 다른 곳</span>`;
+      window._places = list;
+    }
+    function pick(i) { place = window._places[i]; loadAll(); }
+    function unsave(i) { const s = load(SAVED, []) || []; s.splice(i, 1); save(SAVED, s); renderPlaces(); }
+    function myPlace() {
+      if (!navigator.geolocation) return;
+      navigator.geolocation.getCurrentPosition(pos => { place = { name: '현재 위치', lat: +pos.coords.latitude.toFixed(3), lng: +pos.coords.longitude.toFixed(3) }; loadAll(); }, () => { document.getElementById('sub').textContent = '위치 권한이 없어요'; }, { timeout: 8000, maximumAge: 6e5 });
+    }
+    function toggleSearch() { const b = document.getElementById('searchBox'); b.classList.toggle('hidden'); if (!b.classList.contains('hidden')) document.getElementById('sq').focus(); }
+    document.getElementById('sq').addEventListener('keydown', e => { if (e.key === 'Enter') searchPlace(); });
+    async function searchPlace() {
+      const q = document.getElementById('sq').value.trim(), box = document.getElementById('sres'); if (!q) return;
+      box.innerHTML = '<p class="text-xs text-slate-400 py-1">찾는 중…</p>';
+      try {
+        const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=ko&format=json`).then(r => r.json());
+        const rs = r.results || []; window._sres = rs;
+        box.innerHTML = rs.map((x, i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span role="button" tabindex="0" onclick="useRes(${i}, false)" class="cursor-pointer flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(x.name)} <span class="text-[11px] text-slate-400">${esc([x.admin1, x.country].filter(Boolean).join(', '))}</span></span><span role="button" tabindex="0" onclick="useRes(${i}, true)" class="cursor-pointer text-[11px] font-bold text-indigo-600 shrink-0">⭐ 저장</span></div>`).join('') || '<p class="text-xs text-slate-400 py-1">못 찾았어요. 영어 이름으로도 해 보세요.</p>';
+      } catch (e) { box.innerHTML = '<p class="text-xs text-rose-500 py-1">검색이 안 돼요. 잠시 뒤 다시.</p>'; }
+    }
+    function useRes(i, keep) {
+      const x = window._sres[i]; place = { name: x.name, lat: +x.latitude.toFixed(3), lng: +x.longitude.toFixed(3) };
+      if (keep) { const s = load(SAVED, []) || []; if (!s.some(p => p.name === place.name)) s.push(place); save(SAVED, s.slice(-8)); }
+      document.getElementById('searchBox').classList.add('hidden'); document.getElementById('sres').innerHTML = ''; document.getElementById('sq').value = ''; loadAll();
+    }
+    async function loadAll(force) {
+      renderPlaces();
+      const q = `latitude=${place.lat}&longitude=${place.lng}&timezone=Asia%2FSeoul`, ck = `wx_${place.lat}_${place.lng}`;
+      const cached = !force && (() => { try { const c = JSON.parse(sessionStorage.getItem(ck)); return c && Date.now() - c.t < 10 * 6e4 ? c : null; } catch (e) { return null; } })();
+      try {
+        if (cached) { data = cached.w; air = cached.a; }
+        else {
+          [data, air] = await Promise.all([
+            fetch(`https://api.open-meteo.com/v1/forecast?${q}&wind_speed_unit=ms&past_days=1&forecast_days=14`
+              + '&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,uv_index'
+              + '&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,is_day,uv_index,wind_speed_10m'
+              + '&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,daylight_duration,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max').then(r => { if (!r.ok) throw 0; return r.json(); }),
+            fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?${q}&current=pm10,pm2_5&hourly=pm10,pm2_5&forecast_days=4`).then(r => r.ok ? r.json() : null).catch(() => null)
+          ]);
+          try { sessionStorage.setItem(ck, JSON.stringify({ t: Date.now(), w: data, a: air })); } catch (e) {}
+        }
+        render();
+      } catch (e) {
+        document.getElementById('now').innerHTML = head('🌤️ 지금') + '<p class="text-xs text-slate-500">날씨를 불러오지 못했어요. 🔄 눌러서 다시 시도해 보세요.</p>';
+      }
+    }
+    function render() {
+      const w = data, c = w.current, d = w.daily, T = 1; // daily[0]=어제, [1]=오늘
+      const [ic, desc] = WMO(c.weather_code, c.is_day);
+      const hi = Math.round(d.temperature_2m_max[T]), lo = Math.round(d.temperature_2m_min[T]);
+      // 어제 같은 시각과 비교
+      const hk = c.time.slice(0, 13), hi0 = w.hourly.time.findIndex(t => t.slice(0, 13) === hk), y = hi0 >= 24 ? w.hourly.temperature_2m[hi0 - 24] : null;
+      const diff = y == null ? null : Math.round(c.temperature_2m - y);
+      const cmp = diff == null ? '' : diff === 0 ? '어제와 비슷해요' : `어제보다 ${Math.abs(diff)}° ${diff > 0 ? '높아요' : '낮아요'}`;
+      const uv = uvGrade(c.uv_index);
+      document.getElementById('sub').textContent = `${place.name} · ${hm(c.time)} 기준`;
+      const tile = (k, v, s = '') => `<div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">${k}</p><p class="text-sm font-extrabold text-slate-800 num">${v}</p>${s ? `<p class="text-[10px] font-bold text-slate-400">${s}</p>` : ''}</div>`;
+      document.getElementById('now').innerHTML = head(`🌡️ 지금 <span class="text-[11px] font-bold text-slate-400">${esc(place.name)}</span>`) +
+        `<div class="flex items-center gap-4"><div class="text-6xl leading-none">${ic}</div>
+          <div class="min-w-0"><p class="text-4xl font-extrabold num text-slate-900">${Math.round(c.temperature_2m)}°</p>
+          <p class="text-xs font-bold text-slate-500">${desc} · 체감 ${Math.round(c.apparent_temperature)}° · <span class="up">${hi}°</span> / <span class="down">${lo}°</span></p>
+          ${cmp ? `<p class="text-[11px] font-bold ${diff > 0 ? 'text-rose-500' : diff < 0 ? 'text-sky-600' : 'text-slate-400'}">${cmp}</p>` : ''}</div></div>
+        <div class="grid grid-cols-3 gap-2 mt-3">
+          ${tile('💧 습도', `${c.relative_humidity_2m}%`)}
+          ${tile('🌬️ 바람', `${c.wind_speed_10m.toFixed(1)}m/s`, `${windDir(c.wind_direction_10m)} · ${windWord(c.wind_speed_10m)}`)}
+          ${tile('🌀 돌풍', `${c.wind_gusts_10m.toFixed(1)}m/s`)}
+          ${tile('🕶️ 자외선', `<span class="${uv[1]}">${uv[0]}</span>`, `지수 ${c.uv_index != null ? c.uv_index.toFixed(1) : '-'} · 오늘 최고 ${d.uv_index_max[T] != null ? d.uv_index_max[T].toFixed(0) : '-'}`)}
+          ${tile('☁️ 구름', `${c.cloud_cover}%`)}
+          ${tile('🧭 기압', `${Math.round(c.pressure_msl)}hPa`)}
+        </div>
+        ${tips(w)}`;
+      renderSun(w); renderHourly(w); renderWeek(w); renderAir();
+    }
+    // 오늘 옷차림·우산 한 줄 팁
+    function tips(w) {
+      const d = w.daily, T = 1, hi = d.temperature_2m_max[T], lo = d.temperature_2m_min[T], pop = d.precipitation_probability_max[T] || 0, t = [];
+      if (pop >= 60) t.push('☂️ 우산 꼭'); else if (pop >= 30) t.push('🌂 작은 우산');
+      const avg = (hi + lo) / 2;
+      t.push(avg <= 0 ? '🧥 패딩·목도리' : avg <= 6 ? '🧥 두꺼운 코트' : avg <= 11 ? '🧥 트렌치·니트' : avg <= 16 ? '🧶 가디건·자켓' : avg <= 22 ? '👕 긴팔·얇은 겉옷' : avg <= 27 ? '👕 반팔' : '🩳 반팔·반바지');
+      if (hi - lo >= 10) t.push(`🌡️ 일교차 ${Math.round(hi - lo)}°`);
+      if ((d.uv_index_max[T] || 0) >= 6) t.push('🧴 선크림');
+      if ((d.wind_speed_10m_max[T] || 0) >= 9) t.push('🌬️ 바람 강함');
+      // 빨래: 비 확률 낮고, 습도·구름 적당
+      const nx = d.precipitation_probability_max.slice(T, T + 2);
+      if (Math.max(...nx.map(v => v || 0)) < 20 && hi >= 5) t.push('👚 빨래하기 괜찮아요');
+      return `<div class="flex flex-wrap gap-1.5 mt-3">${t.map(x => `<span class="text-[11px] font-bold px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">${x}</span>`).join('')}</div>`;
+    }
+    function renderSun(w) {
+      const d = w.daily, T = 1, rise = d.sunrise[T], set = d.sunset[T], now = new Date(), r = new Date(rise), s = new Date(set);
+      const p = Math.min(1, Math.max(0, (now - r) / (s - r))), prev = d.daylight_duration[0], dl = d.daylight_duration[T], dd = Math.round((dl - prev) / 60);
+      const m = moon(now), tr = d.sunrise[T + 1];
+      // 해 궤적: 반원 위의 현재 위치
+      const ang = Math.PI * (1 - p), cx = 150 + 120 * Math.cos(ang), cy = 90 - 80 * Math.sin(ang), up = now > r && now < s;
+      const golden = new Date(s - 60 * 6e4);
+      document.getElementById('sun').classList.remove('hidden');
+      document.getElementById('sun').innerHTML = head('🌅 해·달') +
+        `<svg viewBox="0 0 300 100" class="w-full max-w-sm mx-auto block text-amber-500"><path d="M30 90 A120 80 0 0 1 270 90" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M30 90 A120 80 0 0 1 ${cx.toFixed(1)} ${cy.toFixed(1)}" fill="none" stroke="currentColor" stroke-width="3" ${up ? '' : 'stroke-opacity="0"'}/>
+          <line x1="10" y1="90" x2="290" y2="90" stroke="currentColor" stroke-opacity=".25"/>
+          ${up ? `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="8" fill="currentColor"/>` : ''}</svg>
+        <div class="grid grid-cols-3 gap-2 mt-1 text-center">
+          <div><p class="text-[10px] font-bold text-slate-500">🌅 일출</p><p class="text-lg font-extrabold num text-slate-900">${hm(rise)}</p></div>
+          <div><p class="text-[10px] font-bold text-slate-500">☀️ 낮 길이</p><p class="text-sm font-extrabold num text-slate-800 mt-1">${dur(dl)}</p><p class="text-[10px] font-bold ${dd >= 0 ? 'text-amber-600' : 'text-sky-600'}">어제보다 ${Math.abs(dd)}분 ${dd >= 0 ? '길어요' : '짧아요'}</p></div>
+          <div><p class="text-[10px] font-bold text-slate-500">🌇 일몰</p><p class="text-lg font-extrabold num text-slate-900">${hm(set)}</p></div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">${up ? '🌇 해 지기까지' : now < r ? '🌅 해 뜨기까지' : '🌅 내일 일출'}</p><p class="text-sm font-extrabold num text-slate-800">${up ? dur((s - now) / 1000) : now < r ? dur((r - now) / 1000) : hm(tr)}</p>${up && s - now > 0 ? `<p class="text-[10px] font-bold text-slate-400">📸 골든아워 ${pad(golden.getHours())}:${pad(golden.getMinutes())}~</p>` : ''}</div>
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">달</p><p class="text-sm font-extrabold text-slate-800">${m.ic} ${m.name}</p><p class="text-[10px] font-bold text-slate-400">${m.full === 0 ? '오늘 보름' : `보름까지 ${m.full}일`}</p></div>
+        </div>`;
+    }
+    // 48시간: 온도 선 + 비 확률
+    function renderHourly(w) {
+      const h = w.hourly, i0 = h.time.findIndex(t => t.slice(0, 13) >= w.current.time.slice(0, 13)), n = 48, CW = 46;
+      const xs = h.time.slice(i0, i0 + n).map((t, k) => ({ t, temp: h.temperature_2m[i0 + k], pop: h.precipitation_probability[i0 + k] || 0, mm: h.precipitation[i0 + k] || 0, code: h.weather_code[i0 + k], day: h.is_day[i0 + k] }));
+      const mn = Math.min(...xs.map(x => x.temp)), mx = Math.max(...xs.map(x => x.temp)), Y = v => 44 - (mx === mn ? 0.5 : (v - mn) / (mx - mn)) * 34;
+      const pts = xs.map((x, k) => `${k * CW + CW / 2},${Y(x.temp).toFixed(1)}`).join(' ');
+      document.getElementById('hourly').classList.remove('hidden');
+      document.getElementById('hourly').innerHTML = head('🕐 48시간', '<span class="text-[10px] font-bold text-slate-400">옆으로 넘겨 보기 →</span>') +
+        `<div class="overflow-x-auto -mx-1 px-1 pb-1"><div style="width:${n * CW}px">
+          <div class="flex">${xs.map((x, k) => { const hh = +x.t.slice(11, 13), nd = hh === 0;
+            return `<div class="shrink-0 text-center ${nd ? 'border-l border-slate-200' : ''}" style="width:${CW}px"><p class="text-[10px] font-bold ${nd ? 'text-indigo-600' : 'text-slate-500'}">${k === 0 ? '지금' : nd ? `${+x.t.slice(8, 10)}일` : hh + '시'}</p><p class="text-lg leading-tight">${WMO(x.code, x.day)[0]}</p></div>`; }).join('')}</div>
+          <svg width="${n * CW}" height="56" class="block text-indigo-500 overflow-visible"><polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+            ${xs.map((x, k) => `<circle cx="${k * CW + CW / 2}" cy="${Y(x.temp).toFixed(1)}" r="2.5" fill="currentColor"/><text x="${k * CW + CW / 2}" y="${(Y(x.temp) - 6).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="800" fill="currentColor" class="num">${Math.round(x.temp)}°</text>`).join('')}</svg>
+          <div class="flex items-end h-8">${xs.map(x => `<div class="shrink-0 flex flex-col items-center justify-end h-full" style="width:${CW}px"><div class="w-3 rounded-t bg-sky-400" style="height:${Math.round(x.pop / 100 * 18)}px;opacity:${x.pop ? .35 + x.pop / 160 : 0}"></div><p class="text-[9px] font-bold ${x.pop >= 50 ? 'text-sky-600' : 'text-slate-400'} num">${x.pop}%</p></div>`).join('')}</div>
+          <div class="flex">${xs.map(x => `<p class="shrink-0 text-center text-[9px] font-bold text-sky-600 num" style="width:${CW}px">${x.mm >= 0.1 ? x.mm.toFixed(1) + 'mm' : ''}</p>`).join('')}</div>
+        </div></div>`;
+      const sc = document.querySelector('#hourly .overflow-x-auto'); if (sc) sc.scrollLeft = 0;
+    }
+    // 2주: 범위 막대
+    function renderWeek(w) {
+      const d = w.daily, rows = d.time.map((t, i) => ({ t, i })).slice(1);
+      const mn = Math.min(...rows.map(r => d.temperature_2m_min[r.i])), mx = Math.max(...rows.map(r => d.temperature_2m_max[r.i])), P = v => ((v - mn) / (mx - mn || 1) * 100).toFixed(1);
+      document.getElementById('week').classList.remove('hidden');
+      document.getElementById('week').innerHTML = head('📅 2주 예보', '<span class="text-[10px] font-bold text-slate-400">뒤로 갈수록 정확도 ↓</span>') + rows.map(({ t, i }, k) => {
+        const lo = d.temperature_2m_min[i], hi = d.temperature_2m_max[i], pop = d.precipitation_probability_max[i] || 0, mm = d.precipitation_sum[i] || 0, dt = new Date(t + 'T00:00'), wk = dt.getDay();
+        return `${k === 7 ? '<p class="text-[10px] font-bold text-slate-400 pt-2 pb-1">다음 주</p>' : ''}<div class="flex items-center gap-2 py-1.5 border-b border-slate-100 ${k >= 10 ? 'opacity-70' : ''}">
+          <span class="w-12 shrink-0"><span class="block text-sm font-extrabold ${k === 0 ? 'text-indigo-600' : wk === 0 ? 'text-rose-500' : wk === 6 ? 'text-sky-600' : 'text-slate-800'}">${dayName(t, k)}</span><span class="block text-[10px] font-bold text-slate-400 num">${dt.getMonth() + 1}/${dt.getDate()}</span></span>
+          <span class="text-xl w-7 text-center shrink-0">${WMO(d.weather_code[i])[0]}</span>
+          <span class="w-12 shrink-0 text-right"><span class="block text-[11px] font-extrabold num ${pop >= 50 ? 'text-sky-600' : 'text-slate-300'}">${pop ? pop + '%' : ''}</span>${mm >= 1 ? `<span class="block text-[9px] font-bold text-sky-600 num">${mm.toFixed(0)}mm</span>` : ''}</span>
+          <span class="w-8 text-right text-sm font-bold text-sky-600 num shrink-0">${Math.round(lo)}°</span>
+          <span class="flex-1 h-1.5 rounded-full bg-slate-100 relative"><span class="absolute h-full rounded-full" style="left:${P(lo)}%;width:${Math.max(4, P(hi) - P(lo))}%;background:linear-gradient(90deg,#38bdf8,#f59e0b)"></span></span>
+          <span class="w-8 text-sm font-extrabold text-rose-500 num shrink-0">${Math.round(hi)}°</span></div>`; }).join('');
+    }
+    // 미세먼지: 지금 + 날짜별 최고
+    function renderAir() {
+      const box = document.getElementById('air');
+      if (!air || !air.current) { box.classList.add('hidden'); return; }
+      const p10 = Math.round(air.current.pm10), p25 = Math.round(air.current.pm2_5), g10 = pmGrade(p10), g25 = pmGrade(p25, true);
+      const by = {}; (air.hourly.time || []).forEach((t, i) => { const k = t.slice(0, 10); const v = by[k] = by[k] || { a: 0, b: 0 }; v.a = Math.max(v.a, air.hourly.pm10[i] || 0); v.b = Math.max(v.b, air.hourly.pm2_5[i] || 0); });
+      const days = Object.entries(by).slice(0, 4);
+      box.classList.remove('hidden');
+      box.innerHTML = head('😷 미세먼지') + `<div class="grid grid-cols-2 gap-2">
+          <div class="rounded-xl px-3 py-2 ${g10[2]}"><p class="text-[10px] font-bold text-slate-500">미세먼지 PM10</p><p class="text-base font-extrabold ${g10[1]}">${g10[0]} <span class="text-[11px] font-bold text-slate-400 num">${p10}㎍</span></p></div>
+          <div class="rounded-xl px-3 py-2 ${g25[2]}"><p class="text-[10px] font-bold text-slate-500">초미세먼지 PM2.5</p><p class="text-base font-extrabold ${g25[1]}">${g25[0]} <span class="text-[11px] font-bold text-slate-400 num">${p25}㎍</span></p></div></div>
+        <div class="grid grid-cols-4 gap-1.5 mt-2">${days.map(([k, v], i) => { const a = pmGrade(Math.round(v.a)), b = pmGrade(Math.round(v.b), true), worst = [a, b].sort((x, y) => ['좋음', '보통', '나쁨', '매우 나쁨'].indexOf(y[0]) - ['좋음', '보통', '나쁨', '매우 나쁨'].indexOf(x[0]))[0];
+          return `<div class="rounded-lg ${worst[2]} text-center py-1.5"><p class="text-[10px] font-bold text-slate-500">${dayName(k, i)}</p><p class="text-xs font-extrabold ${worst[1]}">${worst[0]}</p></div>`; }).join('')}</div>
+        <p class="text-[10px] text-slate-400 mt-1">날짜별은 그날 가장 나쁜 시간 기준</p>`;
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    loadAll();
+    setInterval(() => { if (data && !document.hidden) renderSun(data); }, 60000);
+  </script>
+</body>
+</html>
