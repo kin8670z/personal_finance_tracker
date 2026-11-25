@@ -39,24 +39,37 @@ async function wiktionary(word) {
     if (m) { lang = { lang: plain(m[1]), senses: [] }; out.push(lang); pos = null; continue; }
     m = line.match(/^={3,5}\s*([^=]+?)\s*={3,5}$/);
     if (m) { pos = plain(m[1]); continue; }
-    if (lang && /^#(?![:*#])/.test(line)) {
-      const def = plain(line.replace(/^#+\s*/, ''));
+    const isDef = /^#(?![:*#])/.test(line) || /^\*\s*'''\s*\d+\.?\s*'''/.test(line);
+    if (lang && !lang.hanja && /\{\{한자풀이/.test(line)) lang.hanjaOpen = true;
+    if (lang && lang.hanjaOpen) {
+      const f = line.match(/^\|\s*([^=]+?)\s*=\s*(.*?)(\}\})?$/); if (f) { lang.hanja = lang.hanja || {}; lang.hanja[f[1]] = plain(f[2]); }
+      if (/\}\}\s*$/.test(line)) lang.hanjaOpen = false;
+      continue;
+    }
+    if (lang && isDef) {
+      const def = plain(line.replace(/^#+\s*/, '').replace(/^\*\s*'''\s*\d+\.?\s*'''\s*/, ''));
       if (def && def.length < 300) lang.senses.push({ pos: pos || '', def });
-    } else if (lang && /^#[:*]/.test(line) && lang.senses.length) {
-      const ex = plain(line.replace(/^#[:*]+\s*/, '')); const s = lang.senses[lang.senses.length - 1];
+    } else if (lang && (/^#[:*]/.test(line) || /^:\*?/.test(line)) && lang.senses.length) {
+      const ex = plain(line.replace(/^[#:*]+\s*/, '')); const s = lang.senses[lang.senses.length - 1];
       if (ex && !s.ex && ex.length < 200) s.ex = ex;
     }
   }
-  return out.filter(l => l.senses.length).map(l => ({ ...l, senses: l.senses.slice(0, 12) }));
+  return out.filter(l => l.senses.length || l.hanja).map(l => ({ lang: l.lang, hanja: l.hanja ? { 훈: l.hanja['훈'] || '', 음: l.hanja['음'] || '', 부수: [l.hanja['부수'], l.hanja['부수풀이']].filter(Boolean).join(' '), 획: l.hanja['획'] || '', 간체: l.hanja['간체'] || '' } : undefined, senses: l.senses.slice(0, 12) }));
 }
 
+// 영어: 서버에서는 영어 위키낱말사전(뜻) + 한국어 위키낱말사전(한국어 뜻). 발음은 브라우저가 Free Dictionary API로 바로 가져감
+async function enwikt(q) {
+  const j = await getJSON(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(q)}`).catch(() => null);
+  return ((j && j.en) || []).filter(x => x.language === 'English').slice(0, 5).map(x => ({ pos: String(x.partOfSpeech || '').toLowerCase(), defs: (x.definitions || []).map(d => ({ def: plain(d.definition), ex: plain(((d.parsedExamples || [])[0] || {}).example || (d.examples || [])[0] || '') })).filter(d => d.def).slice(0, 4), syn: [] })).filter(m => m.defs.length);
+}
 async function en(q) {
-  const [d, w] = await Promise.all([getJSON(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q)}`).catch(() => null), wiktionary(q).catch(() => [])]);
+  const [d, w, ew] = await Promise.all([getJSON(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q)}`).catch(() => null), wiktionary(q).catch(() => []), enwikt(q)]);
   const e = Array.isArray(d) ? d : [];
   const phon = e.flatMap(x => x.phonetics || []), audio = (phon.find(p => p.audio && /-us\./.test(p.audio)) || phon.find(p => p.audio) || {}).audio || '';
   const meanings = [];
   e.forEach(x => (x.meanings || []).forEach(m => meanings.push({ pos: m.partOfSpeech, defs: (m.definitions || []).slice(0, 4).map(df => ({ def: df.definition, ex: df.example || '' })), syn: (m.synonyms || []).slice(0, 6) })));
   const ko = (w.find(l => /영어/.test(l.lang)) || { senses: [] }).senses.slice(0, 6);
+  if (!meanings.length) meanings.push(...ew);
   if (!meanings.length && !ko.length) return null;
   return { word: (e[0] && e[0].word) || q, phonetic: (e.find(x => x.phonetic) || {}).phonetic || (phon.find(p => p.text) || {}).text || '', audio, ko, meanings: meanings.slice(0, 6) };
 }

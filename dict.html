@@ -166,6 +166,15 @@
       const k = tab + '|' + q;
       try {
         const j = cache[k] || await fetch(`/api/dict?src=${tab}&q=${encodeURIComponent(q)}`).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j; });
+        if (tab === 'en' && !j.notFound && !j.audio && !j._fd) {   // 발음·영영 뜻은 브라우저에서 바로 (서버에선 막힐 때가 있어서)
+          try { const d = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(q.toLowerCase())}`).then(r => r.ok ? r.json() : null);
+            if (Array.isArray(d) && d.length) { const ph = d.flatMap(x => x.phonetics || []);
+              j.audio = (ph.find(p => p.audio && /-us\./.test(p.audio)) || ph.find(p => p.audio) || {}).audio || '';
+              j.phonetic = j.phonetic || (d.find(x => x.phonetic) || {}).phonetic || (ph.find(p => p.text) || {}).text || '';
+              const ms = []; d.forEach(x => (x.meanings || []).forEach(m => ms.push({ pos: m.partOfSpeech, defs: (m.definitions || []).slice(0, 4).map(df => ({ def: df.definition, ex: df.example || '' })), syn: (m.synonyms || []).slice(0, 6) })));
+              if (ms.length) j.meanings = ms.slice(0, 6); } } catch (e) {}
+          j._fd = 1;
+        }
         cache[k] = j; last = { tab, q, j }; renderResult();
       } catch (e) { box.innerHTML = `<p class="text-sm text-rose-600">${esc(e.message)}</p>`; }
     }
@@ -175,7 +184,7 @@
       if (t === 'en') return (j.ko[0] && j.ko[0].def) || (j.meanings[0] && j.meanings[0].defs[0] && j.meanings[0].defs[0].def) || '';
       if (t === 'ko') return (j.items[0] || {}).def || '';
       if (t === 'ja') return `${j.items[0].reading} · ${(j.items[0].senses[0] || {}).def || ''}`;
-      if (t === 'hanja') return (j.langs[0].senses[0] || {}).def || '';
+      if (t === 'hanja') { const h = j.langs.find(l => l.hanja); return h ? `${h.hanja.훈} ${h.hanja.음}` : (j.langs[0].senses[0] || {}).def || ''; }
       return j.desc || j.extract.slice(0, 60);
     }
     function toggleStar() {
@@ -203,7 +212,7 @@
         h = `<div class="flex justify-end">${star()}</div>` + j.items.map(it => `<div class="py-2 border-b border-slate-100"><p class="text-xl font-extrabold text-slate-900">${esc(it.word)} <span class="text-sm font-bold text-slate-500">${it.reading !== it.word ? esc(it.reading) : ''}</span> <span role="button" tabindex="0" onclick="speak('${esc(it.reading || it.word)}', 'ja-JP')" class="cursor-pointer text-base">🔊</span>${it.common ? ' <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 align-middle">자주 씀</span>' : ''}${it.jlpt ? ` <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-indigo-100 text-indigo-600 align-middle">${esc(it.jlpt.replace('jlpt-', '').toUpperCase())}</span>` : ''}</p>
           ${it.senses.map((s, i) => `<p class="text-sm text-slate-700">${i + 1}. ${s.pos ? `<span class="text-[10px] text-slate-400">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>`).join('')}</div>`).join('') + `<p class="text-[10px] text-slate-400 mt-2">뜻은 영어로 나와요 (Jisho)</p>`;
       } else if (t === 'hanja') {
-        h = `<div class="flex items-start justify-between gap-2"><p class="text-5xl font-extrabold text-slate-900">${esc(q)}</p>${star()}</div>` + j.langs.map(l => `<p class="text-xs font-extrabold text-indigo-600 mt-3">${esc(l.lang)}</p>${l.senses.map(s => `<p class="text-sm text-slate-700 mt-0.5">${s.pos ? `<span class="text-[10px] text-slate-400">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>`).join('')}`).join('');
+        h = `<div class="flex items-start justify-between gap-2"><p class="text-5xl font-extrabold text-slate-900">${esc(q)}</p>${star()}</div>` + j.langs.map(l => `<p class="text-xs font-extrabold text-indigo-600 mt-3">${esc(l.lang)}</p>${l.hanja ? `<div class="mt-1 rounded-xl bg-amber-50 px-3 py-2"><p class="text-lg font-extrabold text-slate-900">${esc(l.hanja.훈)} <span class="text-amber-600">${esc(l.hanja.음)}</span></p><p class="text-[11px] font-bold text-slate-500">${[l.hanja.부수 && `부수 ${esc(l.hanja.부수)}`, l.hanja.획 && `총 ${esc(l.hanja.획)}획`, l.hanja.간체 && l.hanja.간체 !== q && `간체 ${esc(l.hanja.간체)}`].filter(Boolean).join(' · ')}</p></div>` : ''}${l.senses.map(s => `<p class="text-sm text-slate-700 mt-0.5">${s.pos ? `<span class="text-[10px] text-slate-400">${esc(s.pos)}</span> ` : ''}${esc(s.def)}</p>${s.ex ? `<p class="text-xs text-slate-500 ml-3">${esc(s.ex)}</p>` : ''}`).join('')}`).join('');
       } else {
         h = `<div class="flex items-start justify-between gap-2"><div><p class="text-xl font-extrabold text-slate-900">${esc(j.title)}</p>${j.desc ? `<p class="text-xs font-bold text-slate-500">${esc(j.desc)}</p>` : ''}</div>${star()}</div>
           ${j.img ? `<img src="${esc(j.img)}" alt="${esc(j.title)}" class="mt-2 rounded-xl max-h-56 mx-auto">` : ''}
