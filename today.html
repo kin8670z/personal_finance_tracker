@@ -98,6 +98,7 @@
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
     <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
     <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
@@ -140,6 +141,7 @@
     <section id="gifts" class="hidden card p-4"></section>
     <section id="trip" class="hidden card p-4"></section>
     <section id="parking" class="hidden card p-4"></section>
+    <section id="games" class="hidden card p-4"></section>
     <section id="fever" class="hidden card p-4"></section>
     <section id="sticker" class="hidden card p-4"></section>
     <section id="kidsay" class="hidden card p-4"></section>
@@ -424,6 +426,14 @@
       const line = sIn ? `🏨 오늘 ${esc(sIn.inT)} 체크인 · ${esc(sIn.name)}` : sOut ? `🧳 오늘 ${esc(sOut.outT)} 체크아웃 · ${esc(sOut.name)}` : sNow ? `🏨 ${esc(sNow.name)}에서 숙박 중` : sNext ? `🏨 ${esc(sNext.name)} 체크인 ${+sNext.in.slice(5, 7)}/${+sNext.in.slice(8)} ${esc(sNext.inT)}` : '';
       box.innerHTML = head(`${esc(t.emoji || '✈️')} ${esc(t.name)}`, './trip.html', '자세히') + `<a href="./trip.html" class="block"><p class="text-lg font-extrabold text-sky-600">${going ? `여행 ${dd(t.start, t0) + 1}일째${t0 === t.end ? ' · 오늘 귀가' : ''}` : dd(t0, t.start) === 1 ? '내일 출발!' : `D-${dd(t0, t.start)}`}</p>${line ? `<p class="text-xs font-bold text-slate-600 mt-0.5">${line}</p>` : ''}</a>`;
     }
+    // ---------- 관심 게임 (7일 안에 출시) ----------
+    function renderGames() {
+      const box = document.getElementById('games'), t0 = new Date(new Date().toDateString());
+      const fs = ((load('argon_games_v1', {}) || {}).fav || []).filter(f => f.d).map(f => ({ ...f, k: Math.round((new Date(+f.d.slice(0, 4), +f.d.slice(5, 7) - 1, +f.d.slice(8)) - t0) / 864e5) })).filter(f => f.k >= 0 && f.k <= 7).sort((a, b) => a.k - b.k);
+      if (!fs.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🎮 곧 나오는 게임', './games.html', '캘린더') + fs.map(f => `<a href="./games.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800 truncate">${esc(f.t)}</span><span class="text-sm font-extrabold shrink-0 ${f.k === 0 ? 'text-amber-600' : 'text-indigo-600'}">${f.k === 0 ? '오늘 출시! 🎉' : `D-${f.k}`}</span></a>`).join('');
+    }
     // ---------- 주차 중 ----------
     function renderParking() {
       const box = document.getElementById('parking'), c = (load('argon_parking_v1', {}) || {}).cur;
@@ -631,7 +641,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
