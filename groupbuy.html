@@ -218,7 +218,7 @@
     }
     function closeForm() { document.getElementById('form').classList.add('hidden'); editId = null; }
     function renderForm() {
-      document.getElementById('chans').innerHTML = CHANS.map(k => `<span role="button" tabindex="0" onclick="chan='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${chan === k ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${k}</span>`).join('');
+      document.getElementById('chans').innerHTML = CHANS.map(k => `<span role="button" tabindex="0" onclick="chan='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${chan === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${k}</span>`).join('');
       document.getElementById('sellers').innerHTML = [...new Set(st.items.map(i => i.seller).filter(Boolean))].map(p => `<option value="${esc(p)}">`).join('');
       // 오픈 시각 기준(없으면 지금) +1·2·3·7일 23:59
       document.getElementById('quickClose').innerHTML = [[1, '+1일'], [2, '+2일'], [3, '+3일'], [7, '+7일']].map(([n, l]) => `<span role="button" tabindex="0" onclick="quickClose(${n})" class="cursor-pointer px-2 py-1 rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600">${l}</span>`).join('');

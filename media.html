@@ -165,7 +165,7 @@
     const tLabel = k => (TYPES.find(t => t[0] === k) || [, ''])[1];
     function renderForm() {
       document.getElementById('types').innerHTML = TYPES.map(([k, l]) => `<span role="button" tabindex="0" onclick="type='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${type === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
-      document.getElementById('fStatus').innerHTML = STAT.map(([k, l]) => `<span role="button" tabindex="0" onclick="status='${k}';renderForm()" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-bold ${status === k ? 'bg-slate-700 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+      document.getElementById('fStatus').innerHTML = STAT.map(([k, l]) => `<span role="button" tabindex="0" onclick="status='${k}';renderForm()" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-bold ${status === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
       document.getElementById('fStars').innerHTML = status === 'want' ? '' : [1, 2, 3, 4, 5].map(n => `<span role="button" tabindex="0" onclick="star=${n};renderForm()" class="cursor-pointer ${n <= star ? '' : 'opacity-25 grayscale'}">⭐</span>`).join('');
     }
     function addItem() {
