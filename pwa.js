@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.25';
+  const VERSION = '9.26';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
