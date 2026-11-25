@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>칭찬 스티커 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <style>
+    @keyframes pop { 0% { transform: scale(.2) rotate(-30deg); opacity: 0 } 70% { transform: scale(1.25) rotate(8deg); opacity: 1 } 100% { transform: scale(1) rotate(0) } }
+    .pop { animation: pop .45s ease-out }
+    @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+    .confetti { position: fixed; top: -20px; font-size: 22px; animation: fall linear forwards; pointer-events: none; z-index: 70 }
+    .santa-bg { background: linear-gradient(160deg, #fee2e2, #fef3c7 55%, #dcfce7) }
+    .dark .santa-bg { background: linear-gradient(160deg, #3f1d1d, #3a2f12 55%, #12301f) }
+  </style>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">⭐ 칭찬 스티커</a></h1>
+        <div id="kidTabs" class="flex gap-1 shrink-0"></div>
+      </div>
+    </header>
+
+    <section id="board" class="card p-4"></section>
+
+    <section id="setup" class="card p-4 hidden">
+      <h2 id="setupTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">새 스티커판</h2>
+      <form id="boardForm" class="space-y-2" autocomplete="off">
+        <input id="bTitle" maxlength="20" placeholder="이름 (예: 산타 스티커판)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+        <input id="bReward" maxlength="24" placeholder="다 모으면 받을 선물 (예: 레고, 놀이공원)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+        <div class="flex items-center gap-2 text-sm font-bold text-slate-600">스티커 <span id="goalBtns" class="flex gap-1"></span> 개</div>
+        <div class="flex items-center gap-2 text-sm font-bold text-slate-600">테마 <span id="themeBtns" class="flex gap-1"></span></div>
+        <div class="flex gap-2"><button class="flex-1 py-2 bg-indigo-600 text-white font-bold rounded-lg">시작하기</button><span role="button" tabindex="0" id="bCancel" onclick="closeSetup()" class="cursor-pointer px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-lg">취소</span></div>
+      </form>
+    </section>
+
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">📝 최근 스티커</h2>
+      <div id="recent"></div>
+    </section>
+
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🏆 다 채운 스티커판</h2>
+      <div id="history"></div>
+    </section>
+  </div>
+
+  <!-- 스티커 붙이기 -->
+  <div id="sheet" class="hidden fixed inset-0 z-[60] bg-black/40 items-end sm:items-center justify-center p-3" onclick="if (event.target === this) closeSheet()">
+    <div class="card bg-white w-full max-w-md p-5">
+      <h2 class="text-base font-extrabold text-slate-900">어떤 착한 일 했어요? 😊</h2>
+      <div id="emojiPick" class="flex flex-wrap gap-1.5 mt-3"></div>
+      <div id="whyPick" class="flex flex-wrap gap-1.5 mt-3"></div>
+      <div class="flex gap-2 mt-3"><input id="whyText" maxlength="30" placeholder="직접 쓰기 (선택)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm">
+        <button type="button" onclick="addSticker(document.getElementById('whyText').value.trim())" class="px-4 py-2 bg-indigo-600 text-white font-extrabold rounded-lg shrink-0">붙이기</button></div>
+    </div>
+  </div>
+
+  <script>
+    const KEY = 'argon_sticker_v1', KIDS = 'argon_kid_v1';
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const EMOJI = ['⭐', '🌟', '💖', '🍭', '🦄', '🐶', '🚗', '🎈', '🍓', '🦖', '🌈', '🎀'];
+    const WHY = ['🪥 양치 잘함', '🍚 밥 다 먹음', '🧸 장난감 정리', '🙇 인사 잘함', '😴 혼자 잠들기', '👕 혼자 옷 입기', '🤝 양보했어요', '📚 책 읽기', '🚽 화장실 혼자', '😭 안 울고 참음', '💌 고마워요 말하기', '🧹 집안일 도움'];
+    const GOALS = [10, 15, 20, 30], THEMES = [['basic', '⭐ 기본'], ['santa', '🎅 산타']];
+    let st = Object.assign({ boards: [], cur: {} }, load(KEY, {})), kidId = st.kid ?? null, pickEmoji = '⭐', form = { goal: 10, theme: 'santa' };
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const kids = () => (load(KIDS, {}).kids || []);
+    const kidKey = () => kidId == null ? 0 : kidId;
+    const board = () => st.boards.find(b => b.id === st.cur[kidKey()] && !b.doneAt) || null;
+    const kidName = () => { const k = kids().find(x => x.id === kidId); return k ? k.name : '우리 아이'; };
+
+    function renderTabs() {
+      const ks = kids();
+      if (kidId == null && ks.length) kidId = ks[0].id;
+      document.getElementById('kidTabs').innerHTML = ks.length > 1 ? ks.map(k => `<span role="button" tabindex="0" onclick="pickKid(${k.id})" class="cursor-pointer px-2 py-1 rounded-full text-xs font-extrabold ${k.id === kidId ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${k.sex === 'm' ? '👦' : '👧'} ${esc(k.name)}</span>`).join('') : '';
+    }
+    function pickKid(id) { kidId = id; st.kid = id; persist(); render(); }
+
+    function renderBoard(popIdx) {
+      const b = board(), box = document.getElementById('board');
+      if (!b) {
+        box.className = 'card p-5 text-center';
+        box.innerHTML = `<div class="text-5xl">⭐</div><p class="text-sm font-extrabold text-slate-800 mt-2">${esc(kidName())}의 스티커판을 만들어 볼까요?</p>
+          <p class="text-xs text-slate-500 mt-1">착한 일을 할 때마다 스티커를 붙이고, 다 모으면 선물을 받아요 🎁</p>
+          <button type="button" onclick="openSetup()" class="mt-3 px-5 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">＋ 스티커판 만들기</button>`;
+        return;
+      }
+      const n = b.items.length, santa = b.theme === 'santa';
+      box.className = `card p-4 ${santa ? 'santa-bg' : ''}`;
+      box.innerHTML = `
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0"><h2 class="text-lg font-extrabold text-slate-900 truncate">${santa ? '🎄 ' : ''}${esc(b.title)}</h2>
+            <p class="text-xs font-bold text-slate-600">${esc(kidName())} · 🎁 <b>${esc(b.reward || '깜짝 선물')}</b></p></div>
+          <span role="button" tabindex="0" onclick="openSetup(true)" aria-label="스티커판 수정" class="cursor-pointer text-slate-400 text-sm px-1">✎</span>
+        </div>
+        ${santa ? `<p class="text-[11px] font-bold text-rose-600 mt-1">🎅 산타 할아버지가 보고 있어요!</p>` : ''}
+        <div class="grid grid-cols-5 gap-2 mt-3">${Array.from({ length: b.goal }, (_, i) => { const it = b.items[i];
+          return `<div class="aspect-square rounded-2xl flex items-center justify-center text-3xl ${it ? 'bg-white shadow-sm' : 'border-2 border-dashed border-slate-300 bg-white/40'}" ${it ? `title="${esc(it.why || '')}"` : ''}>${it ? `<span class="${i === popIdx ? 'pop' : ''}">${it.e}</span>` : `<span class="text-xs font-bold text-slate-300 num">${i + 1}</span>`}</div>`; }).join('')}</div>
+        <div class="mt-3"><div class="h-3 rounded-full bg-white/70 overflow-hidden"><div class="h-full rounded-full ${santa ? 'bg-rose-500' : 'bg-indigo-500'}" style="width:${Math.round(n / b.goal * 100)}%"></div></div>
+          <p class="text-xs font-extrabold text-slate-700 mt-1 text-center">${n}/${b.goal} · ${b.goal - n === 0 ? '다 모았어요! 🎉' : `${b.goal - n}개만 더 모으면 선물! 🎁`}</p></div>
+        <button type="button" onclick="openSheet()" class="w-full mt-3 py-3.5 rounded-2xl text-lg font-extrabold text-white shadow ${santa ? 'bg-rose-500' : 'bg-indigo-600'}">⭐ 스티커 붙이기</button>`;
+    }
+
+    function openSheet() {
+      document.getElementById('emojiPick').innerHTML = EMOJI.map(e => `<span role="button" tabindex="0" onclick="setEmoji('${e}')" class="cursor-pointer w-10 h-10 rounded-xl flex items-center justify-center text-2xl ${e === pickEmoji ? 'bg-indigo-100 ring-2 ring-indigo-500' : 'bg-slate-50'}">${e}</span>`).join('');
+      document.getElementById('whyPick').innerHTML = WHY.map(w => `<span role="button" tabindex="0" onclick="addSticker('${w}')" class="cursor-pointer px-3 py-2 rounded-xl bg-slate-100 text-sm font-bold text-slate-700">${w}</span>`).join('');
+      document.getElementById('whyText').value = '';
+      const s = document.getElementById('sheet'); s.classList.remove('hidden'); s.classList.add('flex');
+    }
+    function closeSheet() { const s = document.getElementById('sheet'); s.classList.add('hidden'); s.classList.remove('flex'); }
+    function setEmoji(e) { pickEmoji = e; openSheet(); }
+    function addSticker(why) {
+      const b = board(); if (!b || b.items.length >= b.goal) return;
+      b.items.push({ t: Date.now(), e: pickEmoji, why: why || '' }); persist(); closeSheet();
+      renderBoard(b.items.length - 1); renderRecent();
+      if (b.items.length >= b.goal) setTimeout(() => celebrate(b), 600);
+    }
+    function celebrate(b) {
+      const set = b.theme === 'santa' ? ['🎄', '🎅', '⭐', '🎁', '❄️'] : ['🎉', '⭐', '💖', '🎈', '🌟'];
+      for (let i = 0; i < 40; i++) { const c = document.createElement('span'); c.className = 'confetti'; c.textContent = set[i % set.length]; c.style.left = Math.random() * 100 + 'vw'; c.style.animationDuration = 2 + Math.random() * 2 + 's'; c.style.animationDelay = Math.random() * .8 + 's'; document.body.appendChild(c); setTimeout(() => c.remove(), 5000); }
+      b.doneAt = Date.now(); persist();
+      const box = document.getElementById('board'); box.className = 'card p-6 text-center';
+      box.innerHTML = `<div class="text-6xl pop">🏆</div><p class="text-xl font-extrabold text-slate-900 mt-2">${esc(kidName())} 최고! 다 모았어요!</p>
+        <p class="text-base font-extrabold text-rose-600 mt-2">🎁 ${esc(b.reward || '깜짝 선물')} 받을 시간!</p>
+        <button type="button" onclick="openSetup()" class="mt-4 px-5 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">＋ 새 스티커판 시작</button>`;
+      renderHistory();
+    }
+    function undoLast() { const b = board(); if (!b || !b.items.length) return; b.items.pop(); persist(); render(); }
+
+    function renderRecent() {
+      const b = board(), items = b ? b.items.slice().reverse().slice(0, 8) : [];
+      const when = t => { const d = new Date(t); return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
+      document.getElementById('recent').innerHTML = items.length ? items.map((x, i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-xl">${x.e}</span><span class="flex-1 min-w-0 text-sm font-bold text-slate-700 truncate">${esc(x.why || '착한 일')}</span><span class="text-[10px] text-slate-400 num">${when(x.t)}</span>${i === 0 ? `<span role="button" tabindex="0" onclick="undoLast()" class="cursor-pointer text-[10px] font-bold text-slate-400 px-1">되돌리기</span>` : ''}</div>`).join('') : '<p class="text-xs text-slate-400 py-1">아직 붙인 스티커가 없어요.</p>';
+    }
+    function renderHistory() {
+      const hs = st.boards.filter(b => b.doneAt && (b.kid ?? 0) === kidKey()).sort((a, b) => b.doneAt - a.doneAt);
+      document.getElementById('history').innerHTML = hs.length ? hs.map(b => { const d = new Date(b.doneAt), days = Math.max(1, Math.round((b.doneAt - b.items[0].t) / 864e5));
+        return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-xl">🏆</span><span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(b.title)}</span><span class="block text-[10px] text-slate-500">${b.goal}개 · ${days}일 걸림 · 🎁 ${esc(b.reward || '깜짝 선물')}</span></span><span class="text-[10px] text-slate-400 num">${d.getFullYear() % 100}.${d.getMonth() + 1}.${d.getDate()}</span></div>`; }).join('') : '<p class="text-xs text-slate-400 py-1">첫 스티커판을 채워 봐요! 💪</p>';
+    }
+
+    let editing = false;
+    function openSetup(edit) {
+      editing = !!edit && !!board(); const b = editing ? board() : null;
+      form = { goal: b ? b.goal : 10, theme: b ? b.theme : (new Date().getMonth() === 11 ? 'santa' : 'basic') };
+      document.getElementById('setupTitle').textContent = editing ? '스티커판 수정' : '새 스티커판';
+      document.getElementById('bTitle').value = b ? b.title : (form.theme === 'santa' ? '산타 스티커판' : `${kidName()} 칭찬 스티커`);
+      document.getElementById('bReward').value = b ? b.reward : '';
+      renderForm(); document.getElementById('setup').classList.remove('hidden'); document.getElementById('setup').scrollIntoView({ behavior: 'smooth' });
+    }
+    function renderForm() {
+      const b = editing ? board() : null;
+      document.getElementById('goalBtns').innerHTML = GOALS.map(g => `<span role="button" tabindex="0" onclick="form.goal=${g};renderForm()" class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-extrabold ${form.goal === g ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'} ${b && g < b.items.length ? 'opacity-30 pointer-events-none' : ''}">${g}</span>`).join('');
+      document.getElementById('themeBtns').innerHTML = THEMES.map(([k, l]) => `<span role="button" tabindex="0" onclick="form.theme='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-lg text-xs font-extrabold ${form.theme === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+    }
+    function closeSetup() { document.getElementById('setup').classList.add('hidden'); }
+    document.getElementById('boardForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const title = document.getElementById('bTitle').value.trim() || '칭찬 스티커판', reward = document.getElementById('bReward').value.trim();
+      if (editing && board()) Object.assign(board(), { title, reward, goal: form.goal, theme: form.theme });
+      else { const id = Date.now(); st.boards.push({ id, kid: kidId, title, reward, goal: form.goal, theme: form.theme, items: [] }); st.cur[kidKey()] = id; }
+      persist(); closeSetup(); render();
+    });
+
+    function render() { renderTabs(); renderBoard(); renderRecent(); renderHistory(); }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSideNav(); closeSheet(); } });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ boards: [], cur: {} }, load(KEY, {})); render(); } });
+    render();
+  </script>
+</body>
+</html>

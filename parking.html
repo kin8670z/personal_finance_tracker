@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>주차 위치 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./parking.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🅿️ <span>주차 위치</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <h1 class="flex-1 min-w-0 text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🅿️ 주차 위치</a></h1>
+      </div>
+    </header>
+
+    <section id="now" class="card p-5"></section>
+
+    <section id="formCard" class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">📍 어디에 세웠어요?</h2>
+      <input id="pPlace" maxlength="30" list="placeList" placeholder="장소 (예: 회사, 스타필드 하남)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white">
+      <datalist id="placeList"></datalist>
+      <p class="text-[11px] font-bold text-slate-500 mt-3 mb-1">층</p>
+      <div id="floorBtns" class="flex flex-wrap gap-1.5"></div>
+      <div class="flex gap-2 mt-3">
+        <input id="pZone" maxlength="12" placeholder="구역·기둥 (예: C-12)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-lg font-extrabold uppercase">
+        <label class="cursor-pointer shrink-0 px-3 py-2 rounded-lg bg-slate-100 text-sm font-bold text-slate-600 flex items-center gap-1">📷 사진<input id="pPhoto" type="file" accept="image/*" capture="environment" class="hidden"></label>
+      </div>
+      <img id="pPreview" alt="주차 위치 사진 미리보기" class="hidden mt-2 rounded-xl max-h-48 w-full object-cover">
+      <input id="pMemo" maxlength="40" placeholder="메모 (선택) 예: 엘리베이터 옆, 출구 B 가까움" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <button type="button" onclick="park()" class="w-full mt-3 py-3 bg-indigo-600 text-white text-base font-extrabold rounded-xl">🅿️ 여기 주차했어요</button>
+    </section>
+
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🕘 최근 주차</h2>
+      <div id="hist"></div>
+    </section>
+  </div>
+
+  <script>
+    const KEY = 'argon_parking_v1', IMG = 'parking_photo_v1';   // 사진은 기기에만 (동기화 안 함)
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const FLOORS = ['B6', 'B5', 'B4', 'B3', 'B2', 'B1', '1F', '2F', '3F', '4F', '5F', '옥상', '지상'];
+    let st = Object.assign({ cur: null, hist: [] }, load(KEY, {})), floor = null, photo = null;
+    const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
+    const pad = n => String(n).padStart(2, '0');
+    const dur = ms => { const m = Math.max(0, Math.floor(ms / 6e4)); return m < 60 ? `${m}분` : m < 1440 ? `${Math.floor(m / 60)}시간 ${m % 60}분` : `${Math.floor(m / 1440)}일 ${Math.floor(m % 1440 / 60)}시간`; };
+    const when = t => { const d = new Date(t), n = new Date(), same = d.toDateString() === n.toDateString(); return `${same ? '오늘' : `${d.getMonth() + 1}/${d.getDate()}`} ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+
+    function renderNow() {
+      const c = st.cur, box = document.getElementById('now');
+      document.getElementById('formCard').classList.toggle('hidden', !!c);
+      if (!c) { box.className = 'card p-4 text-center'; box.innerHTML = `<p class="text-sm font-bold text-slate-500">지금 주차 중인 차가 없어요 🚗</p>`; return; }
+      const img = c.photo ? localStorage.getItem(IMG) : null;
+      box.className = 'card p-5 text-center';
+      box.innerHTML = `<p class="text-xs font-bold text-slate-500">${esc(c.place || '주차 위치')}</p>
+        <div class="flex items-center justify-center gap-3 mt-1">${c.floor ? `<span class="px-4 py-2 rounded-2xl bg-indigo-600 text-white text-4xl font-extrabold">${esc(c.floor)}</span>` : ''}${c.zone ? `<span class="px-4 py-2 rounded-2xl bg-amber-400 text-slate-900 text-4xl font-extrabold">${esc(c.zone)}</span>` : ''}</div>
+        ${c.memo ? `<p class="text-sm font-bold text-slate-700 mt-2">📝 ${esc(c.memo)}</p>` : ''}
+        ${img ? `<img src="${img}" alt="주차 위치 사진" class="mt-3 rounded-xl max-h-72 w-full object-cover">` : ''}
+        <p class="text-xs font-bold text-slate-500 mt-3">${when(c.t)} 주차 · <b id="elapsed" class="text-slate-800">${dur(Date.now() - c.t)}</b> 지났어요</p>
+        <div class="flex gap-2 mt-3"><span role="button" tabindex="0" onclick="editCur()" class="cursor-pointer flex-1 py-2.5 rounded-xl bg-slate-100 text-sm font-bold text-slate-600">수정</span>
+          <span role="button" tabindex="0" onclick="leave()" class="cursor-pointer flex-[2] py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-extrabold">🚗 출차했어요</span></div>`;
+    }
+    function renderForm() {
+      document.getElementById('floorBtns').innerHTML = FLOORS.map(f => `<span role="button" tabindex="0" onclick="setFloor('${f}')" class="cursor-pointer min-w-[2.75rem] text-center px-2 py-2 rounded-lg text-sm font-extrabold ${f === floor ? 'bg-indigo-600 text-white' : f[0] === 'B' ? 'bg-slate-200 text-slate-700' : 'bg-slate-100 text-slate-600'}">${f}</span>`).join('');
+      const places = [...new Set(st.hist.map(h => h.place).filter(Boolean))].slice(0, 10);
+      document.getElementById('placeList').innerHTML = places.map(p => `<option value="${esc(p)}">`).join('');
+    }
+    function setFloor(f) { floor = floor === f ? null : f; renderForm(); }
+    document.getElementById('pPlace').addEventListener('change', e => {
+      const h = st.hist.find(x => x.place === e.target.value); if (h && !floor) { floor = h.floor; renderForm(); }   // 같은 장소면 지난번 층 먼저
+    });
+    document.getElementById('pPhoto').addEventListener('change', async e => {
+      const f = e.target.files[0]; if (!f) return;
+      photo = await shrink(f); const p = document.getElementById('pPreview'); p.src = photo; p.classList.remove('hidden');
+    });
+    function shrink(file) {
+      return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.75)); }; img.src = URL.createObjectURL(file); });
+    }
+    function park() {
+      const zone = document.getElementById('pZone').value.trim().toUpperCase(), place = document.getElementById('pPlace').value.trim(), memo = document.getElementById('pMemo').value.trim();
+      if (!floor && !zone && !photo && !memo) { document.getElementById('pZone').focus(); return; }
+      if (photo) { try { localStorage.setItem(IMG, photo); } catch (e) { photo = null; alertMsg('사진이 너무 커서 저장 못 했어요. 위치만 저장할게요.'); } } else localStorage.removeItem(IMG);
+      st.cur = { t: Date.now(), place, floor, zone, memo, photo: !!photo }; persist();
+      floor = null; photo = null; ['pZone', 'pMemo', 'pPlace'].forEach(id => document.getElementById(id).value = ''); document.getElementById('pPreview').classList.add('hidden');
+      render();
+    }
+    function alertMsg(t) { const p = document.createElement('p'); p.className = 'text-[11px] font-bold text-rose-600 mt-2'; p.textContent = t; document.getElementById('now').appendChild(p); }
+    function editCur() {
+      const c = st.cur; if (!c) return;
+      floor = c.floor; document.getElementById('pZone').value = c.zone || ''; document.getElementById('pPlace').value = c.place || ''; document.getElementById('pMemo').value = c.memo || '';
+      if (c.photo) { photo = localStorage.getItem(IMG); const p = document.getElementById('pPreview'); if (photo) { p.src = photo; p.classList.remove('hidden'); } }
+      st.cur = null; persist(); render();
+    }
+    function leave() {
+      const c = st.cur; if (!c) return;
+      st.hist.unshift({ ...c, out: Date.now(), photo: false }); st.hist = st.hist.slice(0, 20); st.cur = null;
+      localStorage.removeItem(IMG); persist(); render();
+    }
+    function renderHist() {
+      document.getElementById('hist').innerHTML = st.hist.length ? st.hist.slice(0, 10).map(h => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-sm font-extrabold text-slate-800 w-24 truncate">${esc(h.place || '-')}</span><span class="flex-1 text-sm font-bold text-indigo-600">${esc([h.floor, h.zone].filter(Boolean).join(' · ') || '-')}</span><span class="text-[10px] text-slate-400 text-right">${when(h.t)}<br>${h.out ? dur(h.out - h.t) : ''}</span></div>`).join('') : '<p class="text-xs text-slate-400 py-1">출차하면 여기에 기록이 남아요.</p>';
+    }
+
+    function render() { renderNow(); renderForm(); renderHist(); }
+    setInterval(() => { const el = document.getElementById('elapsed'); if (el && st.cur) el.textContent = dur(Date.now() - st.cur.t); }, 30000);
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ cur: null, hist: [] }, load(KEY, {})); render(); } });
+    render();
+  </script>
+</body>
+</html>
