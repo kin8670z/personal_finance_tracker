@@ -96,6 +96,7 @@
     <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
     <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
     <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
@@ -156,6 +157,7 @@
     <section id="fever" class="hidden card p-4"></section>
     <section id="sticker" class="hidden card p-4"></section>
     <section id="kidsay" class="hidden card p-4"></section>
+    <section id="health" class="hidden card p-4"></section>
     <section id="sleep" class="hidden card p-4"></section>
     <section id="mood" class="hidden card p-4"></section>
     <section id="ceremony" class="hidden card p-4"></section>
@@ -540,6 +542,17 @@
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
 
+    // ---------- 🩹 아플 때: 아직 안 나은 기록이 있을 때만 ----------
+    function renderHealth() {
+      const box = document.getElementById('health'), eps = (load('argon_health_v1', {}).eps || []).filter(e => !e.end), ks = (load('argon_kid_v1', {}).kids || []), today = ymd(new Date());
+      if (!eps.length) { box.classList.add('hidden'); return; }
+      const name = w => !w || w === 'me' ? '' : (((ks.find(k => String(k.id) === String(w)) || {}).name || '아이') + ' ');
+      const dayN = s => Math.floor((new Date(new Date().toDateString()) - new Date(new Date(s).toDateString())) / 864e5) + 1;
+      box.classList.remove('hidden');
+      box.innerHTML = head('🩹 아픈 곳', './health.html', '기록') + eps.map(e => { const ls = e.logs || [], last = ls.reduce((a, x) => !a || x.t >= a.t ? x : a, null), lp = last ? last.pain : null, done = ls.some(l => l.t.slice(0, 10) === today);
+        return `<a href="./health.html" class="flex items-center justify-between gap-2 py-1"><span class="min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(name(e.who))}${esc(e.part)} <span class="text-indigo-600">${dayN(e.start)}일째</span></span>${done ? '' : '<span class="block text-[11px] font-bold text-amber-600">오늘 상태 아직 안 남겼어요 →</span>'}</span>${lp != null ? `<span class="text-sm font-extrabold num shrink-0 ${lp >= 7 ? 'text-rose-600' : lp >= 4 ? 'text-amber-600' : 'text-emerald-600'}">통증 ${lp}</span>` : ''}</a>`; }).join('');
+    }
+
     // ---------- 🛒 공동구매: 오늘 오픈하거나, 오늘·내일 마감하는 것만 (산 것·패스는 제외) ----------
     function renderGroupbuy() {
       const box = document.getElementById('groupbuy'), items = (load('argon_groupbuy_v1', {}).items || []), now = Date.now(), t0 = new Date(new Date().toDateString());
@@ -750,7 +763,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }

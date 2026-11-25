@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>아플 때 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🩹 <span>아플 때</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📚 <span>책·영화</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🩹 아플 때</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <button type="button" onclick="openForm()" class="shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-extrabold rounded-xl">+ 아파요</button>
+      </div>
+    </header>
+    <section id="form" class="card p-4 hidden">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🩹 어디가 아파요?</h2>
+      <div id="whoBtns" class="flex flex-wrap gap-1.5"></div>
+      <div id="parts" class="flex flex-wrap gap-1.5 mt-2"></div>
+      <input id="fPart" maxlength="16" placeholder="직접 쓰기 (예: 왼쪽 옆구리)" class="hidden w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <label class="block text-[10px] font-bold text-slate-500 mt-3">⏱️ 언제부터<input id="fStart" type="datetime-local" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+      <div class="flex flex-wrap gap-1.5 mt-1.5"><span id="quickStart" class="contents"></span></div>
+      <p class="text-[10px] font-bold text-slate-500 mt-3">어떻게 아파요 (여러 개)</p>
+      <div id="syms" class="flex flex-wrap gap-1.5 mt-1"></div>
+      <div class="mt-3"><p class="text-[10px] font-bold text-slate-500">통증 <span id="painVal" class="text-indigo-600"></span></p><input id="fPain" type="range" min="0" max="10" value="5" class="w-full accent-indigo-600"><div class="flex justify-between text-[9px] font-bold text-slate-400"><span>0 안 아픔</span><span>5 신경 쓰임</span><span>10 못 참음</span></div></div>
+      <input id="fCause" maxlength="40" placeholder="계기 (선택) 예: 아이 안다가, 아침에 일어나니" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <textarea id="fNote" rows="2" maxlength="300" placeholder="메모 (선택) 예: 숙이면 찌릿, 앉았다 일어날 때 제일 아픔" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"></textarea>
+      <p id="flag" class="hidden text-[11px] font-bold text-rose-600 bg-rose-50 rounded-lg px-2.5 py-1.5 mt-2"></p>
+      <div class="flex gap-2 mt-2">
+        <button type="button" onclick="closeForm()" class="px-4 py-2.5 bg-slate-100 text-slate-600 font-extrabold rounded-xl">취소</button>
+        <button type="button" onclick="saveEp()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록 시작</button>
+      </div>
+    </section>
+    <div id="live" class="space-y-3 md:space-y-4"></div>
+    <section class="card p-4">
+      <div class="flex items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900 flex-1">🗂️ 지난 기록</h2><input id="q" placeholder="🔍 부위·증상" class="w-28 border border-slate-200 rounded-lg px-2 py-1 bg-white text-xs"></div>
+      <div id="past"></div>
+    </section>
+    <p class="text-center text-[10px] text-slate-400 pb-2">기록용이에요. 진단은 병원에서 받아 주세요. 기록은 이 기기와 내 동기화 기기에만 저장돼요.</p>
+    <div id="sheet" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" onclick="if(event.target===this)closeSheet()">
+      <div class="card p-4 w-full max-w-sm bg-white max-h-[90vh] overflow-y-auto" id="sheetBody"></div>
+    </div>
+  </div>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const local = d => `${ymd(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const W = '일월화수목금토';
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    const KEY = 'argon_health_v1';
+    const PARTS = ['🦴 허리', '🧠 머리', '😣 목', '💪 어깨', '🫃 배', '🦵 무릎', '✋ 손목', '🦶 발목', '🦷 치아', '👁️ 눈', '👂 귀', '🤧 감기 기운', '🌡️ 몸살', '🔴 피부', '✏️ 직접'];
+    const SYMS = ['⚡ 찌릿', '🪨 뻐근', '💥 욱신', '📌 콕콕 쑤심', '🔗 결림', '🫨 저림', '🎈 부음', '🔥 열감', '🚶 움직이면 아픔', '🛏️ 가만있어도 아픔', '🌙 밤에 더 아픔', '🤢 메스꺼움', '🤒 열', '😮‍💨 기침', '💧 콧물', '🥴 어지러움'];
+    const TREATS = [['🏥', '병원'], ['💊', '약'], ['🩹', '파스'], ['🔥', '온찜질'], ['🧊', '냉찜질'], ['💆', '물리치료'], ['🧘', '스트레칭'], ['🛌', '쉼'], ['📝', '기타']];
+    // 바로 병원 가야 하는 신호 (부위별 짧게)
+    const FLAGS = { '허리': '다리 힘이 빠지거나 감각이 둔해짐, 대소변 이상, 열이 같이 나면 바로 병원 가세요.', '머리': '갑자기 생애 최악의 두통, 말이 어눌하거나 한쪽 힘 빠짐, 목이 뻣뻣하고 열이 나면 바로 응급실.', '배': '오른쪽 아랫배가 점점 아프거나, 배가 딱딱하고 열·구토가 같이 오면 바로 병원 가세요.', '목': '팔 저림·힘 빠짐이 같이 오면 진료를 받아 보세요.' };
+    let st = Object.assign({ eps: [] }, load(KEY, {})), who = 'me', part = PARTS[0], syms = [], sheetFor = null;
+    const persist = () => save(KEY, st);
+    const kids = () => (load('argon_kid_v1', {}).kids || []);
+    const whoName = w => !w || w === 'me' ? '나' : ((kids().find(k => String(k.id) === String(w)) || {}).name || '아이');
+    const pName = e => e.part.replace(/^\S+\s/, '');
+    const tm = s => { const d = new Date(s); return `${d.getMonth() + 1}/${d.getDate()}(${W[d.getDay()]}) ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+    const since = (s, e = Date.now()) => { const m = Math.max(0, Math.round((e - new Date(s)) / 6e4)); if (m < 60) return `${m}분`; if (m < 1440) return `${Math.floor(m / 60)}시간`; const d = Math.floor(m / 1440), h = Math.floor(m % 1440 / 60); return `${d}일${h && d < 3 ? ` ${h}시간` : ''}`; };
+    const dayN = s => Math.floor((new Date(new Date().toDateString()) - new Date(new Date(s).toDateString())) / 864e5) + 1;
+    const painCls = p => p >= 7 ? 'text-rose-600' : p >= 4 ? 'text-amber-600' : 'text-emerald-600';
+    // 같은 분에 여러 번 남기면 나중 것 (>=)
+    const lastPain = e => { const l = (e.logs || []).reduce((a, x) => !a || x.t >= a.t ? x : a, null); return l ? l.pain : null; };
+    // ---------- 새로 기록 ----------
+    function openForm() {
+      who = 'me'; part = PARTS[0]; syms = []; ['fCause', 'fNote', 'fPart'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('fStart').value = local(new Date()); document.getElementById('fPain').value = 5;
+      renderForm(); document.getElementById('form').classList.remove('hidden'); scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function closeForm() { document.getElementById('form').classList.add('hidden'); }
+    function setWho(w) { who = w; renderForm(); }
+    function setPart(i) { part = PARTS[i]; renderForm(); if (part === '✏️ 직접') document.getElementById('fPart').focus(); }
+    function togSym(i) { const s = SYMS[i]; syms = syms.includes(s) ? syms.filter(x => x !== s) : [...syms, s]; renderForm(); }
+    function quickStart(h) { const d = new Date(); if (h === 'am') d.setHours(7, 0, 0, 0); else if (h === 'yd') { d.setDate(d.getDate() - 1); d.setHours(20, 0, 0, 0); } else d.setTime(Date.now() - h * 36e5); document.getElementById('fStart').value = local(d); }
+    function renderForm() {
+      const ks = kids();
+      document.getElementById('whoBtns').innerHTML = ks.length ? [['me', '🙋 나'], ...ks.map(k => [String(k.id), `${k.sex === 'm' ? '👦' : '👧'} ${k.name}`])].map(([k, l]) => `<span role="button" tabindex="0" onclick="setWho('${k}')" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${who === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${esc(l)}</span>`).join('') : '';
+      document.getElementById('parts').innerHTML = PARTS.map((p, i) => `<span role="button" tabindex="0" onclick="setPart(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${part === p ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${p}</span>`).join('');
+      document.getElementById('fPart').classList.toggle('hidden', part !== '✏️ 직접');
+      document.getElementById('syms').innerHTML = SYMS.map((s, i) => `<span role="button" tabindex="0" onclick="togSym(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${syms.includes(s) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${s}</span>`).join('');
+      document.getElementById('quickStart').innerHTML = [['now', '방금', 0], ['1', '1시간 전', 1], ['3', '3시간 전', 3], ['am', '오늘 아침', "'am'"], ['yd', '어젯밤', "'yd'"]].map(([, l, v]) => `<span role="button" tabindex="0" onclick="quickStart(${v})" class="cursor-pointer px-2 py-1 rounded-lg bg-slate-100 text-[11px] font-bold text-slate-600">${l}</span>`).join('');
+      document.getElementById('painVal').textContent = document.getElementById('fPain').value + ' / 10';
+      const f = FLAGS[part.replace(/^\S+\s/, '')], el = document.getElementById('flag'); el.classList.toggle('hidden', !f); el.textContent = f ? '🚨 ' + f : '';
+    }
+    document.getElementById('fPain').addEventListener('input', () => { document.getElementById('painVal').textContent = document.getElementById('fPain').value + ' / 10'; });
+    function saveEp() {
+      const p = part === '✏️ 직접' ? '✏️ ' + (document.getElementById('fPart').value.trim() || '기타') : part, start = document.getElementById('fStart').value || local(new Date()), pain = +document.getElementById('fPain').value, note = document.getElementById('fNote').value.trim();
+      st.eps.push({ id: Date.now(), who, part: p, start, end: null, syms: syms.slice(), cause: document.getElementById('fCause').value.trim(), logs: [{ t: local(new Date()), pain, note, syms: syms.slice() }], treats: [] });
+      persist(); closeForm(); render();
+    }
+    // ---------- 진행 중 카드 ----------
+    function chart(e) {
+      const ls = (e.logs || []).slice().sort((a, b) => a.t.localeCompare(b.t)); if (ls.length < 2) return '';
+      const t0 = +new Date(e.start), t1 = Math.max(Date.now(), +new Date(ls[ls.length - 1].t)), X = t => 8 + (+new Date(t) - t0) / ((t1 - t0) || 1) * 284, Y = p => 52 - p * 4.4;
+      return `<svg viewBox="0 0 300 60" class="w-full mt-2 text-rose-500"><line x1="0" y1="${Y(5)}" x2="300" y2="${Y(5)}" stroke="currentColor" stroke-opacity=".15" stroke-dasharray="3 3"/>
+        <polyline points="${ls.map(l => `${X(l.t).toFixed(1)},${Y(l.pain).toFixed(1)}`).join(' ')}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+        ${ls.map(l => `<circle cx="${X(l.t).toFixed(1)}" cy="${Y(l.pain).toFixed(1)}" r="3" fill="currentColor"/>`).join('')}
+        ${(e.treats || []).map(t => `<text x="${X(t.t).toFixed(1)}" y="59" font-size="9" text-anchor="middle">${t.ic}</text>`).join('')}</svg>`;
+    }
+    function timeline(e) {
+      const ev = [...(e.logs || []).map(l => ({ t: l.t, k: 'log', l })), ...(e.treats || []).map(t => ({ t: t.t, k: 'tr', x: t }))].sort((a, b) => b.t.localeCompare(a.t));
+      return ev.map(v => v.k === 'log'
+        ? `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700"><b class="${painCls(v.l.pain)}">통증 ${v.l.pain}</b>${(v.l.syms || []).length ? ` · ${v.l.syms.map(s => s.replace(/^\S+\s/, '')).join(', ')}` : ''}${v.l.note ? `<br><span class="text-slate-500">${esc(v.l.note)}</span>` : ''}</span></div>`
+        : `<div class="flex gap-2 py-1 border-b border-slate-100"><span class="w-20 shrink-0 text-[10px] font-bold text-slate-400 num">${tm(v.t)}</span><span class="flex-1 min-w-0 text-xs text-slate-700">${v.x.ic} <b>${esc(v.x.kind)}</b>${v.x.note ? ` · ${esc(v.x.note)}` : ''}</span></div>`).join('');
+    }
+    function liveCard(e) {
+      const lp = lastPain(e), firstP = (e.logs || [])[0] ? e.logs[0].pain : null, todayLogged = (e.logs || []).some(l => l.t.slice(0, 10) === ymd(new Date()));
+      const trend = lp != null && firstP != null && e.logs.length > 1 ? (lp < firstP ? `<span class="text-emerald-600">처음보다 ${firstP - lp} 나아짐</span>` : lp > firstP ? `<span class="text-rose-600">처음보다 ${lp - firstP} 심해짐</span>` : '<span class="text-slate-400">처음과 비슷</span>') : '';
+      const same = st.eps.filter(x => x.id !== e.id && pName(x) === pName(e) && x.who === e.who).length;
+      return `<section class="card p-4">
+        <div class="flex items-start gap-2"><div class="flex-1 min-w-0">
+          <p class="text-[11px] font-bold text-slate-500">${esc(whoName(e.who))} · ${tm(e.start)}부터</p>
+          <p class="text-lg font-extrabold text-slate-900">${esc(e.part)} <span class="text-sm text-indigo-600">${dayN(e.start)}일째</span></p>
+          <p class="text-[11px] font-bold text-slate-500">${since(e.start)} 지남${e.cause ? ` · 계기: ${esc(e.cause)}` : ''}${same ? ` · <span class="text-amber-600">전에도 ${same}번</span>` : ''}</p></div>
+          ${lp != null ? `<div class="text-right shrink-0"><p class="text-[10px] font-bold text-slate-400">지금 통증</p><p class="text-2xl font-extrabold num ${painCls(lp)}">${lp}</p><p class="text-[10px] font-bold">${trend}</p></div>` : ''}</div>
+        ${(e.syms || []).length ? `<div class="flex flex-wrap gap-1 mt-2">${e.syms.map(s => `<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">${s}</span>`).join('')}</div>` : ''}
+        ${chart(e)}
+        <div class="grid grid-cols-3 gap-1.5 mt-3">
+          <span role="button" tabindex="0" onclick="openLog(${e.id})" class="cursor-pointer text-center py-2 rounded-xl text-xs font-extrabold ${todayLogged ? 'bg-slate-100 text-slate-600' : 'bg-indigo-600 text-white'}">📝 지금 상태</span>
+          <span role="button" tabindex="0" onclick="openTreat(${e.id})" class="cursor-pointer text-center py-2 rounded-xl bg-slate-100 text-xs font-extrabold text-slate-600">💊 병원·약</span>
+          <span role="button" tabindex="0" onclick="heal(${e.id})" class="cursor-pointer text-center py-2 rounded-xl bg-emerald-50 text-xs font-extrabold text-emerald-700">😌 나았어요</span>
+        </div>
+        <details class="mt-2"><summary class="cursor-pointer text-[11px] font-bold text-slate-500">🕐 흐름 보기 (${(e.logs || []).length + (e.treats || []).length})</summary><div class="mt-1">${timeline(e)}</div></details>
+        <div class="flex items-center gap-3 mt-2"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 병원에 보여줄 요약 복사</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '정말 지울까요?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div>
+      </section>`;
+    }
+    // ---------- 상태·치료 기록 시트 ----------
+    let sheetSyms = [];
+    function openLog(id) {
+      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; sheetSyms = (e.logs.slice(-1)[0] || {}).syms || e.syms || [];
+      const lp = lastPain(e) ?? 5;
+      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">📝 ${esc(e.part)} 지금 상태</h3>
+        <p class="text-[10px] font-bold text-slate-500 mt-3">통증 <span id="sPainVal" class="text-indigo-600">${lp} / 10</span> <span class="text-slate-400">(지난번 ${lp})</span></p>
+        <input id="sPain" type="range" min="0" max="10" value="${lp}" oninput="document.getElementById('sPainVal').textContent=this.value+' / 10'" class="w-full accent-indigo-600">
+        <div id="sSyms" class="flex flex-wrap gap-1.5 mt-2"></div>
+        <textarea id="sNote" rows="2" maxlength="300" placeholder="메모 (선택) 예: 아침보다 덜함, 걷기는 괜찮음" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"></textarea>
+        <button type="button" onclick="saveLog()" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>`;
+      renderSheetSyms(); document.getElementById('sheet').classList.remove('hidden');
+    }
+    function renderSheetSyms() { document.getElementById('sSyms').innerHTML = SYMS.map((s, i) => `<span role="button" tabindex="0" onclick="togSheetSym(${i})" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${sheetSyms.includes(s) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${s}</span>`).join(''); }
+    function togSheetSym(i) { const s = SYMS[i]; sheetSyms = sheetSyms.includes(s) ? sheetSyms.filter(x => x !== s) : [...sheetSyms, s]; renderSheetSyms(); }
+    function saveLog() {
+      const e = st.eps.find(x => x.id === sheetFor); if (!e) return;
+      e.logs = e.logs || []; e.logs.push({ t: local(new Date()), pain: +document.getElementById('sPain').value, note: document.getElementById('sNote').value.trim(), syms: sheetSyms.slice() });
+      sheetSyms.forEach(s => { if (!e.syms.includes(s)) e.syms.push(s); }); persist(); closeSheet(); render();
+    }
+    let trKind = 0;
+    function openTreat(id) {
+      const e = st.eps.find(x => x.id === id); if (!e) return; sheetFor = id; trKind = 0;
+      document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">💊 ${esc(e.part)} 병원·약·관리</h3>
+        <div id="trKinds" class="flex flex-wrap gap-1.5 mt-3"></div>
+        <input id="trNote" maxlength="60" placeholder="" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <label class="block text-[10px] font-bold text-slate-500 mt-2">언제<input id="trTime" type="datetime-local" value="${local(new Date())}" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <button type="button" onclick="saveTreat()" class="w-full mt-3 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>`;
+      renderTr(); document.getElementById('sheet').classList.remove('hidden');
+    }
+    function renderTr() {
+      document.getElementById('trKinds').innerHTML = TREATS.map(([ic, k], i) => `<span role="button" tabindex="0" onclick="trKind=${i};renderTr()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${trKind === i ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${ic} ${k}</span>`).join('');
+      document.getElementById('trNote').placeholder = ['병원 이름·진단 (예: OO정형외과, 요추 염좌)', '약 이름 (예: 이부프로펜 1알)', '어디에 붙였는지', '몇 분', '몇 분', '어디서·몇 회차', '어떤 동작', '메모', '메모'][trKind];
+    }
+    function saveTreat() {
+      const e = st.eps.find(x => x.id === sheetFor); if (!e) return; const [ic, kind] = TREATS[trKind];
+      e.treats = e.treats || []; e.treats.push({ t: document.getElementById('trTime').value || local(new Date()), ic, kind, note: document.getElementById('trNote').value.trim() }); persist(); closeSheet(); render();
+    }
+    function closeSheet() { document.getElementById('sheet').classList.add('hidden'); sheetFor = null; }
+    function heal(id) { const e = st.eps.find(x => x.id === id); if (!e) return; e.end = local(new Date()); persist(); render(); }
+    function reopen(id) { const e = st.eps.find(x => x.id === id); if (!e) return; e.end = null; persist(); render(); }
+    // ---------- 병원용 요약 ----------
+    function summary(e) {
+      const ls = (e.logs || []).slice().sort((a, b) => a.t.localeCompare(b.t)), tr = (e.treats || []).slice().sort((a, b) => a.t.localeCompare(b.t));
+      return [`[${pName(e)}] ${whoName(e.who) === '나' ? '' : whoName(e.who) + ' · '}${tm(e.start)}부터 (${e.end ? `${since(e.start, new Date(e.end))} 동안` : `${dayN(e.start)}일째`})`,
+        e.cause ? `계기: ${e.cause}` : '', (e.syms || []).length ? `증상: ${e.syms.map(s => s.replace(/^\S+\s/, '')).join(', ')}` : '',
+        ls.length ? `통증(0~10): ${ls.map((l, i) => `${i && l.t.slice(0, 10) === ls[i - 1].t.slice(0, 10) ? l.t.slice(11, 16) : tm(l.t)} ${l.pain}`).join(' → ')}` : '',
+        ...ls.filter(l => l.note).map(l => `- ${tm(l.t)} ${l.note}`),
+        tr.length ? '한 것: ' + tr.map(t => `${tm(t.t).split(' ')[0]} ${t.kind}${t.note ? `(${t.note})` : ''}`).join(', ') : ''].filter(Boolean).join('\n');
+    }
+    async function copySummary(id, el) { const e = st.eps.find(x => x.id === id); if (!e) return; try { await navigator.clipboard.writeText(summary(e)); el.textContent = '복사했어요 ✓'; } catch (x) { el.textContent = '복사 실패'; } setTimeout(() => { if (el.isConnected) el.textContent = '🏥 병원에 보여줄 요약 복사'; }, 2000); }
+    function render() {
+      const live = st.eps.filter(e => !e.end).sort((a, b) => b.start.localeCompare(a.start));
+      document.getElementById('live').innerHTML = live.map(liveCard).join('');
+      const q = document.getElementById('q').value.trim(), past = st.eps.filter(e => e.end && (!q || (e.part + (e.syms || []).join(' ') + (e.cause || '')).includes(q))).sort((a, b) => b.start.localeCompare(a.start));
+      document.getElementById('past').innerHTML = past.map(e => `<details class="border-b border-slate-100 py-1.5"><summary class="cursor-pointer flex items-center gap-2"><span class="w-16 shrink-0 text-[11px] font-bold text-slate-500 num">${e.start.slice(2, 10).replace(/-/g, '.')}</span><span class="flex-1 min-w-0 text-sm font-bold text-slate-800 truncate">${esc(e.part)}${e.who !== 'me' ? ` <span class="text-[11px] text-slate-400">${esc(whoName(e.who))}</span>` : ''}</span><span class="text-[11px] font-bold text-slate-500 shrink-0">${since(e.start, new Date(e.end))}</span></summary>
+        <pre class="whitespace-pre-wrap text-[11px] text-slate-600 bg-slate-50 rounded-lg p-2 mt-1 font-sans">${esc(summary(e))}</pre>
+        <div class="flex gap-3 mt-1"><span role="button" tabindex="0" onclick="copySummary(${e.id}, this)" class="cursor-pointer text-[11px] font-bold text-indigo-600">🏥 요약 복사</span><span role="button" tabindex="0" onclick="reopen(${e.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">↩ 다시 아파요</span><span class="flex-1"></span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.eps = st.eps.filter(x => x.id !== ${e.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div></details>`).join('') || '<p class="text-xs text-slate-400 py-1">나은 기록이 여기 모여요. 같은 데가 또 아프면 몇 번째인지도 알려줘요.</p>';
+      const y = String(new Date().getFullYear()), yc = st.eps.filter(e => e.start.startsWith(y)).length;
+      document.getElementById('sub').textContent = live.length ? `지금 아픈 곳 ${live.length} · 올해 ${yc}번` : `괜찮아요 · 올해 ${yc}번 기록`;
+    }
+    document.getElementById('q').addEventListener('input', render);
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSideNav(); closeSheet(); } });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ eps: [] }, load(KEY, {})); render(); } });
+    render();
+    if (!st.eps.some(e => !e.end) && new URLSearchParams(location.search).has('add')) openForm();
+  </script>
+</body>
+</html>
