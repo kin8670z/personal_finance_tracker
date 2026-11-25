@@ -49,6 +49,7 @@ module.exports = async (req, res) => {
     const pages = ['index.htm', ...new Set([...index.matchAll(/href=["'](?:\.\/|[^"']*\/lineup\/regular\/)?(\d{3}-\d{3}\.htm)["']/gi)].map(x => x[1]))];
     const longLinks = [...new Set([...index.matchAll(/href=["']([^"']*lineup\/(?:long|regular_long|longtype)[^"']*\.htm)["']/gi)].map(x => x[1]))];
     if (q.get('debug') === '1') {
+      if (q.get('no')) { const n = q.get('no'), idx = [...index.matchAll(new RegExp('No\\.' + n + '[^0-9]', 'g'))].map(x => x.index); return send(res, 200, { idx, snips: idx.slice(1, 3).map(i => index.slice(i - 700, i + 900)) }, 0); }
       const i = index.indexOf('No.1');
       return send(res, 200, { pages, longLinks, snippet: index.slice(Math.max(0, i - 800), i + 1200), parsed: parse(index, 'index.htm').slice(0, 5) }, 0);
     }
