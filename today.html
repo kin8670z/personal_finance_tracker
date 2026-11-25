@@ -154,10 +154,7 @@
     <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-      <section id="lotto" class="card p-4"><div class="skel" style="height:60px"></div></section>
-      <section id="tax" class="card p-4"></section>
-    </div>
+    <section id="lotto" class="card p-4"><div class="skel" style="height:60px"></div></section>
 
     <section id="pushCard" class="card p-4">
       <div class="flex items-center justify-between gap-3">
@@ -431,12 +428,35 @@
     }
     // ---------- 관심 게임 (7일 안에 출시) ----------
     function renderGames() {
-      const box = document.getElementById('games'), t0 = new Date(new Date().toDateString());
+      const box = document.getElementById('games'), t0 = new Date(new Date().toDateString()), today = ymd(t0), lines = [];
+      // 🚗 토미카 신차: 매달 셋째 토요일 (전날부터 알려줌)
+      const third = (y, m) => { const f = new Date(y, m, 1); return new Date(y, m, 1 + ((6 - f.getDay() + 7) % 7) + 14); };
+      const tr = third(t0.getFullYear(), t0.getMonth()), tk = Math.round((tr - t0) / 864e5);
+      if (tk === 0 || tk === 1) lines.push(`<a href="./tomica.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800">🚗 토미카 신차 나오는 날</span><span class="text-sm font-extrabold shrink-0 ${tk ? 'text-indigo-600' : 'text-amber-600'}">${tk ? '내일!' : '오늘! 🎉'}</span></a>`);
+      // ⭐ 관심 게임 (7일 안)
       const fs = ((load('argon_games_v1', {}) || {}).fav || []).filter(f => f.d).map(f => ({ ...f, k: Math.round((new Date(+f.d.slice(0, 4), +f.d.slice(5, 7) - 1, +f.d.slice(8)) - t0) / 864e5) })).filter(f => f.k >= 0 && f.k <= 7).sort((a, b) => a.k - b.k);
-      if (!fs.length) { box.classList.add('hidden'); return; }
-      box.classList.remove('hidden');
-      box.innerHTML = head('🎮 곧 나오는 게임', './games.html', '캘린더') + fs.map(f => `<a href="./games.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800 truncate">${esc(f.t)}</span><span class="text-sm font-extrabold shrink-0 ${f.k === 0 ? 'text-amber-600' : 'text-indigo-600'}">${f.k === 0 ? '오늘 출시! 🎉' : `D-${f.k}`}</span></a>`).join('');
+      fs.forEach(f => lines.push(`<a href="./games.html" class="flex items-center justify-between py-1"><span class="text-sm font-extrabold text-slate-800 truncate">⭐ ${esc(f.t)}</span><span class="text-sm font-extrabold shrink-0 ${f.k === 0 ? 'text-amber-600' : 'text-indigo-600'}">${f.k === 0 ? '오늘 출시! 🎉' : `D-${f.k}`}</span></a>`));
+      // 🎮 오늘 나오는 주요 게임 (게임 캘린더의 플랫폼 필터 따라감)
+      const show = () => {
+        const gs = todayGames || [], favT = new Set(fs.map(f => f.t.toLowerCase())), plats = ((load('argon_games_v1', {}) || {}).plats || []);
+        const PL = { PC: ['WIN', 'OSX', 'LIN'], PS5: ['PS5'], PS4: ['PS4'], 스위치2: ['NS2'], 스위치: ['NS'], Xbox: ['XBX/S', 'XBO'], 모바일: ['iOS', 'DROID'], VR: ['Quest', 'PSVR', 'PSVR2'] };
+        const want = plats.flatMap(p => PL[p] || []);
+        const hits = gs.filter(g => g[0] === today && g[2] && !favT.has(String(g[1]).toLowerCase()) && (!want.length || (g[3] || []).some(x => want.includes(x))));
+        const all = [...lines];
+        if (hits.length) all.push(`<a href="./games.html" class="block py-1"><span class="text-xs font-extrabold text-slate-500">🎮 오늘 출시 ${hits.length}개</span><span class="block text-sm font-bold text-slate-800 truncate">${hits.slice(0, 3).map(g => esc(g[1])).join(' · ')}${hits.length > 3 ? ' …' : ''}</span></a>`);
+        if (!all.length) { box.classList.add('hidden'); return; }
+        box.classList.remove('hidden');
+        box.innerHTML = head('🎮 게임·토미카', './games.html', '캘린더') + all.join('');
+      };
+      show();
+      if (todayGames === null) {
+        todayGames = [];
+        const ck = 'games_today_' + today;
+        try { const c = JSON.parse(sessionStorage.getItem(ck) || 'null'); if (c) { todayGames = c; show(); return; } } catch (e) {}
+        fetch(`./api/games?y=${t0.getFullYear()}`).then(r => r.ok ? r.json() : null).then(j => { if (!j) return; todayGames = (j.games || []).filter(g => g[0] === today); try { sessionStorage.setItem(ck, JSON.stringify(todayGames)); } catch (e) {} show(); }).catch(() => {});
+      }
     }
+    let todayGames = null;
     // ---------- 주차 중 ----------
     function renderParking() {
       const box = document.getElementById('parking'), c = (load('argon_parking_v1', {}) || {}).cur;
@@ -589,13 +609,6 @@
       } catch (e) { box.innerHTML = head('🍀 로또', './lotto.html', '번호 뽑기') + `<p class="text-xs text-slate-500">당첨번호를 불러오지 못했어요.</p>`; }
     }
 
-    // ---------- 연말정산 ----------
-    function renderTax() {
-      const box = document.getElementById('tax'), T = window.ArgonTax, a = T.analyze();
-      if (!a.s.salary) { box.innerHTML = head('🧾 연말정산', './tax.html', '계산하기') + `<p class="text-xs text-slate-500">올해 카드 사용액 <b class="num text-slate-800">${T.won(a.now.spent)}</b>. 총급여를 넣으면 공제 예상액이랑 남은 기간 체크·신용 중 뭐가 유리한지 알려줘요.</p>`; return; }
-      box.innerHTML = head('🧾 연말정산', './tax.html', '자세히') + `<p class="text-[10px] font-bold text-slate-500">연말 예상 카드 공제</p><p class="text-xl font-extrabold num text-indigo-600">${T.won(a.end.total)} <span class="text-xs font-bold text-emerald-600">세금 약 ${T.won(a.saveEnd)}↓</span></p>
-        <p class="text-[11px] text-slate-600 mt-1 leading-snug">${a.advice.kind === 'switch' ? `🔁 남은 기간 체크카드가 유리 (+${T.won(a.advice.gain)})` : a.advice.kind === 'below' ? `🪜 문턱(총급여 25%)까지 ${T.won(a.advice.short)} 남음` : a.advice.kind === 'cap' ? '✅ 한도 채움 · 카드 혜택 위주로' : '👍 지금 그대로 OK'}</p>`;
-    }
 
     // ---------- 첫 화면 설정 ----------
     const startOn = () => localStorage.getItem('argon_start_today') !== '0';
@@ -652,7 +665,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
