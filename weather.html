@@ -267,7 +267,7 @@
     function renderSun(w) {
       const d = w.daily, T = 1, rise = d.sunrise[T], set = d.sunset[T], now = placeNow(w), r = new Date(rise), s = new Date(set);
       const p = Math.min(1, Math.max(0, (now - r) / (s - r))), prev = d.daylight_duration[0], dl = d.daylight_duration[T], dd = Math.round((dl - prev) / 60);
-      const m = moon(now), tr = d.sunrise[T + 1];
+      const m = moon(new Date()), tr = d.sunrise[T + 1];
       // 해 궤적: 반원 위의 현재 위치
       const ang = Math.PI * (1 - p), cx = 150 + 120 * Math.cos(ang), cy = 90 - 80 * Math.sin(ang), up = now > r && now < s;
       const golden = new Date(s - 60 * 6e4);
