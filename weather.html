@@ -167,7 +167,7 @@
     function moon(d = new Date()) {
       const age = (((d - Date.UTC(2000, 0, 6, 18, 14)) / 864e5) % 29.530588853 + 29.530588853) % 29.530588853;
       const i = Math.floor((age / 29.530588853) * 8 + 0.5) % 8;
-      return { age, ic: ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][i], name: ['삭 (달이 안 보여요)', '초승달', '상현달', '차오르는 달', '보름달', '기우는 달', '하현달', '그믐달'][i], full: Math.round((age < 14.77 ? 14.77 - age : 29.53 - age + 14.77)) };
+      return { age, ic: ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'][i], name: ['삭 (달이 안 보여요)', '초승달', '상현달', '차오르는 달', '보름달', '기우는 달', '하현달', '그믐달'][i], k: Math.round(14.77 - age), dark: Math.round(29.53 - age) };
     }
     // 장소 칩: 오늘 화면 장소 + 하남시 + 저장한 곳 + 현재 위치·검색
     function renderPlaces() {
@@ -282,7 +282,7 @@
         </div>
         <div class="grid grid-cols-2 gap-2 mt-3">
           <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">${up ? '🌇 해 지기까지' : now < r ? '🌅 해 뜨기까지' : '🌅 내일 일출'}</p><p class="text-sm font-extrabold num text-slate-800">${up ? dur((s - now) / 1000) : now < r ? dur((r - now) / 1000) : hm(tr)}</p>${up && s - now > 0 ? `<p class="text-[10px] font-bold text-slate-400">📸 골든아워 ${pad(golden.getHours())}:${pad(golden.getMinutes())}~</p>` : ''}</div>
-          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">달</p><p class="text-sm font-extrabold text-slate-800">${m.ic} ${m.name}</p><p class="text-[10px] font-bold text-slate-400">${m.full === 0 ? '오늘 보름' : `보름까지 ${m.full}일`}</p></div>
+          <div class="rounded-xl bg-slate-50 px-3 py-2"><p class="text-[10px] font-bold text-slate-500">달</p><p class="text-sm font-extrabold text-slate-800">${m.ic} ${m.name}</p><p class="text-[10px] font-bold text-slate-400">${Math.abs(m.k) <= 1 ? (m.k === 0 ? '오늘이 보름' : m.k > 0 ? '내일이 보름' : '어제가 보름') : m.k > 0 ? `보름까지 ${m.k}일` : `그믐까지 ${m.dark}일`}</p></div>
         </div>`;
     }
     // 48시간: 온도 선 + 비 확률
@@ -310,7 +310,7 @@
       document.getElementById('week').classList.remove('hidden');
       document.getElementById('week').innerHTML = head('📅 2주 예보', '<span class="text-[10px] font-bold text-slate-400">뒤로 갈수록 정확도 ↓</span>') + rows.map(({ t, i }, k) => {
         const lo = d.temperature_2m_min[i], hi = d.temperature_2m_max[i], pop = d.precipitation_probability_max[i] || 0, mm = d.precipitation_sum[i] || 0, dt = new Date(t + 'T00:00'), wk = dt.getDay();
-        return `${k === 7 ? '<p class="text-[10px] font-bold text-slate-400 pt-2 pb-1">다음 주</p>' : ''}<div class="flex items-center gap-2 py-1.5 border-b border-slate-100 ${k >= 10 ? 'opacity-70' : ''}">
+        return `${k > 0 && wk === 1 ? `<p class="text-[10px] font-bold text-slate-400 pt-2 pb-1">${rows.slice(1, k).some(r => new Date(r.t + 'T00:00').getDay() === 1) ? '그다음 주' : '다음 주'}</p>` : ''}<div class="flex items-center gap-2 py-1.5 border-b border-slate-100 ${k >= 10 ? 'opacity-70' : ''}">
           <span class="w-12 shrink-0"><span class="block text-sm font-extrabold ${k === 0 ? 'text-indigo-600' : wk === 0 ? 'text-rose-500' : wk === 6 ? 'text-sky-600' : 'text-slate-800'}">${dayName(t, k)}</span><span class="block text-[10px] font-bold text-slate-400 num">${dt.getMonth() + 1}/${dt.getDate()}</span></span>
           <span class="text-xl w-7 text-center shrink-0">${WMO(d.weather_code[i])[0]}</span>
           <span class="w-12 shrink-0 text-right"><span class="block text-[11px] font-extrabold num ${pop >= 50 ? 'text-sky-600' : 'text-slate-300'}">${pop ? pop + '%' : ''}</span>${mm >= 1 ? `<span class="block text-[9px] font-bold text-sky-600 num">${mm.toFixed(0)}mm</span>` : ''}</span>
