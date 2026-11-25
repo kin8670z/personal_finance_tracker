@@ -73,13 +73,36 @@ async function en(q) {
   if (!meanings.length && !ko.length) return null;
   return { word: (e[0] && e[0].word) || q, phonetic: (e.find(x => x.phonetic) || {}).phonetic || (phon.find(p => p.text) || {}).text || '', audio, ko, meanings: meanings.slice(0, 6) };
 }
+// 많이 쓰는 뜻 먼저: 표준국어대사전은 등재 번호 순이라, 위키낱말사전(흔한 뜻 위주)과 비슷한 뜻을 올리고
+// 옛 제도·전문 분야·방언 같은 뜻은 내린다
+const RARE = /조선 시대|고려 시대|신라|백제|고구려|옛날|예전에|불교|유학|성리학|한의학|도교|기독교|천주교|가톨릭|벼슬|관아|관직|군직|궁중|임금|왕실|제사|역사|법률|의학|약학|화학|물리|수학|광물|건설|음악|인명|지명|책 이름/;
+const bigrams = s => { const t = String(s).replace(/[^가-힣a-z0-9]/gi, ''), out = new Set(); for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2)); return out; };
+function similar(a, b) { const A = bigrams(a), B = bigrams(b); if (!A.size || !B.size) return 0; let n = 0; A.forEach(x => { if (B.has(x)) n++; }); return n / Math.min(A.size, B.size); }
+function rank(items, common) {
+  return items.map((it, i) => {
+    let sc = 0;
+    const sim = Math.max(0, ...common.map(c => similar(it.def, c)));
+    sc += sim * 10;
+    if (it.type && it.type !== '일반어') sc -= 6;            // 방언·북한어·옛말
+    if (RARE.test(it.def)) sc -= 3;
+    if (/과의 (한해|두해|여러해)살이|과의 (낙엽|상록)|과의 (곤충|물고기|새)/.test(it.def) && sim < 0.3) sc -= 1;
+    return { it, sc, i };
+  }).sort((a, b) => b.sc - a.sc || a.i - b.i).map(x => ({ ...x.it, common: x.sc >= 2 }));
+}
 async function ko(q) {
   const key = process.env.STDICT_KEY;
   if (key) {
     try {
-      const j = await getJSON(`https://stdict.korean.go.kr/api/search.do?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&req_type=json&num=10`);
+      const [j, w] = await Promise.all([
+        getJSON(`https://stdict.korean.go.kr/api/search.do?key=${encodeURIComponent(key)}&q=${encodeURIComponent(q)}&req_type=json&num=20`),
+        wiktionary(q).catch(() => [])
+      ]);
       const items = j && j.channel && j.channel.item;
-      if (items && items.length) return { src: '표준국어대사전', items: items.map(it => ({ word: String(it.word).replace(/[-^]/g, ''), sup: it.sup_no && it.sup_no !== '0' ? it.sup_no : '', pos: (it.pos || ''), def: (it.sense && it.sense.definition) || '' })) };
+      if (items && items.length) {
+        const common = ((w.find(l => /한국어/.test(l.lang)) || {}).senses || []).map(s => s.def);
+        const list = items.map(it => ({ word: String(it.word).replace(/[-^]/g, ''), sup: it.sup_no && it.sup_no !== '0' ? it.sup_no : '', pos: (it.pos || ''), type: (it.sense && it.sense.type) || '', def: (it.sense && it.sense.definition) || '' }));
+        return { src: '표준국어대사전', ranked: true, items: rank(list, common) };
+      }
     } catch (e) { /* 위키낱말사전으로 */ }
   }
   const w = await wiktionary(q);
