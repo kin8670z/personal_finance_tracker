@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.22';
+  const VERSION = '9.23';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -105,7 +105,7 @@
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
     ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'gift.html', 'parking.html', 'car.html']],
-    ['trip', '✈️', '여행', ['english.html', 'fx.html']]
+    ['trip', '📚', '공부·여행', ['dict.html', 'english.html', 'fx.html']]
   ];
   function groupNav() {
     const nav = document.getElementById('sideNav');
