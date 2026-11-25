@@ -88,6 +88,7 @@
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
     <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
     <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
     <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
     <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
@@ -157,6 +158,7 @@
     <section id="sleep" class="hidden card p-4"></section>
     <section id="mood" class="hidden card p-4"></section>
     <section id="ceremony" class="hidden card p-4"></section>
+    <section id="groupbuy" class="hidden card p-4"></section>
     <section id="habits" class="card p-4"></section>
     <section id="food" class="hidden card p-4"></section>
 
@@ -537,6 +539,23 @@
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
 
+    // ---------- 🛒 공동구매: 오늘 오픈하거나, 오늘·내일 마감하는 것만 (산 것·패스는 제외) ----------
+    function renderGroupbuy() {
+      const box = document.getElementById('groupbuy'), items = (load('argon_groupbuy_v1', {}).items || []), now = Date.now(), t0 = new Date(new Date().toDateString());
+      const day = s => s ? Math.round((new Date(new Date(s).toDateString()) - t0) / 864e5) : null, hm = s => s.slice(11, 16);
+      const left = ms => { const m = Math.max(0, Math.round(ms / 6e4)); return m < 60 ? `${m}분` : `${Math.floor(m / 60)}시간${m % 60 ? ` ${m % 60}분` : ''}`; };
+      const rows = items.filter(i => (!i.status || i.status === 'wait') && !(i.close && new Date(i.close) <= now)).map(i => {
+        const o = i.open ? new Date(i.open) : null, ko = day(i.open), kc = day(i.close);
+        if (o && o > now && ko === 0) return { i, k: 0, txt: `${hm(i.open)} 오픈`, sub: o - now < 36e5 * 3 ? `${left(o - now)} 뒤` : '', cls: 'text-indigo-600' };
+        if ((!o || o <= now) && (kc === 0 || kc === 1)) return { i, k: 1, txt: `${kc ? '내일' : '오늘'} ${hm(i.close)} 마감`, sub: kc === 0 ? `${left(new Date(i.close) - now)} 남음` : '', cls: kc === 0 ? 'text-rose-500' : 'text-amber-600' };
+        return null; }).filter(Boolean).sort((a, b) => (a.i.open || a.i.close).localeCompare(b.i.open || b.i.close));
+      if (!rows.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🛒 공동구매', './groupbuy.html', '전체') + rows.map(r => { const u = /^https?:\/\//i.test(r.i.link || '') ? r.i.link : '';
+        return `<div class="flex items-center gap-2 py-1.5"><a href="./groupbuy.html" class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(r.i.name)}</span><span class="block text-[11px] font-bold text-slate-500 truncate">${esc(r.i.chan || '')}${r.i.seller ? ` · ${esc(r.i.seller)}` : ''}${r.i.price ? ` · ${Number(r.i.price).toLocaleString('ko-KR')}원` : ''}</span></a>
+          <span class="text-right shrink-0"><span class="block text-xs font-extrabold ${r.cls}">${r.txt}</span>${r.sub ? `<span class="block text-[10px] font-bold text-slate-400">${r.sub}</span>` : ''}</span>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" class="shrink-0 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-[11px] font-extrabold">🔗</a>` : ''}</div>`; }).join('');
+    }
+
     // ---------- 체온 (최근 24시간 안에 기록 있을 때만) ----------
     function renderFever() {
       const box = document.getElementById('fever'), st = load('argon_fever_v1', { logs: [] }), kids = (load('argon_kid_v1', { kids: [] }).kids || []), now = Date.now();
@@ -730,7 +749,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderSleep(); renderMood(); renderCeremony(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
