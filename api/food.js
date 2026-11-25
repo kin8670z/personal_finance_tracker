@@ -1,8 +1,7 @@
 // 식약처 식품영양성분DB (공공데이터포털) 검색 — 키는 Vercel 환경변수 MFDS_KEY
 //   GET /api/food?q=신라면 → { items: [{ name, kcal, per, weight, maker, cat }], total }
 const EP = [
-  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02',
-  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo01/getFoodNtrCpntDbInq01'
+  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02'
 ];
 function send(res, status, body, maxAge) {
   res.statusCode = status;
