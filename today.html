@@ -104,6 +104,7 @@
     <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
     <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
     <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
     <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
@@ -137,6 +138,7 @@
     <section id="lunch" class="card p-4 hidden"></section>
     <section id="phrase" class="card p-4"></section>
     <section id="gifts" class="hidden card p-4"></section>
+    <section id="trip" class="hidden card p-4"></section>
     <section id="parking" class="hidden card p-4"></section>
     <section id="fever" class="hidden card p-4"></section>
     <section id="sticker" class="hidden card p-4"></section>
@@ -410,6 +412,18 @@
       box.innerHTML = head('🎁 곧 만료되는 기프티콘', './gift.html', '전체') + `<div class="space-y-1.5">${soon.map(x => { const n = left(x.exp); return `<a href="./gift.html?id=${x.id}" class="flex items-center gap-2"><span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-600 shrink-0">${n === 0 ? '오늘까지' : `D-${n}`}</span><span class="text-sm font-bold text-slate-800 truncate">${esc(x.name)}</span><span class="text-[11px] text-slate-400 shrink-0">${esc(x.store || '')}</span></a>`; }).join('')}</div>`;
     }
 
+    // ---------- 여행 (30일 안에 출발하거나 여행 중) ----------
+    function renderTrip() {
+      const box = document.getElementById('trip'), st = load('argon_trip_v1', { trips: [], stays: [] }), t0 = ymd(new Date());
+      const dd = (a, b) => { const p = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }; return Math.round((p(b) - p(a)) / 864e5); };
+      const t = (st.trips || []).find(x => x.start <= t0 && t0 <= x.end) || (st.trips || []).filter(x => x.start > t0 && dd(t0, x.start) <= 30).sort((a, b) => a.start.localeCompare(b.start))[0];
+      if (!t) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      const going = t.start <= t0, stays = (st.stays || []).filter(s => s.trip === t.id);
+      const sIn = stays.find(s => s.in === t0), sOut = stays.find(s => s.out === t0), sNow = stays.find(s => s.in < t0 && t0 < s.out), sNext = stays.filter(s => s.in > t0).sort((a, b) => a.in.localeCompare(b.in))[0];
+      const line = sIn ? `🏨 오늘 ${esc(sIn.inT)} 체크인 · ${esc(sIn.name)}` : sOut ? `🧳 오늘 ${esc(sOut.outT)} 체크아웃 · ${esc(sOut.name)}` : sNow ? `🏨 ${esc(sNow.name)}에서 숙박 중` : sNext ? `🏨 ${esc(sNext.name)} 체크인 ${+sNext.in.slice(5, 7)}/${+sNext.in.slice(8)} ${esc(sNext.inT)}` : '';
+      box.innerHTML = head(`${esc(t.emoji || '✈️')} ${esc(t.name)}`, './trip.html', '자세히') + `<a href="./trip.html" class="block"><p class="text-lg font-extrabold text-sky-600">${going ? `여행 ${dd(t.start, t0) + 1}일째${t0 === t.end ? ' · 오늘 귀가' : ''}` : dd(t0, t.start) === 1 ? '내일 출발!' : `D-${dd(t0, t.start)}`}</p>${line ? `<p class="text-xs font-bold text-slate-600 mt-0.5">${line}</p>` : ''}</a>`;
+    }
     // ---------- 주차 중 ----------
     function renderParking() {
       const box = document.getElementById('parking'), c = (load('argon_parking_v1', {}) || {}).cur;
@@ -617,7 +631,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderParking(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderFever(); renderSticker(); renderKidsay(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney(); renderTax();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }

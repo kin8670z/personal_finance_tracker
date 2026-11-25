@@ -22,7 +22,7 @@
     } catch (e) {}
   </script>
   <script src="sync.js" defer></script>
-  <title>든든 · 가계부 v9.23</title>
+  <title>든든 · 가계부 v9.24</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -91,6 +91,7 @@
     <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
     <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
     <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
   </nav>
@@ -128,7 +129,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v9.23</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v9.24</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -249,7 +250,11 @@
             </div>
             <div class="grid grid-cols-2 gap-2">
               <div><label class="block text-xs font-bold text-slate-600 mb-1">날짜</label><input type="date" id="txDate" required class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm"></div>
-              <div><label class="block text-xs font-bold text-slate-600 mb-1">카테고리</label><select id="txCategory" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm bg-white"></select></div>
+              <div><label class="block text-xs font-bold text-slate-600 mb-1">카테고리</label><select id="txCategory" onchange="toggleTripRow()" class="w-full border border-slate-200 rounded-lg px-2 py-2 text-sm bg-white"></select></div>
+            </div>
+            <div id="tripRow" class="hidden grid grid-cols-2 gap-2 p-2.5 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200/80">
+              <div><label class="block text-[11px] font-bold text-sky-700 mb-1">✈️ 여행 세부</label><select id="txSub" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white"><option>숙소</option><option>식비</option><option>교통</option><option>관광</option><option>쇼핑</option><option>기타</option></select></div>
+              <div><label class="block text-[11px] font-bold text-sky-700 mb-1">어느 여행?</label><select id="txTrip" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-semibold bg-white"></select></div>
             </div>
             <div id="paymentOptionRow" class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200/80">
               <div class="col-span-2 sm:col-span-1">
@@ -458,7 +463,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v9.23</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v9.24</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -499,9 +504,14 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '9.23';
+    const APP_VERSION = '9.24';
     const releaseNotesData = [
-      { version: 'v9.23', date: '2026.11.23 (최신)', badge: '사전', isLatest: true, items: [
+      { version: 'v9.24', date: '2026.11.23 (최신)', badge: '여행·숙소', isLatest: true, items: [
+        '🧳 여행·숙소 — 여행별 D-Day·N일째, 숙소 체크인/체크아웃·남은 시간, 1박 가격, 현장 결제 잔금, 지도·전화 바로가기',
+        '📒 가계부에 ✈️ 여행 카테고리 추가 — 세부(숙소·식비·교통·관광·쇼핑·기타)와 어느 여행인지 선택, 여행 페이지에 비용 합계',
+        '☀️ 여행이 다가오면 오늘 화면·아침 알림에 D-Day·체크인 안내'
+      ] },
+      { version: 'v9.23', date: '2026.11.23', badge: '사전', isLatest: false, items: [
         '📖 사전 추가 — 🇺🇸 영어(발음·예문·한국어 뜻) · 🇰🇷 국어 · 🇯🇵 일본어 · 漢 한자 · 📚 백과',
         '⭐ 내 단어장, 최근 검색, 글자 보고 사전 자동 선택 (한글 → 국어, 가나 → 일본어)'
       ] },
@@ -882,8 +892,8 @@
 
     function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.remove('opacity-0'); setTimeout(() => t.classList.add('opacity-0'), 3000); }
 
-    const categories = { expense: ['🍔 식비', '☕ 카페/간식', '🛍️ 쇼핑/생활', '🚌 교통/차량', '🏠 주거/통신', '🏥 의료/건강', '🎬 문화/여가', '📺 구독', '💐 경조사', '🎸 기타지출'], income: ['💰 월급', '🎁 용돈/보너스', '📈 금융/부수입', '🎸 기타수입'] };
-    const defaultCategoryBudgets = { '🍔 식비': 450000, '☕ 카페/간식': 100000, '🛍️ 쇼핑/생활': 300000, '🚌 교통/차량': 150000, '🏠 주거/통신': 600000, '🏥 의료/건강': 100000, '🎬 문화/여가': 150000, '📺 구독': 50000, '💐 경조사': 100000, '🎸 기타지출': 150000 };
+    const categories = { expense: ['🍔 식비', '☕ 카페/간식', '🛍️ 쇼핑/생활', '🚌 교통/차량', '🏠 주거/통신', '🏥 의료/건강', '🎬 문화/여가', '📺 구독', '💐 경조사', '✈️ 여행', '🎸 기타지출'], income: ['💰 월급', '🎁 용돈/보너스', '📈 금융/부수입', '🎸 기타수입'] };
+    const defaultCategoryBudgets = { '🍔 식비': 450000, '☕ 카페/간식': 100000, '🛍️ 쇼핑/생활': 300000, '🚌 교통/차량': 150000, '🏠 주거/통신': 600000, '🏥 의료/건강': 100000, '🎬 문화/여가': 150000, '📺 구독': 50000, '💐 경조사': 100000, '✈️ 여행': 0, '🎸 기타지출': 150000 };
     let categoryBudgets = JSON.parse(localStorage.getItem('argon_cat_budgets_v3')) || defaultCategoryBudgets;
     let currentType = 'expense', editingTxId = null, parsedSMSResults = [], chartInstance = null, isHistoryOpen = false, registerSeq = 0;
 
@@ -954,15 +964,16 @@
     }
 
     function createTransactionsWithInstallment(item) {
+      if (item.category === '✈️ 여행' && item.type === 'expense' && !item.sub) item.sub = guessTripSub(item.merchant) || '기타';
       const months = Number(item.installmentMonths) || 1, totalAmount = Number(item.amount), list = [];
       if (item.type === 'income' || months <= 1) {
         const s = nextCreatedOrder();
-        list.push({ id: s, createdAt: s, date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : (item.method || '신용카드'), cardCompany: item.cardCompany || '-', merchant: item.merchant, memo: item.memo || '', amount: totalAmount, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: totalAmount, groupId: null });
+        list.push({ id: s, createdAt: s, date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : (item.method || '신용카드'), cardCompany: item.cardCompany || '-', merchant: item.merchant, memo: item.memo || '', amount: totalAmount, installmentMonths: 1, installmentCurrent: 1, installmentTotalAmount: totalAmount, groupId: null, ...(item.sub ? { sub: item.sub, trip: item.trip || null } : {}) });
       } else {
         const gid = 'inst_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), base = Math.floor(totalAmount / months), rem = totalAmount - (base * months);
         for (let i = 0; i < months; i++) {
           const s = nextCreatedOrder(), cleanM = (item.memo || '').replace(/\s*\(할부\s*\d+\/\d+회차\)/g, '').trim();
-          list.push({ id: s, createdAt: s, date: addMonthsToDate(item.date, i), type: 'expense', category: item.category, method: item.method || '신용카드', cardCompany: item.cardCompany || '신한카드', merchant: item.merchant, memo: `${cleanM ? cleanM + ' ' : ''}(할부 ${i + 1}/${months}회차)`, amount: i === 0 ? base + rem : base, installmentMonths: months, installmentCurrent: i + 1, installmentTotalAmount: totalAmount, groupId: gid });
+          list.push({ id: s, createdAt: s, date: addMonthsToDate(item.date, i), type: 'expense', category: item.category, method: item.method || '신용카드', cardCompany: item.cardCompany || '신한카드', merchant: item.merchant, memo: `${cleanM ? cleanM + ' ' : ''}(할부 ${i + 1}/${months}회차)`, amount: i === 0 ? base + rem : base, installmentMonths: months, installmentCurrent: i + 1, installmentTotalAmount: totalAmount, groupId: gid, ...(item.sub ? { sub: item.sub, trip: item.trip || null } : {}) });
         }
       }
       return list;
@@ -972,6 +983,7 @@
       if (type === 'income') return /급여|월급/.test(m) ? '💰 월급' : '🎁 용돈/보너스';
       const rules = [
         { c: '📺 구독', k: ['넷플릭스', 'NETFLIX', '유튜브', 'YOUTUBE', '티빙', '웨이브', '왓챠', '디즈니', '쿠팡플레이', '멜론', '지니뮤직', '스포티파이', 'SPOTIFY', '밀리의서재', '리디', '정기결제', '구독'] },
+        { c: '✈️ 여행', k: ['호텔', '모텔', '펜션', '리조트', '에어비앤비', 'AIRBNB', '야놀자', '여기어때', '아고다', 'AGODA', '부킹닷컴', '호스텔', '게스트하우스', '풀빌라', '글램핑', '면세점', '렌터카', '대한항공', '아시아나', '제주항공', '진에어', '티웨이'] },
         { c: '💐 경조사', k: ['축의금', '조의금', '부의금', '경조사', '화환', '근조'] },
         { c: '☕ 카페/간식', k: ['스타벅스', '투썸', '메가', '빽다방', '컴포즈', '텐퍼센트', '이디야', '커피', '카페', '베이커리', '아이스크림', '디저트'] },
         { c: '🍔 식비', k: ['식당', '배민', '요기요', '쿠팡이츠', '맥도날드', '버거킹', '김밥', '국밥', '마라탕', '치킨', '피자'] },
@@ -1380,12 +1392,25 @@
     function fillFormFromSMS() { if (!parsedSMSResults.length) return; exitEditMode(); const f = parsedSMSResults[0]; setType(f.type); document.getElementById('txDate').value = f.date; document.getElementById('txCategory').value = f.category; document.getElementById('txMethod').value = f.method; document.getElementById('txCardCompany').value = f.cardCompany; document.getElementById('txInstallment').value = String(f.installmentMonths); document.getElementById('txMerchant').value = f.merchant; document.getElementById('txMemo').value = f.memo; document.getElementById('txAmount').value = f.amount; toggleCardOptions(); updateInstallmentNotice(); }
     function registerAllSMS() { if (!parsedSMSResults.length) return; parsedSMSResults.forEach(i => transactions.push(...createTransactionsWithInstallment(i))); addChangeLog('등록', '문자 자동등록', `${parsedSMSResults.length}건 자동 등록`); document.getElementById('monthFilter').value = parsedSMSResults[0].date.slice(0, 7); document.getElementById('smsInput').value = ''; document.getElementById('smsPreviewArea').classList.add('hidden'); parsedSMSResults = []; saveAndRender(); showToast('⚡ 결제문자 자동 등록 완료!'); }
 
+    // ✈️ 여행: 세부(숙소·식비…)와 어느 여행인지 (여행 목록은 trip.html의 argon_trip_v1)
+    const TRIP_SUB_KW = { 숙소: ['호텔', '모텔', '펜션', '리조트', '에어비앤비', 'AIRBNB', '야놀자', '여기어때', '아고다', 'AGODA', '부킹닷컴', 'BOOKING', '호스텔', '게스트하우스', '풀빌라', '글램핑', '캠핑장', '숙소'], 교통: ['항공', '대한항공', '아시아나', '제주항공', '진에어', '티웨이', '에어', '렌터카', '렌트', 'KTX', 'SRT', '코레일', '택시', '공항', '주유', '톨게이트', '하이패스'], 관광: ['입장', '티켓', '투어', '박물관', '테마파크', '랜드', '월드', '아쿠아리움', '케이블카'], 쇼핑: ['면세', '기념품', '아울렛'] };
+    function guessTripSub(m) { const u = String(m || '').toUpperCase(); for (const [k, ws] of Object.entries(TRIP_SUB_KW)) if (ws.some(w => u.includes(w.toUpperCase()))) return k; return /식당|카페|커피|맛집|횟집|고기|국밥/.test(m) ? '식비' : ''; }
+    function tripList() { try { return (JSON.parse(localStorage.getItem('argon_trip_v1') || '{}').trips || []).slice().sort((a, b) => (b.start || '').localeCompare(a.start || '')); } catch (e) { return []; } }
+    function toggleTripRow(sub, trip) {
+      const on = document.getElementById('txCategory').value === '✈️ 여행';
+      document.getElementById('tripRow').classList.toggle('hidden', !on); if (!on) return;
+      const ts = tripList(), d = document.getElementById('txDate').value, near = ts.find(t => t.start && t.end && d >= t.start && d <= t.end) || ts.filter(t => t.start && t.start >= d).sort((a, b) => a.start.localeCompare(b.start))[0] || null;   // 여행 중이면 그 여행, 아니면 다가오는 여행(미리 예약)
+      document.getElementById('txTrip').innerHTML = `<option value="">(여행 선택 안 함)</option>` + ts.map(t => `<option value="${t.id}">${t.emoji || '✈️'} ${String(t.name).replace(/</g, '&lt;')}</option>`).join('');
+      document.getElementById('txTrip').value = trip != null ? String(trip || '') : (near ? String(near.id) : '');
+      const g = sub || guessTripSub(document.getElementById('txMerchant').value); if (g) document.getElementById('txSub').value = g;
+    }
+    document.addEventListener('DOMContentLoaded', () => { const m = document.getElementById('txMerchant'); if (m) m.addEventListener('change', () => { if (document.getElementById('txCategory').value === '✈️ 여행') { const g = guessTripSub(m.value); if (g) document.getElementById('txSub').value = g; } }); });
     function setType(type) {
       currentType = type; const exp = type === 'expense';
       document.getElementById('btnExpense').className = exp ? 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-rose-600 shadow-sm' : 'py-2 text-sm font-bold rounded-md text-slate-500';
       document.getElementById('btnIncome').className = !exp ? 'py-2 text-sm font-bold rounded-md bg-white dark:bg-slate-800 text-emerald-600 shadow-sm' : 'py-2 text-sm font-bold rounded-md text-slate-500';
       document.getElementById('paymentOptionRow').classList.toggle('hidden', !exp);
-      document.getElementById('txCategory').innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
+      document.getElementById('txCategory').innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join(''); document.getElementById('tripRow').classList.add('hidden');
       updateInstallmentNotice();
     }
     function toggleCardOptions() { const isC = document.getElementById('txMethod').value === '신용카드', b = document.getElementById('installmentBox'); if (!isC) document.getElementById('txInstallment').value = '1'; b.classList.toggle('opacity-40', !isC); b.classList.toggle('pointer-events-none', !isC); updateInstallmentNotice(); }
@@ -1396,7 +1421,7 @@
       const grp = t.groupId ? transactions.filter(x => x.groupId === t.groupId).sort((a, b) => (a.installmentCurrent || 0) - (b.installmentCurrent || 0)) : [t], g0 = grp[0];
       document.getElementById('txDate').value = g0.date; document.getElementById('txCategory').value = t.category; document.getElementById('txMethod').value = t.method || '신용카드'; document.getElementById('txCardCompany').value = t.cardCompany || '신한카드';
       document.getElementById('txInstallment').value = String(t.installmentMonths || 1); document.getElementById('txMerchant').value = t.merchant || ''; document.getElementById('txMemo').value = (t.memo || '').replace(/\s*\(할부\s*\d+\/\d+회차\)/g, '').trim(); document.getElementById('txAmount').value = t.groupId ? (t.installmentTotalAmount || t.amount) : t.amount;
-      toggleCardOptions(); updateInstallmentNotice();
+      toggleCardOptions(); updateInstallmentNotice(); toggleTripRow(t.sub, t.trip);
       document.getElementById('formCard').classList.add('border-indigo-500', 'ring-4', 'ring-indigo-50'); document.getElementById('formTitle').innerHTML = t.groupId ? `<span class="text-indigo-600">✏️ 할부 전체 수정 (${grp.length}회차 · 날짜는 첫 결제일)</span>` : `<span class="text-indigo-600">✏️ 내역 수정 모드</span>`; document.getElementById('cancelEditBtn').classList.remove('hidden'); document.getElementById('submitBtn').textContent = '수정 완료';
       render(); document.getElementById('formCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -1407,7 +1432,9 @@
 
     document.getElementById('txForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      const isTrip = document.getElementById('txCategory').value === '✈️ 여행';
       const item = { date: document.getElementById('txDate').value, type: currentType, category: document.getElementById('txCategory').value, method: document.getElementById('txMethod').value, cardCompany: document.getElementById('txCardCompany').value, installmentMonths: Number(document.getElementById('txInstallment').value), merchant: document.getElementById('txMerchant').value.trim(), memo: document.getElementById('txMemo').value.trim(), amount: Number(document.getElementById('txAmount').value) };
+      if (isTrip && currentType === 'expense') { item.sub = document.getElementById('txSub').value; item.trip = Number(document.getElementById('txTrip').value) || null; }
       if (editingTxId !== null) {
         const target = transactions.find(t => t.id === editingTxId);
         if (target && (target.groupId || (item.type === 'expense' && item.installmentMonths > 1))) {
@@ -1419,7 +1446,7 @@
           addChangeLog('수정', '할부 수정', `${bStr} ➔ ${aStr}`, { undoData: { type: 'edit_group', beforeList: before, afterIds: created.map(t => t.id) } });
         } else if (target) {
           const snap = { ...target }, bStr = `${target.merchant}(${target.amount.toLocaleString()}원)`, aStr = `${item.merchant}(${item.amount.toLocaleString()}원)`;
-          Object.assign(target, { date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : item.method, cardCompany: item.cardCompany, merchant: item.merchant, memo: item.memo, amount: item.amount });
+          Object.assign(target, { date: item.date, type: item.type, category: item.category, method: item.type === 'income' ? '계좌이체' : item.method, cardCompany: item.cardCompany, merchant: item.merchant, memo: item.memo, amount: item.amount }); if (item.sub) { target.sub = item.sub; target.trip = item.trip || null; } else { delete target.sub; delete target.trip; }
           addChangeLog('수정', '내역 수정', `${bStr} ➔ ${aStr}`, { targetTxId: target.id, beforeStr: bStr, afterStr: aStr, undoData: { type: 'edit_single', beforeTx: snap } });
         }
         exitEditMode(); saveAndRender(); showToast('✏️ 수정되었습니다!'); return;
@@ -1653,7 +1680,7 @@
                 </td>
               </tr>`;
           }
-          const isEd = editingTxId === t.id, cleanCat = (t.category || '').replace(/^[^\w가-힣]+\s*/, '');
+          const isEd = editingTxId === t.id, cleanCat = (t.category || '').replace(/^[^\w가-힣]+\s*/, '') + (t.sub ? ` · ${t.sub}` : '');
           const instTxt = t.installmentMonths > 1 ? ` · 할부 ${t.installmentCurrent}/${t.installmentMonths}` : '';
           html += `
             <tr onclick="enterEditMode(${t.id})" class="${isEd ? 'bg-indigo-50/90 dark:bg-indigo-950/80' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'} cursor-pointer transition">

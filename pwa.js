@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.23';
+  const VERSION = '9.24';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -90,6 +90,7 @@
         todos: ((t && t.todos) || []).filter(x => !x.done).map(x => ({ n: x.text, due: x.due || '' })).slice(0, 50),
         shop: ((t && t.shop) || []).filter(x => !x.done).length,
         kids: ((kd && kd.kids) || []).map(x => ({ n: x.name, b: x.birth })),
+        trip: (() => { const tr = L('argon_trip_v1'); return tr ? { trips: (tr.trips || []).map(x => ({ n: x.name, e: x.emoji, s: x.start, en: x.end, id: x.id })), stays: (tr.stays || []).map(x => ({ t: x.trip, n: x.name, in: x.in, inT: x.inT, out: x.out, outT: x.outT })) } : null; })(),
         place: L('argon_today_place_v1') || { name: '하남시', lat: 37.5393, lng: 127.2149 }
       };
       const rq = indexedDB.open('dd_notify', 1);
@@ -105,7 +106,7 @@
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
     ['life', '🚇', '생활', ['subway.html', 'lunch.html', 'gift.html', 'parking.html', 'car.html']],
-    ['trip', '📚', '공부·여행', ['dict.html', 'english.html', 'fx.html']]
+    ['trip', '✈️', '여행·공부', ['trip.html', 'fx.html', 'english.html', 'dict.html']]
   ];
   function groupNav() {
     const nav = document.getElementById('sideNav');
