@@ -15,3 +15,4 @@
 - 버전: index.html `APP_VERSION`·제목·릴리즈 노트, `pwa.js` `VERSION`, `sw.js` 캐시 이름을 같이 올린다.
 - 비밀값(Upstash, 서울 지하철·열린데이터, STDICT_KEY, MFDS_KEY 등)은 Vercel 환경변수에만. 코드·응답에 노출 금지.
 - Vercel Hobby는 하루 배포 100회(미리보기 포함) — 작은 수정은 모아서 push.
+- 인라인 `onclick="x='..'"`로 전역 변수를 바꿀 때, 요소 속성과 이름이 겹치면(`dir`·`title`·`lang`·`hidden`·`id` 등) 요소 쪽이 바뀐다. 함수로 감싸서 바꾸기.
