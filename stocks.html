@@ -237,7 +237,8 @@
 
           <!-- 시장 흐름 -->
           <section id="pulseSection" class="card p-4">
-            <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 시장 흐름</h2><span id="pulseAt" class="text-[10px] font-bold text-slate-400"></span></div>
+            <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 시장 흐름</h2><div id="pulseMk" class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장 흐름"></div></div>
+            <p id="pulseAt" class="text-[10px] font-bold text-slate-400 -mt-1 mb-2"></p>
             <div id="pulseBox"><div class="skel" style="height:120px"></div></div>
           </section>
       </div>
@@ -1140,6 +1141,7 @@
       renderPulse(); renderTips();
     }
     function renderPulse() {
+      if (pulseMk === 'us') return renderUs();
       const box = document.getElementById('pulseBox'), K = series['IDX:KOSPI'], Q = series['IDX:KOSDAQ'], S = series['WLD:.INX'], N = series['WLD:.IXIC'], F = series['FX:USD'], p = pulseData || {};
       const kq = quotes['idx:KOSPI'], today = kq ? kq.rate : null;
       if (!K && !p.industry) { box.innerHTML = '<p class="text-xs text-slate-400">시장 데이터를 불러오지 못했어요. 🔄 다시 시도해 보세요.</p>'; return; }
@@ -1169,8 +1171,52 @@
         ${tot ? bar(br.up, br.down, br.flat, '오른 종목 · 보합 · 내린 종목') : ''}
         ${ind.length ? `<p class="text-[11px] font-extrabold text-slate-600 mt-3">🏭 오늘 업종</p><div class="grid grid-cols-2 gap-2 mt-1"><div>${ind.slice(0, 5).map(g => `<div class="flex justify-between text-xs py-0.5"><span class="font-bold text-slate-700 truncate">${esc(g.name)}</span><span class="font-extrabold num up">${rateText(g.rate)}</span></div>`).join('')}</div><div>${ind.slice(-5).reverse().map(g => `<div class="flex justify-between text-xs py-0.5"><span class="font-bold text-slate-700 truncate">${esc(g.name)}</span><span class="font-extrabold num ${g.rate < 0 ? 'down' : 'flat'}">${rateText(g.rate)}</span></div>`).join('')}</div></div>` : ''}
         <p class="text-[10px] text-slate-400 mt-3">숫자로 정리한 자동 요약이에요. 앞으로의 방향을 예측하거나 매수·매도를 권하는 게 아니에요.</p>`;
-      document.getElementById('pulseAt').textContent = p.status === 'OPEN' ? '장중 · 1분마다' : p.status ? '장 마감 기준' : '';
+      document.getElementById('pulseAt').textContent = p.status === 'OPEN' ? '국내 장중 · 1분마다 새로고침' : p.status ? '국내 장 마감 기준' : '';
     }
+
+    // ---------- 🇺🇸 미국 시장 흐름 ----------
+    let pulseMk = load('argon_pulse_mk', 'kr'), usData = null, usAt = 0, usLoading = false;
+    function setPulseMk(m) { pulseMk = m; save('argon_pulse_mk', m); renderPulseMk(); if (m === 'us') loadUs(); else renderPulse(); }
+    function renderPulseMk() { document.getElementById('pulseMk').innerHTML = [['kr', '🇰🇷 국내'], ['us', '🇺🇸 미국']].map(([k, l]) => `<button type="button" onclick="setPulseMk('${k}')" aria-pressed="${pulseMk === k}" class="px-3 py-1.5 rounded-lg">${l}</button>`).join(''); }
+    async function loadUs(force) {
+      if (!usData || force || Date.now() - usAt > 5 * 6e4) {
+        usAt = Date.now(); document.getElementById('pulseBox').innerHTML = usData ? document.getElementById('pulseBox').innerHTML : '<div class="skel" style="height:160px"></div>';
+        usLoading = true; try { const r = await fetch(`${API}?op=uspulse`); usData = r.ok ? await r.json() : null; } catch (e) { usData = null; } usLoading = false;
+      }
+      if (pulseMk === 'us') renderUs();
+    }
+    function renderUs() {
+      const box = document.getElementById('pulseBox'), by = {}; ((usData || {}).items || []).forEach(x => { by[x.sym] = x; });
+      const st = k => by[k] && by[k].v.length >= 25 ? stats(by[k].v.map((v, i) => [i, v])) : null, day = k => { const v = (by[k] || {}).v || []; return v.length > 1 ? (v[v.length - 1] / v[v.length - 2] - 1) * 100 : null; };
+      const S = st('^GSPC'), N = st('^IXIC'), Dj = st('^DJI'), X = st('^SOX'), Rt = st('^RUT'), V = by['^VIX'], T = by['^TNX'];
+      if (!S && usLoading) { box.innerHTML = '<div class="skel" style="height:160px"></div>'; return; }
+      if (!S) { box.innerHTML = '<p class="text-xs text-slate-400">미국 시장 데이터를 불러오지 못했어요. 잠시 뒤 다시 열어 보세요.</p>'; document.getElementById('pulseAt').textContent = ''; return; }
+      const wx = S.m1 >= 4 ? ['☀️', '맑음'] : S.m1 >= 1 ? ['🌤️', '대체로 맑음'] : S.m1 > -1 ? ['⛅', '구름 조금'] : S.m1 > -4 ? ['🌥️', '흐림'] : ['🌧️', '비'], d0 = day('^GSPC'), lines = [];
+      const [w, c] = mood(S.m1);
+      lines.push([c, `S&P 500은 최근 한 달 <b class="${c}">${sgn(S.m1)}</b>로 <b>${w}</b>예요. 3달로 보면 ${sgn(S.m3)}, 20일 평균선 ${S.aboveMa ? '<b class="up">위</b>' : '<b class="down">아래</b>'}.`]);
+      if (S.dd > -1.5) lines.push(['up', `3달 사이 가장 높은 곳 근처예요 (고점 대비 ${sgn(S.dd)}).`]); else if (S.dd < -8) lines.push(['down', `3달 고점보다 <b>${sgn(S.dd)}</b> 내려와 있어요. 조정 구간이에요.`]);
+      if (Math.abs(S.streak) >= 3) lines.push([S.streak > 0 ? 'up' : 'down', `${Math.abs(S.streak)}거래일 연속 ${S.streak > 0 ? '올랐어요' : '내렸어요'}.`]);
+      if (N) lines.push([N.m1 >= S.m1 ? 'up' : 'down', `나스닥 ${sgn(N.m1)}${Dj ? `, 다우 ${sgn(Dj.m1)}` : ''} — ${Math.abs(N.m1 - S.m1) < 1.5 ? '기술주와 전체 시장이 비슷하게 움직여요' : N.m1 > S.m1 ? '기술주가 시장보다 강해요' : '기술주가 시장보다 약해요'}.`]);
+      if (X) lines.push([X.m1 >= 0 ? 'up' : 'down', `반도체(SOX)는 한 달 <b class="${X.m1 >= 0 ? 'up' : 'down'}">${sgn(X.m1)}</b>${Math.abs(X.m1 - S.m1) >= 5 ? (X.m1 > S.m1 ? ' — 반도체가 시장을 끌고 있어요' : ' — 반도체가 시장보다 많이 약해요') : ''}. 한국 반도체주에도 영향이 큰 지수예요.`]);
+      if (Rt && Math.abs(Rt.m1 - S.m1) >= 3) lines.push(['flat', `중소형주(러셀 2000)는 ${sgn(Rt.m1)}로 대형주보다 ${Rt.m1 > S.m1 ? '강해요' : '약해요'}.`]);
+      if (V && V.v.length) { const vl = V.v[V.v.length - 1], v1 = V.v[Math.max(0, V.v.length - 22)], lv = vl < 15 ? ['매우 차분', 'up'] : vl < 20 ? ['평소 수준', 'flat'] : vl < 30 ? ['불안한 편', 'down'] : ['공포 구간', 'down'];
+        lines.push([lv[1], `공포지수(VIX) <b>${vl.toFixed(1)}</b> — <b>${lv[0]}</b>이에요${Math.abs(vl - v1) >= 3 ? ` (한 달 전 ${v1.toFixed(1)}에서 ${vl > v1 ? '올랐어요' : '내려왔어요'})` : ''}. 20을 넘으면 시장이 불안하다는 신호로 많이 봐요.`]); }
+      if (T && T.v.length) { const tl = T.v[T.v.length - 1], t1 = T.v[Math.max(0, T.v.length - 22)], bp = Math.round((tl - t1) * 100);
+        lines.push([bp > 0 ? 'down' : 'up', `미국 10년물 금리 <b>${tl.toFixed(2)}%</b>, 한 달 ${bp > 0 ? '+' : ''}${bp}bp. ${bp >= 20 ? '금리가 빠르게 오르면 성장주·기술주에 부담이 되는 경우가 많아요.' : bp <= -20 ? '금리가 내려오면 성장주·기술주엔 숨통이 트이는 경우가 많아요.' : '금리는 크게 움직이지 않았어요.'}`]); }
+      // 섹터: 최근 거래일 · 한 달
+      const sec = US_SECT.map(([k, n]) => { const s1 = st(k); return s1 ? { n, d: day(k), m: s1.m1 } : null; }).filter(Boolean), byD = sec.slice().sort((a, b) => b.d - a.d), byM = sec.slice().sort((a, b) => b.m - a.m);
+      if (byM.length) lines.push([byM[0].m >= 0 ? 'up' : 'down', `한 달 동안 가장 강한 업종은 <b>${byM[0].n}</b>(${sgn(byM[0].m)}), 가장 약한 업종은 <b>${byM[byM.length - 1].n}</b>(${sgn(byM[byM.length - 1].m)})예요.`]);
+      const lastT = by['^GSPC'].t, ld = lastT ? new Date(lastT) : null;
+      const tile = k => { const s1 = st(k), d = day(k), nm = (by[k] || {}).name; return s1 ? `<div class="rounded-lg bg-slate-50 py-1.5 px-2"><p class="text-[10px] font-bold text-slate-500 truncate">${nm}</p><p class="text-xs font-extrabold num ${d > 0 ? 'up' : d < 0 ? 'down' : 'flat'}">${rateText(d)}</p><p class="text-[10px] font-bold num text-slate-400">한 달 ${sgn(s1.m1)}</p></div>` : ''; };
+      const secRow = (x, cls) => `<div class="flex justify-between text-xs py-0.5"><span class="font-bold text-slate-700 truncate">${x.n}</span><span class="font-extrabold num ${cls(x)}">${rateText(x.d)}</span></div>`;
+      box.innerHTML = `<div class="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5"><span class="text-3xl">${wx[0]}</span><span class="flex-1"><span class="block text-[11px] font-bold text-slate-500">한 달 흐름으로 본 미국 시장 날씨</span><span class="block text-base font-extrabold text-slate-900">${wx[1]}${d0 != null ? ` <span class="text-xs font-bold ${d0 > 0 ? 'up' : d0 < 0 ? 'down' : 'flat'}">· 최근 거래일 ${rateText(d0)}</span>` : ''}</span></span></div>
+        <ul class="mt-2 space-y-1.5">${lines.map(([c, t]) => `<li class="flex gap-1.5 text-[13px] leading-snug text-slate-700"><span class="${c} shrink-0">•</span><span>${t}</span></li>`).join('')}</ul>
+        <p class="text-[11px] font-extrabold text-slate-600 mt-3">📊 지수 (최근 거래일)</p><div class="grid grid-cols-3 gap-1.5 mt-1">${['^GSPC', '^IXIC', '^DJI', '^SOX', '^RUT', '^VIX'].map(tile).join('')}</div>
+        ${byD.length ? `<p class="text-[11px] font-extrabold text-slate-600 mt-3">🏭 업종 (섹터 ETF, 최근 거래일)</p><div class="grid grid-cols-2 gap-2 mt-1"><div>${byD.slice(0, 5).map(x => secRow(x, x => x.d > 0 ? 'up' : 'flat')).join('')}</div><div>${byD.slice(-5).reverse().map(x => secRow(x, x => x.d < 0 ? 'down' : 'flat')).join('')}</div></div>` : ''}
+        <p class="text-[10px] text-slate-400 mt-3">미국 장은 한국 시간 밤 11시 반~새벽 6시예요 (서머타임엔 1시간 빨라요). 낮에는 어젯밤 마감 기준이에요. 숫자로 정리한 자동 요약이고, 예측이나 매수·매도 권유가 아니에요.</p>`;
+      document.getElementById('pulseAt').textContent = ld ? `${ld.getMonth() + 1}/${ld.getDate()} 미국 거래일 기준 · 야후 파이낸스` : '';
+    }
+    const US_SECT = [['XLK', '기술'], ['XLC', '통신·미디어'], ['XLY', '임의소비재'], ['XLF', '금융'], ['XLV', '헬스케어'], ['XLI', '산업재'], ['XLE', '에너지'], ['XLP', '필수소비재'], ['XLB', '소재'], ['XLU', '유틸리티'], ['XLRE', '부동산']];
 
     // ===================== 🏆 실시간 랭킹 =====================
     const RANKS = [['searchTop', '🔥 인기 검색'], ['up', '📈 상승'], ['down', '📉 하락'], ['priceTop', '💰 거래대금'], ['quantTop', '📊 거래량'], ['marketValue', '🏢 시가총액']];
@@ -1238,8 +1284,8 @@
     watch.forEach(w => { if (w.trades) recalc(w); });
     renderAll();
     refreshAll(true);
-    renderTips(); loadPulse(true); loadRank(true);
-    setInterval(() => { if (document.visibilityState === 'visible') { loadPulse(); loadRank(); } }, 60000);
+    renderPulseMk(); renderTips(); loadPulse(true); loadRank(true); if (pulseMk === 'us') loadUs();
+    setInterval(() => { if (document.visibilityState === 'visible') { loadPulse(); loadRank(); if (pulseMk === 'us') loadUs(); } }, 60000);
   </script>
 </body>
 </html>
