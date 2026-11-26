@@ -94,6 +94,8 @@
     <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
     <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
     <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./supplies.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔧 <span>교체 주기</span></a>
+    <a href="./warranty.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>보증서</span></a>
     <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
     <a href="./leave.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏖️ <span>연차</span></a>
     <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
@@ -105,6 +107,7 @@
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
     <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
     <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
@@ -120,6 +123,8 @@
     <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
+    <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
     <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
@@ -161,6 +166,10 @@
     <section id="fever" class="hidden card p-4"></section>
     <section id="sticker" class="hidden card p-4"></section>
     <section id="kidsay" class="hidden card p-4"></section>
+    <section id="daycare" class="hidden card p-4"></section>
+    <section id="subs" class="hidden card p-4"></section>
+    <section id="supplies" class="hidden card p-4"></section>
+    <section id="warranty" class="hidden card p-4"></section>
     <section id="leave" class="hidden card p-4"></section>
     <section id="trash" class="hidden card p-4"></section>
     <section id="weekly" class="hidden card p-4"></section>
@@ -551,6 +560,45 @@
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
 
+    // ---------- 🎒 어린이집: 오전엔 오늘, 15시 이후엔 내일 챙길 것 (다 챙기면 숨김) ----------
+    function renderDaycare() {
+      const box = document.getElementById('daycare'), st = load('argon_daycare_v1', null), h = new Date().getHours();
+      if (!st || (!(st.items || []).length && !(st.weekly || []).length) || (h >= 12 && h < 15)) { box.classList.add('hidden'); return; }
+      const d = new Date(); if (h >= 15) d.setDate(d.getDate() + 1); const k = ymd(d), wd = d.getDay();
+      const xs = [...(st.items || []).filter(i => i.date === k).map(i => ({ id: i.id, x: i.text, done: i.done, src: 'i' })), ...(st.weekly || []).filter(w => (w.days || []).includes(wd)).map(w => ({ id: w.id, x: w.text, done: ((st.wdone || {})[k] || []).includes(w.id), src: 'w' }))];
+      if (!xs.length || xs.every(x => x.done)) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head(`🎒 ${h >= 15 ? '내일' : '오늘'} 어린이집`, './daycare.html', '알림장') + xs.map(x => `<div role="button" tabindex="0" onclick="dcTog('${x.src}', ${x.id}, '${k}')" class="cursor-pointer flex items-center gap-2 py-1"><span class="w-5 h-5 rounded-md border-2 flex items-center justify-center text-[11px] font-extrabold ${x.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">${x.done ? '✓' : ''}</span><span class="text-sm font-bold ${x.done ? 'text-slate-400 line-through' : 'text-slate-800'}">${esc(x.x)}</span></div>`).join('');
+    }
+    function dcTog(src, id, k) { const st = load('argon_daycare_v1', null); if (!st) return; if (src === 'i') { const i = (st.items || []).find(x => x.id === id); if (i) i.done = !i.done; } else { st.wdone = st.wdone || {}; const a = st.wdone[k] || []; st.wdone[k] = a.includes(id) ? a.filter(x => x !== id) : [...a, id]; } save('argon_daycare_v1', st); renderDaycare(); }
+    // ---------- 🧾 구독: 오늘·내일 결제, 무료체험 오늘·내일 끝 ----------
+    function subNext(i) { if (!i.next) return null; const t = new Date(new Date().toDateString()); let d = new Date(+i.next.slice(0, 4), +i.next.slice(5, 7) - 1, +i.next.slice(8)), n = 0; while (d < t && n++ < 60) { if (i.cyc === 'y') d.setFullYear(d.getFullYear() + 1); else { d = new Date(d.getFullYear(), d.getMonth() + 1, 1); d.setDate(Math.min(i.day || 1, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); } } return ymd(d); }
+    function renderSubs() {
+      const box = document.getElementById('subs'), items = ((load('argon_subs_v1', {}) || {}).items || []).filter(i => !i.off), t0 = new Date(new Date().toDateString());
+      const dd = s => Math.round((new Date(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8)) - t0) / 864e5);
+      const rows = [...items.filter(i => i.amt > 0).map(i => [i, subNext(i)]).filter(([, n]) => n && dd(n) <= 1).map(([i, n]) => `<a href="./subs.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-800">${esc(i.emoji || '🧾')} ${dd(n) ? '내일' : '오늘'} ${esc(i.name)} 결제</span><span class="text-sm font-extrabold num text-slate-900">${Number(i.amt || 0).toLocaleString()}원</span></a>`),
+        ...items.filter(i => i.trial && dd(i.trial) >= 0 && dd(i.trial) <= 1).map(i => `<a href="./subs.html" class="block py-1 text-sm font-extrabold text-amber-600">⏳ ${esc(i.name)} 무료체험 ${dd(i.trial) ? '내일' : '오늘'} 끝 — 안 쓰면 해지!</a>`)];
+      if (!rows.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden'); box.innerHTML = head('🧾 구독', './subs.html', '전체') + rows.join('');
+    }
+    // ---------- 🔧 교체 주기: 바꿀 때 됐거나 지난 것 ----------
+    function renderSupplies() {
+      const box = document.getElementById('supplies'), st = load('argon_supplies_v1', null), t0 = new Date(new Date().toDateString());
+      const late = ((st || {}).items || []).map(i => { const d = new Date(+i.last.slice(0, 4), +i.last.slice(5, 7) - 1, +i.last.slice(8) + i.cycle); return [i, Math.round((d - t0) / 864e5)]; }).filter(([, k]) => k <= 0).sort((a, b) => a[1] - b[1]);
+      if (!late.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🔧 바꿀 때 됐어요', './supplies.html', '전체') + late.slice(0, 4).map(([i, k]) => `<div class="flex items-center gap-2 py-1"><span class="text-xl">${esc(i.emoji)}</span><span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-800 truncate">${esc(i.name)}</span><span class="block text-[11px] font-bold ${k < 0 ? 'text-rose-500' : 'text-amber-600'}">${k < 0 ? `${-k}일 지났어요` : '오늘이에요'}</span></span><span role="button" tabindex="0" onclick="supDone(${i.id})" class="cursor-pointer shrink-0 px-2.5 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-extrabold">바꿨어요</span></div>`).join('') + (late.length > 4 ? `<p class="text-[11px] font-bold text-slate-400">외 ${late.length - 4}개</p>` : '');
+    }
+    function supDone(id) { const st = load('argon_supplies_v1', null); if (!st) return; const i = st.items.find(x => x.id === id); if (!i) return; (i.hist = i.hist || []).push(i.last); i.hist = i.hist.slice(-12); i.last = ymd(new Date()); save('argon_supplies_v1', st); renderSupplies(); }
+    // ---------- 📦 보증서: 보증 만료 14일 안 ----------
+    function renderWarranty() {
+      const box = document.getElementById('warranty'), t0 = new Date(new Date().toDateString());
+      const xs = (((load('argon_warranty_v1', {}) || {}).items) || []).filter(i => i.months).map(i => { const e = new Date(+i.date.slice(0, 4), +i.date.slice(5, 7) - 1 + +i.months, +i.date.slice(8) - 1); return [i, Math.round((e - t0) / 864e5)]; }).filter(([, k]) => k >= 0 && k <= 14).sort((a, b) => a[1] - b[1]);
+      if (!xs.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('📦 보증 곧 끝나요', './warranty.html', '보증서') + xs.map(([i, k]) => `<a href="./warranty.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-800 truncate">${esc(i.name)}</span><span class="text-sm font-extrabold ${k <= 3 ? 'text-rose-500' : 'text-amber-600'} shrink-0">${k ? `D-${k}` : '오늘까지'}</span></a>`).join('') + '<p class="text-[11px] font-bold text-slate-400 mt-1">고장 난 곳 있으면 보증 끝나기 전에 AS 받아요</p>';
+    }
+
     // ---------- 🏖️ 연차: 오늘 휴가거나 7일 안 ----------
     const leaveUses = () => (load('argon_leave_v1', {}) || {}).uses || [];
     const leaveToday = () => leaveUses().some(u => u.date === ymd(new Date()) && (u.amt >= 1 || u.amt === 0));
@@ -830,7 +878,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }

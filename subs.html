@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>구독 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./supplies.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔧 <span>교체 주기</span></a>
+    <a href="./warranty.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>보증서</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./leave.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏖️ <span>연차</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./subs.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🧾 <span>구독</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
+    <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🧾 구독</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <button type="button" onclick="openForm()" class="shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-extrabold rounded-xl">+ 추가</button>
+      </div>
+    </header>
+    <section id="sum" class="card p-4"></section>
+    <section id="found" class="card p-4 hidden"></section>
+    <section id="form" class="card p-4 hidden">
+      <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🧾 구독 추가</h2>
+      <div id="presets" class="flex flex-wrap gap-1.5"></div>
+      <div class="grid grid-cols-3 gap-2 mt-3">
+        <input id="fName" maxlength="20" placeholder="이름 (예: 넷플릭스)" class="col-span-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <input id="fAmt" inputmode="numeric" placeholder="금액" class="num border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      </div>
+      <div class="flex gap-1.5 mt-2" id="cycBtns"></div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <label class="text-[10px] font-bold text-slate-500">다음 결제일<input id="fNext" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <label class="text-[10px] font-bold text-slate-500">무료체험 끝 (선택)<input id="fTrial" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+      </div>
+      <div class="grid grid-cols-2 gap-2 mt-2">
+        <input id="fPay" maxlength="20" placeholder="결제 수단 (예: 현대카드)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <input id="fShare" maxlength="20" placeholder="같이 쓰는 사람 (선택)" class="border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      </div>
+      <input id="fNote" maxlength="60" placeholder="메모 (선택) 예: 해지는 앱 → 계정 → 멤버십" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <div class="flex gap-2 mt-2"><button type="button" onclick="closeForm()" class="px-4 py-2.5 bg-slate-100 text-slate-600 font-extrabold rounded-xl">취소</button><button type="button" onclick="saveItem()" id="saveBtn" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">저장</button></div>
+    </section>
+    <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">📅 결제 순서</h2><div id="list"></div></section>
+    <section id="paused" class="card p-4 hidden"></section>
+  </div>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const D = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+    const W = '일월화수목금토', md = s => { const d = D(s); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}(${W[d.getDay()]})`; };
+    const dday = s => Math.round((D(s) - new Date(new Date().toDateString())) / 864e5);
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const num = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+    const today = () => ymd(new Date());
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    function shrink(file, max = 1200) { return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.72)); }; img.src = URL.createObjectURL(file); }); }
+    const chip = (on, label, fn) => `<span role="button" tabindex="0" onclick="${fn}" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${label}</span>`;
+    const kids = () => (load('argon_kid_v1', {}).kids || []);
+    const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
+    const KEY = 'argon_subs_v1';
+    const PRESETS = [['🎬', '넷플릭스', 17000], ['▶️', '유튜브 프리미엄', 14900], ['📺', '티빙', 13900], ['🍿', '디즈니+', 9900], ['📼', '쿠팡플레이', 0], ['🚀', '쿠팡 와우', 7890], ['🛒', '네이버 플러스', 4900], ['🎵', '멜론', 10900], ['🎧', '스포티파이', 11990], ['☁️', 'iCloud+', 4400], ['🤖', 'Claude', 0], ['💬', 'ChatGPT', 0], ['🎮', '게임 패스', 0], ['🕹️', 'PS Plus', 0], ['📚', '밀리의 서재', 9900], ['🍔', '배민클럽', 3990]];
+    let st = Object.assign({ items: [], ignore: [] }, load(KEY, {})), editId = null, cyc = 'm';
+    const persist = () => save(KEY, st);
+    const monthly = i => i.cyc === 'y' ? i.amt / 12 : i.amt;
+    // 결제일이 지났으면 다음 주기로 굴려두기
+    function roll() { let ch = false; st.items.forEach(i => { if (!i.next || i.off) return; let d = D(i.next); const t = D(today()); let n = 0; while (d < t && n++ < 60) { if (i.cyc === 'y') d.setFullYear(d.getFullYear() + 1); else { const day = i.day || d.getDate(); d = new Date(d.getFullYear(), d.getMonth() + 1, 1); d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); } ch = true; } i.next = ymd(d); }); if (ch) persist(); }
+    function setCyc(c) { cyc = c; renderCyc(); }
+    function renderCyc() { document.getElementById('cycBtns').innerHTML = [['m', '매달'], ['y', '매년']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setCyc('${k}')" class="cursor-pointer flex-1 text-center py-1.5 rounded-xl text-xs font-extrabold ${cyc === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join(''); }
+    function openForm(id, pre) {
+      const e = id ? st.items.find(x => x.id === id) : null; editId = e ? e.id : null; const p = pre || {};
+      document.getElementById('fName').value = e ? e.name : p.name || ''; document.getElementById('fAmt').value = e ? e.amt.toLocaleString() : p.amt ? p.amt.toLocaleString() : '';
+      document.getElementById('fNext').value = e ? e.next : p.next || ''; document.getElementById('fTrial').value = e ? e.trial || '' : '';
+      document.getElementById('fPay').value = e ? e.pay || '' : p.pay || ''; document.getElementById('fShare').value = e ? e.share || '' : ''; document.getElementById('fNote').value = e ? e.note || '' : '';
+      cyc = e ? e.cyc : 'm'; renderCyc(); window._emoji = e ? e.emoji : p.emoji || '🧾';
+      document.getElementById('presets').innerHTML = e ? '' : PRESETS.map(([em, n, a], i) => chip(false, `${em} ${n}`, `preset(${i})`)).join('');
+      document.getElementById('formTitle').textContent = e ? `✏️ ${e.name} 고치기` : '🧾 구독 추가'; document.getElementById('saveBtn').textContent = e ? '고치기' : '저장';
+      document.getElementById('form').classList.remove('hidden'); document.getElementById('form').scrollIntoView({ behavior: 'smooth' });
+    }
+    function closeForm() { document.getElementById('form').classList.add('hidden'); editId = null; }
+    function preset(i) { const [em, n, a] = PRESETS[i]; window._emoji = em; document.getElementById('fName').value = n; if (a) document.getElementById('fAmt').value = a.toLocaleString(); document.getElementById('fAmt').focus(); }
+    document.getElementById('fAmt').addEventListener('blur', e => { const n = num(e.target.value); e.target.value = n ? n.toLocaleString('ko-KR') : ''; });
+    function saveItem() {
+      const name = document.getElementById('fName').value.trim(); if (!name) { document.getElementById('fName').focus(); return; }
+      const next = document.getElementById('fNext').value || today();
+      const v = { name, emoji: window._emoji || '🧾', amt: num(document.getElementById('fAmt').value), cyc, next, day: D(next).getDate(), trial: document.getElementById('fTrial').value, pay: document.getElementById('fPay').value.trim(), share: document.getElementById('fShare').value.trim(), note: document.getElementById('fNote').value.trim() };
+      if (editId) Object.assign(st.items.find(x => x.id === editId), v); else st.items.push(Object.assign({ id: Date.now(), since: today() }, v));
+      persist(); closeForm(); render();
+    }
+    function toggleOff(id) { const i = st.items.find(x => x.id === id); if (!i) return; i.off = !i.off; if (i.off) i.offAt = today(); persist(); render(); }
+    // 가계부 '📺 구독' 결제에서 아직 안 넣은 것 찾기
+    function scanLedger() {
+      const tx = (load('argon_tx_v3', []) || []).filter(t => t.type === 'expense' && /구독/.test(t.category || '')), by = {};
+      tx.forEach(t => { const k = String(t.merchant || '').replace(/\s+/g, ' ').trim(); if (!k) return; (by[k] = by[k] || []).push(t); });
+      const have = st.items.map(i => i.name.replace(/\s/g, '').toLowerCase());
+      return Object.entries(by).map(([k, ts]) => { ts.sort((a, b) => b.date.localeCompare(a.date)); const last = ts[0], d = D(last.date); d.setMonth(d.getMonth() + 1); return { name: k, amt: +last.amount, last: last.date, n: ts.length, next: ymd(d), pay: last.cardCompany || last.method || '' }; })
+        .filter(x => !st.ignore.includes(x.name) && !have.some(h => h && (x.name.replace(/\s/g, '').toLowerCase().includes(h) || h.includes(x.name.replace(/\s/g, '').toLowerCase()))))
+        .sort((a, b) => b.last.localeCompare(a.last)).slice(0, 8);
+    }
+    function ignore(i) { st.ignore.push(window._found[i].name); persist(); render(); }
+    function render() {
+      roll();
+      const on = st.items.filter(i => !i.off), off = st.items.filter(i => i.off), m = on.reduce((a, i) => a + monthly(i), 0);
+      const next7 = on.filter(i => dday(i.next) <= 7).reduce((a, i) => a + i.amt, 0), trials = on.filter(i => i.trial && dday(i.trial) >= 0);
+      document.getElementById('sub').textContent = on.length ? `${on.length}개 · 한 달 ${won(m)}` : '정기 결제 모아보기';
+      document.getElementById('sum').innerHTML = `<div class="grid grid-cols-3 gap-2 text-center"><div class="rounded-xl bg-indigo-50 py-2"><p class="text-[10px] font-bold text-slate-500">한 달</p><p class="text-lg font-extrabold num text-indigo-700">${won(m)}</p></div><div class="rounded-xl bg-slate-50 py-2"><p class="text-[10px] font-bold text-slate-500">1년이면</p><p class="text-lg font-extrabold num text-slate-800">${won(m * 12)}</p></div><div class="rounded-xl bg-slate-50 py-2"><p class="text-[10px] font-bold text-slate-500">7일 안 결제</p><p class="text-lg font-extrabold num text-slate-800">${won(next7)}</p></div></div>`
+        + (trials.length ? `<div class="mt-2 space-y-1">${trials.map(i => `<p class="text-[11px] font-bold text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5">⏳ ${esc(i.name)} 무료체험 ${dday(i.trial) === 0 ? '오늘' : `${dday(i.trial)}일 뒤`} 끝나요 (${md(i.trial)}) — 안 쓸 거면 해지!</p>`).join('')}</div>` : '')
+        + (() => { const v = on.filter(i => /넷플릭스|티빙|디즈니|쿠팡플레이|웨이브|왓챠|애플tv/i.test(i.name)); return v.length >= 3 ? `<p class="text-[11px] font-bold text-slate-600 bg-slate-50 rounded-lg px-2.5 py-1.5 mt-2">🍿 OTT가 ${v.length}개예요 (한 달 ${won(v.reduce((a, i) => a + monthly(i), 0))}). 요즘 안 보는 게 있으면 쉬어 가도 돼요</p>` : ''; })();
+      const found = scanLedger(); window._found = found; const fb = document.getElementById('found');
+      fb.classList.toggle('hidden', !found.length);
+      fb.innerHTML = `<h2 class="text-sm font-extrabold text-slate-900">🔎 가계부에서 찾은 구독</h2><p class="text-[11px] font-bold text-slate-500 mb-1">'📺 구독'으로 분류된 결제 중 아직 안 넣은 것</p>` + found.map((x, i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${esc(x.name)}</span><span class="block text-[10px] text-slate-500">${won(x.amt)} · 마지막 ${md(x.last)} · ${x.n}번</span></span><span role="button" tabindex="0" onclick='openForm(null, ${JSON.stringify({ name: x.name, amt: x.amt, next: x.next, pay: x.pay }).replace(/'/g, '&#39;')})' class="cursor-pointer text-[11px] font-extrabold text-indigo-600">+ 넣기</span><span role="button" tabindex="0" onclick="ignore(${i})" class="cursor-pointer text-[11px] font-bold text-slate-400">구독 아님</span></div>`).join('');
+      const xs = on.slice().sort((a, b) => a.next.localeCompare(b.next));
+      document.getElementById('list').innerHTML = xs.map(i => { const k = dday(i.next);
+        return `<div class="flex items-center gap-2 py-2 border-b border-slate-100"><span class="text-2xl">${esc(i.emoji)}</span><span class="flex-1 min-w-0"><span class="block text-sm font-extrabold text-slate-900 truncate">${esc(i.name)}${i.share ? ` <span class="text-[10px] font-bold text-slate-400">👥 ${esc(i.share)}</span>` : ''}</span><span class="block text-[11px] font-bold text-slate-500 truncate">${i.cyc === 'y' ? '매년' : `매달 ${i.day}일`}${i.pay ? ` · ${esc(i.pay)}` : ''}${i.note ? ` · ${esc(i.note)}` : ''}</span></span>
+          <span class="text-right shrink-0"><span class="block text-sm font-extrabold num text-slate-900">${won(i.amt)}</span><span class="block text-[10px] font-bold ${k <= 1 ? 'text-rose-500' : k <= 7 ? 'text-amber-600' : 'text-slate-400'}">${k === 0 ? '오늘 결제' : k === 1 ? '내일 결제' : `${md(i.next)} · D-${k}`}</span></span>
+          <span class="flex flex-col items-end gap-0.5 shrink-0"><span role="button" tabindex="0" onclick="openForm(${i.id})" class="cursor-pointer text-[10px] font-bold text-slate-500">고치기</span><span role="button" tabindex="0" onclick="toggleOff(${i.id})" class="cursor-pointer text-[10px] font-bold text-slate-400">해지함</span></span></div>`; }).join('') || '<p class="text-xs text-slate-400 py-1">넷플릭스·유튜브처럼 매달 나가는 걸 넣어 두면 결제 전날 알려줘요</p>';
+      const pb = document.getElementById('paused'); pb.classList.toggle('hidden', !off.length);
+      pb.innerHTML = `<h2 class="text-sm font-extrabold text-slate-900 mb-1">🛑 해지한 것</h2>` + off.map(i => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-lg opacity-50">${esc(i.emoji)}</span><span class="flex-1 text-sm font-bold text-slate-500 line-through">${esc(i.name)}</span><span class="text-[10px] font-bold text-emerald-600">${i.offAt ? `${md(i.offAt)} 해지 · ` : ''}한 달 ${won(monthly(i))} 아낌</span><span role="button" tabindex="0" onclick="toggleOff(${i.id})" class="cursor-pointer text-[10px] font-bold text-indigo-600">다시</span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.items = st.items.filter(x => x.id !== ${i.id}); persist(); render(); })" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('');
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ items: [], ignore: [] }, load(KEY, {})); render(); } });
+    render();
+  </script>
+</body>
+</html>
