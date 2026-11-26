@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.94';
+  const VERSION = '9.95';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -109,7 +109,7 @@
         renew: ((L('argon_renew_v1') || {}).items || []).map(x => ({ n: x.name, d: x.date })),
         parcel: ((L('argon_parcel_v1') || {}).items || []).filter(x => !x.got && x.eta).map(x => ({ n: x.name, d: x.eta })),
         santa: (() => { const s = L('argon_santa_v1') || {}, ks = ((L('argon_kid_v1') || {}).kids) || []; return { b: (s.items || []).filter(i => i.status === 'bought').length, i: (s.items || []).filter(i => i.status === 'idea').length, bd: ks.filter(k => k.birth).map(k => ({ n: k.name, d: k.birth })) }; })(),
-        otaku: (() => { const o = L('argon_otaku_v1') || {}; return { a: (o.anime || []).filter(a => !a.done && a.at).map(a => ({ n: a.ko || a.t, at: a.at, ep: a.ep, e: a.eps, dl: a.delay || 0 })), w: (o.toons || []).filter(w => !w.hiatus).map(w => ({ n: w.t, d: w.days })) }; })(),
+        otaku: (() => { const o = L('argon_otaku_v1') || {}; return { a: (o.anime || []).filter(a => !a.done && a.at).map(a => ({ n: a.ko || a.t, at: a.at, ep: a.ep, e: a.eps, dl: a.delay || 0 })), w: [] }; })(),
         place: L('argon_today_place_v1') || { name: '하남시', lat: 37.5393, lng: 127.2149 }
       };
       const rq = indexedDB.open('dd_notify', 1);
@@ -140,7 +140,7 @@
     'health.html': '아플때 통증 병원 약 허리 증상 몸', 'dday.html': '디데이 기념일 생일 카운트', 'weekly.html': '주간 리포트 이번주 정리 요약', 'wish.html': '위시리스트 사고싶은 충동구매 고민 30일 갖고싶은', 'workout.html': '운동 헬스 러닝 걷기 스트레칭 허리 홈트 만보', 'goals.html': '목표 버킷리스트 다짐 신년 회고 올해 계획', 'kid.html': '아이 성장 키 몸무게 예방접종',
     'fever.html': '열 체온 해열제 열나요', 'sticker.html': '칭찬 스티커 보상', 'kidsay.html': '어록 아이 말 대화', 'firsts.html': '처음 첫 걸음마 순간', 'daycare.html': '어린이집 유치원 준비물 알림장',
     'sizes.html': '사이즈 옷 신발 기저귀 치수', 'games.html': '게임 출시 발매 캘린더', 'tomica.html': '토미카 장난감 미니카 신차', 'media.html': '책 영화 드라마 애니 공연 콘텐츠 독서',
-    'trip.html': '여행 숙소 일정 체크인', 'fx.html': '환율 달러 엔 유로 환전', 'english.html': '영어 회화 문장', 'japanese.html': '일본어 회화', 'dict.html': '사전 단어 뜻 국어', 'anime.html': '애니 애니메이션 방영 신작 분기 웹툰 연재 요일 만화 라프텔 네이버웹툰 카카오', 'worklog.html': '업무일지 주간보고 회사 업무 일일보고 실적 계획 이슈 출근', 'growth.html': '성장 사진 아이 사진 매달 비교 키 컸다', 'santa.html': '산타 크리스마스 선물 생일 어린이날 장난감 갖고싶은', 'bills.html': '관리비 아파트 난방비 전기 수도 가스 고지서 공과금', 'search.html': '검색 찾기 전체 기록 어디 적었 언제', 'recap.html': '연말 결산 올해 1년 정리 회고 랩 wrapped 돌아보기', 'backup.html': '백업 복원 내보내기 폰 교체 기기 변경 저장 파일', 'fridge.html': '냉장고 유통기한 소비기한 식재료 우유 상함 버림', 'renew.html': '만료 갱신 여권 운전면허 적성검사 자동차보험 자동차검사 약정 휴대폰 인터넷', 'parcel.html': '택배 배송 운송장 도착 쿠팡 주문 조회', 'medical.html': '병원 약국 소아과 소아청소년과 진료시간 야간 휴일 달빛 이비인후과 응급', 'voice.html': '목소리 녹음 아이 타임캡슐 음성', 'til.html': 'TIL 오늘배운것 공부 개발 메모 잔디 기술', 'visited.html': '가본곳 지도 여행 시도 전국 지역 다녀온', 'mygames.html': '내게임 백로그 플레이 엔딩 게임기록 쌓아둔'
+    'trip.html': '여행 숙소 일정 체크인', 'fx.html': '환율 달러 엔 유로 환전', 'english.html': '영어 회화 문장', 'japanese.html': '일본어 회화', 'dict.html': '사전 단어 뜻 국어', 'anime.html': '애니 애니메이션 방영 신작 분기 방영표 요일 라프텔 넷플릭스 티빙 OTT', 'worklog.html': '업무일지 주간보고 회사 업무 일일보고 실적 계획 이슈 출근', 'growth.html': '성장 사진 아이 사진 매달 비교 키 컸다', 'santa.html': '산타 크리스마스 선물 생일 어린이날 장난감 갖고싶은', 'bills.html': '관리비 아파트 난방비 전기 수도 가스 고지서 공과금', 'search.html': '검색 찾기 전체 기록 어디 적었 언제', 'recap.html': '연말 결산 올해 1년 정리 회고 랩 wrapped 돌아보기', 'backup.html': '백업 복원 내보내기 폰 교체 기기 변경 저장 파일', 'fridge.html': '냉장고 유통기한 소비기한 식재료 우유 상함 버림', 'renew.html': '만료 갱신 여권 운전면허 적성검사 자동차보험 자동차검사 약정 휴대폰 인터넷', 'parcel.html': '택배 배송 운송장 도착 쿠팡 주문 조회', 'medical.html': '병원 약국 소아과 소아청소년과 진료시간 야간 휴일 달빛 이비인후과 응급', 'voice.html': '목소리 녹음 아이 타임캡슐 음성', 'til.html': 'TIL 오늘배운것 공부 개발 메모 잔디 기술', 'visited.html': '가본곳 지도 여행 시도 전국 지역 다녀온', 'mygames.html': '내게임 백로그 플레이 엔딩 게임기록 쌓아둔'
   };
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const cho = s => [...s].map(c => { const n = c.charCodeAt(0) - 0xAC00; return n >= 0 && n < 11172 ? CHO[Math.floor(n / 588)] : c; }).join('');

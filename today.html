@@ -131,7 +131,7 @@
     <a href="./mygames.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕹️ <span>내 게임</span></a>
     <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
     <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
-    <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니·웹툰</span></a>
+    <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니 방영표</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
@@ -721,7 +721,7 @@
       box.classList.remove('hidden');
       box.innerHTML = head('💼 업무일지', './worklog.html', '업무일지') + (wrote ? '' : `<a href="./worklog.html" class="block text-sm font-bold text-slate-700">오늘 한 일 한 줄씩 남기고 퇴근해요 🙌</a>`) + (fri ? `<a href="./worklog.html?tab=week" class="block mt-1 text-sm font-extrabold text-indigo-600">📋 이번 주 주간보고 복사하기 →</a>` : '');
     }
-    // ---------- 📺 애니·웹툰: 오늘 방영·밀린 화·오늘 연재 (안 본 것) ----------
+    // ---------- 📺 애니: 오늘 방영·밀린 화 ----------
     function renderOtakuCard() {
       const box = document.getElementById('otakuCard'), o = load('argon_otaku_v1', null), n = new Date(), t = ymd(n), W = 7 * 864e5, rows = [];
       ((o || {}).anime || []).filter(a => !a.done && a.at).forEach(a => {
@@ -729,10 +729,9 @@
         if (back > 0) rows.push([`📺 ${esc(a.ko || a.t)}`, `<span class="text-rose-500">${(a.seen || 0) + 1}화${back > 1 ? ` 외 ${back - 1}` : ''}</span>`]);
         else if ((!a.eps || nextEp <= a.eps) && ymd(nx) === t) rows.push([`📺 ${esc(a.ko || a.t)}`, `${pad(nx.getHours())}:${pad(nx.getMinutes())} ${nextEp}화`]);
       });
-      ((o || {}).toons || []).filter(w => !w.hiatus && w.days.includes(n.getDay()) && w.seenAt !== t).forEach(w => rows.push([`📖 ${esc(w.t)}`, w.last ? `${w.last + 1}화` : '연재일']));
       if (!rows.length) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-      box.innerHTML = head('🍿 오늘 볼 것', './anime.html', '애니·웹툰') + rows.slice(0, 6).map(([a, b]) => `<a href="./anime.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-800 truncate">${a}</span><span class="text-xs font-extrabold text-indigo-600 shrink-0">${b}</span></a>`).join('');
+      box.innerHTML = head('🍿 오늘 볼 애니', './anime.html', '방영표') + rows.slice(0, 6).map(([a, b]) => `<a href="./anime.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-800 truncate">${a}</span><span class="text-xs font-extrabold text-indigo-600 shrink-0">${b}</span></a>`).join('');
     }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
