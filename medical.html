@@ -156,7 +156,8 @@
     </header>
     <section class="card p-4">
       <div id="kinds" class="flex flex-wrap gap-1.5"></div>
-      <div class="flex items-center gap-1.5 mt-2"><span id="openOnly"></span><span id="nearBtn"></span><span class="flex-1"></span><span id="when" class="text-[10px] font-bold text-slate-400"></span></div>
+      <input id="q" type="search" oninput="render()" placeholder="🔍 이름·동네로 찾기 (예: 미사, 연세, 감일)" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+      <div class="flex flex-wrap items-center gap-1.5 mt-2"><span id="openOnly"></span><span id="specOnly"></span><span id="nearBtn"></span><span class="flex-1"></span><span id="when" class="text-[10px] font-bold text-slate-400"></span></div>
     </section>
     <section class="card p-4"><div id="list"><p class="text-xs text-slate-400">불러오는 중…</p></div></section>
     <section class="card p-4 text-xs font-bold text-slate-600 space-y-1.5">
@@ -187,7 +188,7 @@
     const KEY = 'argon_medical_v1';
     const KINDS = [['ped', '👶 소아과'], ['pharm', '💊 약국'], ['ent', '👂 이비인후과'], ['im', '🩺 내과'], ['fm', '🏠 가정의학과'], ['os', '🦴 정형외과'], ['derm', '🧴 피부과'], ['eye', '👁️ 안과']];
     const DN = ['', '월', '화', '수', '목', '금', '토', '일', '공휴일'];
-    let st = Object.assign({ kind: 'ped', sido: '경기도', city: '하남시', fav: [], openOnly: true }, load(KEY, {})), data = {}, here = null;
+    let st = Object.assign({ kind: 'ped', sido: '경기도', city: '하남시', fav: [], openOnly: true, specOnly: true }, load(KEY, {})), data = {}, here = null;
     const q0 = new URLSearchParams(location.search).get('kind'); if (q0 && KINDS.some(k => k[0] === q0)) st.kind = q0;
     const persist = () => save(KEY, st);
     const isHol = () => !!(window.ArgonTT && ArgonTT.isHoliday && ArgonTT.isHoliday(today()));
@@ -206,6 +207,10 @@
     }
     const km = (a, b) => { if (!a || !b.lat) return null; const R = 6371, dLa = (b.lat - a.lat) * Math.PI / 180, dLo = (b.lon - a.lon) * Math.PI / 180, x = Math.sin(dLa / 2) ** 2 + Math.cos(a.lat * Math.PI / 180) * Math.cos(b.lat * Math.PI / 180) * Math.sin(dLo / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(x)); };
     const late = i => [1, 2, 3, 4, 5].some(d => i.t[d] && (mins(i.t[d][1]) >= 1260 || mins(i.t[d][1]) <= mins(i.t[d][0]))) ;
+    // 이 과목 '전문' 병원 (공공데이터의 진료과목엔 여러 과를 같이 등록한 곳이 많아서 이름으로 한 번 더 거름)
+    const SPEC = { ped: /소아/, ent: /이비인후/, im: /내과/, fm: /가정의학/, os: /정형|통증|재활|신경외과/, derm: /피부/, eye: /안과/ };
+    const isSpec = i => !SPEC[st.kind] || SPEC[st.kind].test(i.name);
+    function toggleSpec() { st.specOnly = !st.specOnly; persist(); render(); }
     function setKind(k) { st.kind = k; persist(); render(); fetchKind(); }
     function toggleOpen() { st.openOnly = !st.openOnly; persist(); render(); }
     function toggleFav(id) { st.fav = st.fav.includes(id) ? st.fav.filter(x => x !== id) : [...st.fav, id]; persist(); render(); }
@@ -228,21 +233,25 @@
       document.getElementById('areaBtn').textContent = '📍 ' + st.city;
       document.getElementById('kinds').innerHTML = KINDS.map(([k, l]) => chip(st.kind === k, l, `setKind('${k}')`)).join('');
       document.getElementById('openOnly').innerHTML = chip(st.openOnly, st.openOnly ? '🟢 지금 연 곳만' : '전체 보기', 'toggleOpen()');
+      document.getElementById('specOnly').innerHTML = SPEC[st.kind] ? chip(st.specOnly, st.specOnly ? '🎯 전문 병원만' : '🎯 이 과목도 보는 곳 포함', 'toggleSpec()') : '';
       document.getElementById('nearBtn').innerHTML = chip(!!here, '📍 가까운 순', 'near()');
       const now = new Date(); document.getElementById('sub').textContent = `${DN[dayIdx()]}${isHol() ? '' : '요일'} ${pad(now.getHours())}:${pad(now.getMinutes())} 기준 · ${st.city}`;
       const ck = `${st.kind}|${st.sido}|${st.city}`, j = data[ck], box = document.getElementById('list');
       if (!j) { box.innerHTML = '<p class="text-xs text-slate-400">불러오는 중…</p>'; return; }
       if (j.needKey || j.error || !Array.isArray(j.items)) { box.innerHTML = `<p class="text-sm font-bold text-slate-600">😢 ${j.needKey ? '공공데이터포털 키가 아직 없어요' : esc(j.error || '조회 실패 — 잠시 뒤 다시')}</p>${j.needApply || j.needKey ? '<p class="text-xs text-slate-500 mt-1">data.go.kr에서 <b>국립중앙의료원_전국 병·의원 찾기 서비스</b>, <b>국립중앙의료원_전국 약국 정보 조회 서비스</b>를 활용신청해 주세요 (자동승인).</p>' : ''}`; return; }
       let xs = j.items.map(i => Object.assign({ s: status(i), km: km(here, i), fav: st.fav.includes(i.id) }, i));
-      const openN = xs.filter(i => i.s.open).length;
-      if (st.openOnly) xs = xs.filter(i => i.s.open || i.fav);
-      xs.sort((a, b) => (b.fav - a.fav) || (b.s.open - a.s.open) || (here ? (a.km ?? 99) - (b.km ?? 99) : (b.s.left || 0) - (a.s.left || 0)) || a.name.localeCompare(b.name));
-      document.getElementById('when').textContent = `${j.items.length}곳 중 지금 ${openN}곳 열림`;
+      const kw = document.getElementById('q').value.trim().replace(/\s+/g, '').toLowerCase();
+      if (kw) xs = xs.filter(i => (i.name + i.addr).replace(/\s+/g, '').toLowerCase().includes(kw));
+      else if (st.specOnly && SPEC[st.kind]) xs = xs.filter(i => isSpec(i) || i.fav);
+      const openN = xs.filter(i => i.s.open).length, allN = xs.length;
+      if (st.openOnly && !kw) xs = xs.filter(i => i.s.open || i.fav);
+      xs.sort((a, b) => (b.fav - a.fav) || (b.s.open - a.s.open) || (isSpec(b) - isSpec(a)) || (here ? (a.km ?? 99) - (b.km ?? 99) : (b.s.left || 0) - (a.s.left || 0)) || a.name.localeCompare(b.name));
+      document.getElementById('when').textContent = `${allN}곳 중 지금 ${openN}곳 열림`;
       box.innerHTML = xs.slice(0, 80).map(i => {
         const s = i.s, badge = s.open ? (s.left <= 60 ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold" style="background:#ffedd5;color:#c2410c">${s.left}분 뒤 마감</span>` : `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold" style="background:#dcfce7;color:#15803d">진료 중 ~${hm(s.r[1])}</span>`) : `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-extrabold" style="background:#f1f5f9;color:#64748b">${s.r ? (s.soon ? `${hm(s.r[0])} 열어요` : '오늘 끝') : '오늘 쉼'}</span>`;
         const wk = [1, 2, 3, 4, 5, 6, 7, 8].map(d => `<span class="inline-block w-1/4 ${d === dayIdx() ? 'text-indigo-600' : ''}">${DN[d]} ${i.t[d] ? hm(i.t[d][0]) + '~' + hm(i.t[d][1]) : '휴무'}</span>`).join('');
         return `<div class="py-2.5 border-b border-slate-100 last:border-0 ${s.open ? '' : 'opacity-60'}">
-          <div class="flex items-center gap-1.5"><span role="button" tabindex="0" onclick="toggleFav('${esc(i.id)}')" class="cursor-pointer ${i.fav ? 'text-amber-400' : 'text-slate-300'}">${i.fav ? '★' : '☆'}</span><p role="button" tabindex="0" onclick="more('${esc(i.id)}')" class="cursor-pointer flex-1 min-w-0 truncate text-sm font-extrabold text-slate-800">${esc(i.name)}</p>${late(i) ? '<span class="text-[10px] font-extrabold text-violet-600">🌙 야간</span>' : ''}${(i.t[7] || i.t[8]) ? '<span class="text-[10px] font-extrabold text-sky-600">휴일</span>' : ''}${badge}</div>
+          <div class="flex items-center gap-1.5"><span role="button" tabindex="0" onclick="toggleFav('${esc(i.id)}')" class="cursor-pointer ${i.fav ? 'text-amber-400' : 'text-slate-300'}">${i.fav ? '★' : '☆'}</span><p role="button" tabindex="0" onclick="more('${esc(i.id)}')" class="cursor-pointer flex-1 min-w-0 truncate text-sm font-extrabold text-slate-800">${esc(i.name)}</p>${SPEC[st.kind] && !isSpec(i) ? '<span class="text-[10px] font-bold text-slate-400">다른 과</span>' : ''}${late(i) ? '<span class="text-[10px] font-extrabold text-violet-600">🌙 야간</span>' : ''}${(i.t[7] || i.t[8]) ? '<span class="text-[10px] font-extrabold text-sky-600">휴일</span>' : ''}${badge}</div>
           <p class="text-[11px] font-bold text-slate-400 truncate ml-5">${i.km != null ? `<b class="text-slate-600">${i.km < 1 ? Math.round(i.km * 1000) + 'm' : i.km.toFixed(1) + 'km'}</b> · ` : ''}${esc(i.addr.replace(/^경기도\s*|^서울특별시\s*/, ''))}</p>
           <div class="flex gap-1.5 mt-1.5 ml-5">${i.tel ? `<a href="tel:${esc(i.tel)}" class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-[11px] font-extrabold">📞 ${esc(i.tel)}</a>` : ''}<a href="https://map.naver.com/p/search/${encodeURIComponent(i.name + ' ' + st.city)}" target="_blank" rel="noopener" class="px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-extrabold">🗺️ 지도</a><span role="button" tabindex="0" onclick="more('${esc(i.id)}')" class="cursor-pointer px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-extrabold">🕘 진료시간</span></div>
           <p id="wk_${esc(i.id)}" class="hidden ml-5 mt-1.5 text-[10px] font-bold text-slate-500 leading-5">${wk}</p></div>`;
