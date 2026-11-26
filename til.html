@@ -94,6 +94,7 @@
     <a href="./goals.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎯 <span>목표</span></a>
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./worklog.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💼 <span>업무일지</span></a>
     <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
     <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
     <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
@@ -244,6 +245,7 @@
     document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
     document.getElementById('fText').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) saveItem(); });
     window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ items: [] }, load(KEY, {})); render(); } });
+    if (location.hash.length > 1) { try { document.getElementById('fText').value = decodeURIComponent(location.hash.slice(1)); history.replaceState(null, '', location.pathname); document.getElementById('fText').focus(); } catch (e) {} }   // 💼 업무일지에서 넘어온 내용
     render();
   </script>
 </body>
