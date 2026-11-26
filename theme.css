@@ -107,3 +107,8 @@ html.dark .bg-white\/40, html.dark .bg-white\/50, html.dark .bg-white\/60 { back
 html.dark .bg-amber-300.text-slate-900, html.dark .bg-amber-400.text-slate-900, html.dark .bg-yellow-300.text-slate-900, html.dark .bg-yellow-400.text-slate-900, html.dark .bg-lime-300.text-slate-900 { color: #0f172a !important; }
 /* 진한 색 버튼 위 흰 글자 유지 */
 html.dark [class*='bg-'][class*='-500'].text-white, html.dark [class*='bg-'][class*='-600'].text-white, html.dark [class*='bg-'][class*='-700'].text-white { color: #fff !important; }
+
+/* 사이드 메뉴: 폰에서 누른 항목에 hover가 남아 밝은 배경 + 밝은 글자가 되던 것 (다크) */
+html.dark .hover\:bg-slate-100:hover, html.dark .hover\:bg-slate-50:hover, html.dark .hover\:bg-indigo-50:hover { background-color: rgba(148, 163, 184, .16) !important; }
+html.dark .nav-item:not(.active):hover, html.dark .nav-item:not(.active):focus-visible { background-color: rgba(148, 163, 184, .16) !important; color: #f1f5f9 !important; }
+html.dark .nav-item:not(.active):active { background-color: rgba(148, 163, 184, .24) !important; }
