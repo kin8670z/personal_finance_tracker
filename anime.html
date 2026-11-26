@@ -226,7 +226,7 @@
     }
     const title = a => a.ko || (a.tm && a.tm.ko) || a.t;
     // ---------- 🇰🇷 TMDB: 한국어 제목·국내 OTT (기기에 3일 캐시) ----------
-    const TMC = 'tmdb_cache_v1';
+    const TMC = 'tmdb_cache_v2'; try { localStorage.removeItem('tmdb_cache_v1'); } catch (e) {}
     const OTT = { 'Netflix': ['넷플릭스', 'https://www.netflix.com/search?q='], 'Laftel': ['라프텔', 'https://laftel.net/search?keyword='], 'TVING': ['티빙', 'https://www.tving.com/search?keyword='], 'wavve': ['웨이브', 'https://www.wavve.com/search?searchWord='], 'Watcha': ['왓챠', 'https://watcha.com/search?query='], 'Disney Plus': ['디즈니+', 'https://www.disneyplus.com/search?q='], 'Coupang Play': ['쿠팡플레이', 'https://www.coupangplay.com/search?keyword='], 'Amazon Prime Video': ['프라임 비디오', 'https://www.primevideo.com/search?phrase='], 'Apple TV': ['애플TV', ''], 'Crunchyroll': ['크런치롤', ''] };
     const ottName = n => (OTT[n] || [n])[0];
     let tmc = load(TMC, {}), tmBusy = false, tmErr = '';
@@ -237,7 +237,7 @@
       try {
         for (let i = 0; i < need.length; i += 20) {
           const rows = need.slice(i, i + 20).map(m => [m.id, m.en || '', m.ro || '', m.jp || '', m.y || (season && season.y) || new Date().getFullYear()]);
-          const r = await fetch('/api/games?svc=tmdb&q=' + encodeURIComponent(JSON.stringify(rows))), j = await r.json();
+          const r = await fetch('/api/games?svc=tmdb&v=2&q=' + encodeURIComponent(JSON.stringify(rows))), j = await r.json();
           if (j.needKey || j.error) { tmErr = j.needKey ? 'TMDB 키가 아직 없어요' : j.error; break; }
           rows.forEach(([id]) => { if (id in j.items) tmc[id] = { d: j.items[id], at: Date.now() }; });
         }
