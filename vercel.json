@@ -1,4 +1,10 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "dev": false,
+      "claude/*": false
+    }
+  },
   "rewrites": [
     {
       "source": "/personal_finance_tracker/:path*",
