@@ -92,10 +92,11 @@ async function load(year) {
   return games;
 }
 
-const anime = require('../lib/anime.js');
+const anime = require('../lib/anime.js'), tmdb = require('../lib/tmdb.js');
 
 module.exports = async (req, res) => {
-  if (String(req.url).includes('svc=anime')) return anime(req, res);   // 📺 애니 방영표 (lib/anime.js)
+  if (String(req.url).includes('svc=anime')) return anime(req, res);
+  if (String(req.url).includes('svc=tmdb')) return tmdb(req, res);   // 🇰🇷 한국어 제목·국내 OTT (lib/tmdb.js)   // 📺 애니 방영표 (lib/anime.js)
   const now = new Date(), y = Number(new URL(req.url, 'http://localhost').searchParams.get('y')) || now.getFullYear();
   if (y < 2000 || y > now.getFullYear() + 2) return send(res, 400, { error: '연도를 확인해 주세요' });
   try {
