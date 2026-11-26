@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.60';
+  const VERSION = '9.61';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -120,6 +120,54 @@
     ['hobby', '🎮', '취미', ['games.html', 'tomica.html', 'media.html']],
     ['trip', '✈️', '여행·공부', ['trip.html', 'fx.html', 'english.html', 'dict.html']]
   ];
+  // 메뉴 검색용 다른 이름들 (메뉴 이름에 없는 말로 찾을 때)
+  const NAV_KW = {
+    'today.html': '오늘 홈 메인 브리핑', '': '가계부 지출 수입 돈 소비 카드 결제', 'index.html': '가계부 지출 수입 돈 소비 카드 결제', 'report.html': '리포트 소비 분석 통계 줄일',
+    'ceremony.html': '축의금 조의금 결혼 장례 부조 돌잔치', 'subs.html': '구독 넷플릭스 유튜브 정기결제 OTT 티빙 쿠팡', 'stocks.html': '주식 증권 코스피 코스닥 토스 관심종목', 'assets.html': '자산 순자산 계좌 예금',
+    'tax.html': '연말정산 세금 공제', 'lotto.html': '로또 복권 당첨', 'weather.html': '날씨 기온 일출 일몰 미세먼지 비 눈 주간', 'subway.html': '지하철 출근 퇴근 열차 도착 막차',
+    'lunch.html': '점심 메뉴 룰렛 밥 뭐먹지', 'places.html': '맛집 장소 카페 식당', 'gift.html': '기프티콘 쿠폰 선물 바코드', 'groupbuy.html': '공구 공동구매 오픈 마감', 'parking.html': '주차 몇층',
+    'stash.html': '물건 위치 어디뒀 보관', 'trash.html': '쓰레기 재활용 분리배출 음식물 페트', 'supplies.html': '필터 칫솔 교체 소모품 청소 주기', 'warranty.html': '보증 영수증 AS 가전 시리얼',
+    'car.html': '차 자동차 주유 정비 엔진오일', 'leave.html': '연차 휴가 반차 공휴일 징검다리 쉬는날', 'diary.html': '일기 한줄 메모', 'mood.html': '기분 컨디션 감정', 'todo.html': '할일 장보기 체크리스트',
+    'habits.html': '습관 물 운동 영양제 루틴', 'food.html': '칼로리 음식 식단 다이어트 식약처', 'timer.html': '타이머 뽀모도로 집중 휴식 스톱워치', 'sleep.html': '잠 수면 낮잠 기상',
+    'health.html': '아플때 통증 병원 약 허리 증상 몸', 'dday.html': '디데이 기념일 생일 카운트', 'weekly.html': '주간 리포트 이번주 정리 요약', 'kid.html': '아이 성장 키 몸무게 예방접종',
+    'fever.html': '열 체온 해열제 열나요', 'sticker.html': '칭찬 스티커 보상', 'kidsay.html': '어록 아이 말 대화', 'firsts.html': '처음 첫 걸음마 순간', 'daycare.html': '어린이집 유치원 준비물 알림장',
+    'sizes.html': '사이즈 옷 신발 기저귀 치수', 'games.html': '게임 출시 발매 캘린더', 'tomica.html': '토미카 장난감 미니카 신차', 'media.html': '책 영화 드라마 애니 공연 콘텐츠 독서',
+    'trip.html': '여행 숙소 일정 체크인', 'fx.html': '환율 달러 엔 유로 환전', 'english.html': '영어 회화 문장', 'japanese.html': '일본어 회화', 'dict.html': '사전 단어 뜻 국어'
+  };
+  const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
+  const cho = s => [...s].map(c => { const n = c.charCodeAt(0) - 0xAC00; return n >= 0 && n < 11172 ? CHO[Math.floor(n / 588)] : c; }).join('');
+  const norm = s => String(s || '').toLowerCase().replace(/\s+/g, '');
+  function navSearch(nav, links, wrap, file, groupOf) {
+    const box = document.createElement('div'); box.className = 'mb-1';
+    box.innerHTML = '<div class="relative"><input id="navQ" type="search" autocomplete="off" placeholder="🔍 메뉴 찾기 (예: 넷플릭스, ㄱㄷ)" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-300"></div><div id="navRes" class="hidden flex flex-col gap-0.5 mt-1"></div>';
+    const q = box.querySelector('#navQ'), res = box.querySelector('#navRes');
+    const items = links.map(a => { const f = file(a), label = a.textContent.replace(/\s+/g, ' ').trim(); return { a, f, label, name: norm(label.replace(/^\S+\s/, '')), kw: norm(NAV_KW[f] || ''), kws: (NAV_KW[f] || '').split(' ').map(norm), g: groupOf(a) }; });
+    let recent = []; try { recent = JSON.parse(localStorage.getItem('nav_recent') || '[]'); } catch (e) {}
+    const tdy = links.find(a => file(a) === 'today.html'), show = on => { wrap.classList.toggle('hidden', !on); if (tdy) tdy.classList.toggle('hidden', !on); };
+    const row = (it, i) => `<a href="${it.a.getAttribute('href')}" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'}">${it.a.innerHTML}<span class="ml-auto text-[10px] font-bold text-slate-400">${it.g}</span></a>`;
+    function run() {
+      const v = norm(q.value);
+      if (!v) {
+        const rs = recent.map(f => items.find(it => it.f === f)).filter(Boolean).slice(0, 5);
+        if (document.activeElement === q && rs.length) { res.innerHTML = '<p class="px-3 pt-1 text-[10px] font-bold text-slate-400">최근 본 메뉴</p>' + rs.map((it, i) => row(it, -1)).join(''); res.classList.remove('hidden'); show(false); }
+        else { res.classList.add('hidden'); show(true); }
+        return;
+      }
+      const onlyCho = /^[ㄱ-ㅎ]+$/.test(v);
+      const score = it => { const n = it.name; if (onlyCho) { const c = cho(n); return c === v ? 4 : c.startsWith(v) ? 3 : c.includes(v) ? 2 : it.kws.some(k => cho(k).startsWith(v)) ? 1 : 0; }
+        return n === v ? 7 : n.startsWith(v) ? 6 : n.includes(v) ? 5 : it.kws.includes(v) ? 4.5 : it.kws.some(k => k.startsWith(v)) ? 4 : it.kw.includes(v) ? 3 : norm(it.g).includes(v) ? 2 : 0; };
+      const hit = items.map(it => [it, score(it)]).filter(x => x[1]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
+      res.innerHTML = hit.length ? hit.map(row).join('') : '<p class="px-3 py-2 text-xs font-bold text-slate-400">찾는 메뉴가 없어요</p>';
+      res.classList.remove('hidden'); show(false);
+    }
+    q.addEventListener('input', run); q.addEventListener('focus', run);
+    q.addEventListener('blur', () => setTimeout(() => { if (!q.value) run(); }, 150));
+    q.addEventListener('keydown', e => { if (e.key === 'Enter') { const a = res.querySelector('a'); if (a) location.href = a.getAttribute('href'); } if (e.key === 'Escape') { q.value = ''; run(); q.blur(); } });
+    // 데스크톱: / 또는 Ctrl+K 로 바로 찾기
+    document.addEventListener('keydown', e => { const t = (document.activeElement || {}).tagName; if (((e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t)) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'))) { e.preventDefault(); if (window.openSideNav) window.openSideNav(); setTimeout(() => q.focus(), 50); } });
+    return box;
+  }
+  function rememberPage() { try { const f = location.pathname.split('/').pop() || ''; if (f === 'today.html') return; let r = JSON.parse(localStorage.getItem('nav_recent') || '[]'); r = [f, ...r.filter(x => x !== f)].slice(0, 8); localStorage.setItem('nav_recent', JSON.stringify(r)); } catch (e) {} }
   function groupNav() {
     const nav = document.getElementById('sideNav');
     if (!nav || nav.dataset.grouped) return; nav.dataset.grouped = '1';
@@ -152,8 +200,11 @@
       wrap.appendChild(head); wrap.appendChild(box);
     });
     if (today) today.after(wrap); else if (foot) nav.insertBefore(wrap, foot); else nav.appendChild(wrap);
+    const groupOf = a => { const g = groups.find(([, ls]) => ls.includes(a)); return g ? g[0][2] : ''; };
+    const sbox = navSearch(nav, links, wrap, file, groupOf);
+    const first = today || wrap; first.parentNode.insertBefore(sbox, first);
   }
-  function init() { groupNav(); addButton(); addVersion(); saveBrief(); }
+  function init() { rememberPage(); groupNav(); addButton(); addVersion(); saveBrief(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
   window.installApp = install;
 })();
