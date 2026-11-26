@@ -8,6 +8,7 @@
 //   /api/stock?op=rank&kind=searchTop|up|down|marketValue|quantTop|priceTop&market=KOSPI|KOSDAQ|NASDAQ|NYSE  → 실시간 순위
 //   /api/stock?op=pulse                     → 투자자별 순매수·업종 등락·상승/하락 종목 수
 //   /api/stock?op=uspulse                   → 미국 지수·VIX·10년물·섹터 ETF 3달 종가
+//   /api/stock?op=events&kr=..&us=..        → 미국 실적 발표일(나스닥), 국내 최근 공시·다음 분기 컨센서스
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const NAVER = { 'User-Agent': UA, Referer: 'https://m.stock.naver.com/' };
@@ -214,6 +215,37 @@ async function usPulse() {
   const out = await Promise.all(US_SET.map(async ([sym, name]) => { try { const y = await yahoo(sym, '3m'); return { sym, name, t: y.points.length ? y.points[y.points.length - 1][0] : null, v: y.points.map(p => Math.round(p[1] * 100) / 100) }; } catch (e) { return { sym, name, v: [] }; } }));
   return { items: out.filter(x => x.v.length), at: Date.now() };
 }
+// 종목별 이벤트: 미국 실적 발표일(나스닥), 국내 최근 공시 + 다음 분기 실적 컨센서스(네이버)
+const NASDAQ_H = { 'User-Agent': UA, Accept: 'application/json, text/plain, */*', Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' };
+const MON = { Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6, Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12 };
+async function usEarnings(code) {
+  const sym = yahooOf(code).replace('-', '.');
+  const j = await get(`https://api.nasdaq.com/api/analyst/${encodeURIComponent(sym)}/earnings-date`, NASDAQ_H);
+  const d = j.data || {}, txt = `${d.announcement || ''} ${d.reportText || ''}`;
+  let date = null, m;
+  if ((m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(txt))) date = `${m[3]}-${m[1]}-${m[2]}`;
+  else if ((m = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* (\d{1,2}), (\d{4})/.exec(txt))) date = `${m[3]}-${String(MON[m[1]]).padStart(2, '0')}-${m[2].padStart(2, '0')}`;
+  const when = /after market close|after-hours|after the close/i.test(txt) ? 'amc' : /before market open|pre-market|before the open/i.test(txt) ? 'bmo' : '';
+  return { sym: `US:${code}`, date, when, est: /estimated|expected/i.test(txt) };
+}
+async function krEvents(code) {
+  const [disc, fin] = await Promise.all([
+    get(`https://m.stock.naver.com/api/stock/${code}/disclosure?pageSize=20`).catch(() => []),
+    get(`https://m.stock.naver.com/api/stock/${code}/finance/quarter`).catch(() => null)
+  ]);
+  const cut = Date.now() - 45 * 864e5;
+  const items = (Array.isArray(disc) ? disc : []).filter(x => x.title && new Date(x.datetime + '+09:00').getTime() >= cut).map(x => ({ t: String(x.title).replace(/^[^)]*\(주\)\s*/, ''), at: x.datetime, id: x.disclosureId }));
+  // 다음(컨센서스) 분기와 작년 같은 분기 비교
+  let next = null;
+  try {
+    const fi = fin.financeInfo, cols = fi.trTitleList, nx = cols.find(c => c.isConsensus === 'Y');
+    if (nx) {
+      const row = t => (fi.rowList.find(r => r.title === t) || {}).columns || {}, ly = String(+nx.key.slice(0, 4) - 1) + nx.key.slice(4), v = (t, k) => num((row(t)[k] || {}).value);
+      next = { q: nx.key, sales: v('매출액', nx.key), op: v('영업이익', nx.key), salesLY: v('매출액', ly), opLY: v('영업이익', ly) };
+    }
+  } catch (e) {}
+  return { sym: `KRX:${code}`, disc: items.slice(0, 12), next };
+}
 function send(res, status, body, maxAge) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -275,28 +307,12 @@ module.exports = async (req, res) => {
       return send(res, 200, { kind, market, items: await rank(kind, market, n), at: Date.now() }, 30);
     }
     if (op === 'pulse') return send(res, 200, await pulse(), 60);
-    if (op === 'uspulse') return send(res, 200, await usPulse(), 300);
-    if (op === 'probe') {   // 임시: 이벤트 데이터 출처 확인용
-      const H = { 'User-Agent': UA, Accept: 'application/json, text/plain, */*' };
-      const U = [
-        ['https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=calendarEvents', H],
-        ['https://query2.finance.yahoo.com/v7/finance/quote?symbols=AAPL', H],
-        ['https://api.nasdaq.com/api/analyst/AAPL/earnings-date', { ...H, Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' }],
-        ['https://api.nasdaq.com/api/calendar/earnings?date=2026-12-03', { ...H, Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' }],
-        ['https://api.stock.naver.com/stock/AAPL.O/basic', NAVER],
-        ['https://api.stock.naver.com/stock/AAPL.O/integration', NAVER],
-        ['https://m.stock.naver.com/api/stock/005930/integration', NAVER],
-        ['https://m.stock.naver.com/api/stock/005930/disclosure?pageSize=5', NAVER],
-        ['https://m.stock.naver.com/api/stock/005930/notice?pageSize=5', NAVER],
-        ['https://m.stock.naver.com/api/news/stock/005930?pageSize=3', NAVER],
-        ['https://m.stock.naver.com/api/stock/005930/finance/quarter', NAVER],
-        ['https://m.stock.naver.com/front-api/marketIndex/economicCalendar?date=20261201', NAVER],
-        ['https://m.stock.naver.com/api/economicIndicator/calendar?startDate=20261201&endDate=20261231', NAVER],
-        ['https://api.stock.naver.com/economic/calendar?startDate=2026-12-01&endDate=2026-12-31', NAVER]
-      ];
-      const out = await Promise.all(U.map(async ([u, h]) => { try { const r = await fetch(u, { headers: h, signal: AbortSignal.timeout(7000) }); const t = await r.text(); return { u: u.replace(/https:\/\//, '').slice(0, 90), s: r.status, body: t.slice(0, 900) }; } catch (e) { return { u, err: e.message }; } }));
-      return send(res, 200, out, 0);
+    if (op === 'events') {
+      const kr = list(q.get('kr'), c => CODE_RE.test(c), 15), us = list(q.get('us'), c => US_RE.test(c), 15);
+      const [k, u] = await Promise.all([Promise.all(kr.map(c => krEvents(c).catch(() => null))), Promise.all(us.map(c => usEarnings(c).catch(() => null)))]);
+      return send(res, 200, { kr: k.filter(Boolean), us: u.filter(Boolean), at: Date.now() }, 3600);
     }
+    if (op === 'uspulse') return send(res, 200, await usPulse(), 300);
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
       if (!term) return send(res, 400, { error: '검색어가 없어요' });
