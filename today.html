@@ -560,7 +560,7 @@
       const now = us.filter(u => u.date === ymd(t0)), soon = us.find(u => dd(u.date) > 0 && dd(u.date) <= 7);
       if (!now.length && !soon) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-      box.innerHTML = head('🏖️ 휴가', './leave.html', '연차') + (now.length ? `<p class="text-base font-extrabold text-slate-900">오늘 ${esc(now.map(u => u.kind).join('·'))}! 푹 쉬어요 🌿</p>${now[0].memo ? `<p class="text-[11px] font-bold text-slate-500">${esc(now[0].memo)}</p>` : ''}` : '')
+      box.innerHTML = head('🏖️ 휴가', './leave.html', '연차') + (now.length ? `<p class="text-base font-extrabold text-slate-900">오늘 ${esc(now.map(u => u.kind).join('·'))}${now.some(u => u.amt >= 1) ? '! 푹 쉬어요 🌿' : '예요 🌿'}</p>${now[0].memo ? `<p class="text-[11px] font-bold text-slate-500">${esc(now[0].memo)}</p>` : ''}` : '')
         + (soon ? `<a href="./leave.html" class="flex justify-between py-1 ${now.length ? 'mt-1' : ''}"><span class="text-sm font-bold text-slate-700">${(() => { const d = new Date(+soon.date.slice(0, 4), +soon.date.slice(5, 7) - 1, +soon.date.slice(8)); return `${d.getMonth() + 1}/${d.getDate()}(${W[d.getDay()]})`; })()} ${esc(soon.kind)}</span><span class="text-sm font-extrabold text-indigo-600">${dd(soon.date) === 1 ? '내일' : `D-${dd(soon.date)}`}</span></a>` : '');
     }
     // ---------- 🗑️ 분리수거: 오늘 내놓을 것(안 내놨을 때), 17시 이후엔 내일 '전날 저녁부터' 것도 ----------
