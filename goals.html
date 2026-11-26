@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>목표 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./goals.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🎯 <span>목표</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./supplies.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔧 <span>교체 주기</span></a>
+    <a href="./warranty.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>보증서</span></a>
+    <a href="./renew.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📅 <span>만료·갱신</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./leave.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏖️ <span>연차</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./workout.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏃 <span>운동</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
+    <a href="./medical.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏥 <span>문 연 병원·약국</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
+    <a href="./wish.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>위시리스트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./recipes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍳 <span>레시피</span></a>
+    <a href="./fridge.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🥛 <span>냉장고 유통기한</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./mygames.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕹️ <span>내 게임</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
+    <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
+    <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./visited.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗺️ <span>가 본 곳</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./til.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧑‍💻 <span>오늘 배운 것</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🎯 목표</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <div class="flex items-center gap-1 shrink-0"><button type="button" onclick="setYear(-1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold">‹</button><span id="yearLbl" class="text-sm font-extrabold text-slate-800 num w-12 text-center"></span><button type="button" onclick="setYear(1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold">›</button></div>
+      </div>
+      <div id="tabs" class="grid grid-cols-3 gap-1 mt-3 bg-slate-100 rounded-xl p-1"></div>
+    </header>
+    <div id="goalTab" class="space-y-3 md:space-y-4">
+      <section id="overview" class="card p-4"></section>
+      <section id="form" class="card p-4 hidden">
+        <h2 id="formTitle" class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🎯 새 목표</h2>
+        <input id="fTitle" maxlength="40" placeholder="목표 (예: 책 24권 읽기)" class="w-full border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm">
+        <div id="cats" class="flex flex-wrap gap-1.5 mt-2"></div>
+        <p class="text-[10px] font-bold text-slate-500 mt-3">어떻게 확인할까요?</p>
+        <div id="kinds" class="grid grid-cols-2 gap-1.5 mt-1"></div>
+        <div id="kindBox" class="mt-2"></div>
+        <label class="block text-[10px] font-bold text-slate-500 mt-2">언제까지 (선택, 기본은 연말)<input id="fDue" type="date" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></label>
+        <input id="fWhy" maxlength="60" placeholder="왜 하고 싶어요? (선택)" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <div class="flex gap-2 mt-2"><button type="button" onclick="closeForm()" class="px-4 py-2.5 bg-slate-100 text-slate-600 font-extrabold rounded-xl">취소</button><button type="button" onclick="saveGoal()" id="saveBtn" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">저장</button></div>
+      </section>
+      <div id="goals" class="space-y-3 md:space-y-4"></div>
+    </div>
+    <section id="reviewTab" class="card p-4 hidden"></section>
+    <section id="bucketTab" class="card p-4 hidden"></section>
+    <div id="sheet" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" onclick="if(event.target===this)this.classList.add('hidden')"><div class="card p-4 w-full max-w-sm bg-white" id="sheetBody"></div></div>
+  </div>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const D = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+    const W = '일월화수목금토', md = s => { const d = D(s); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}(${W[d.getDay()]})`; };
+    const dday = s => Math.round((D(s) - new Date(new Date().toDateString())) / 864e5);
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const num = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+    const today = () => ymd(new Date());
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    function shrink(file, max = 1200) { return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.72)); }; img.src = URL.createObjectURL(file); }); }
+    const chip = (on, label, fn) => `<span role="button" tabindex="0" onclick="${fn}" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${label}</span>`;
+    const kids = () => (load('argon_kid_v1', {}).kids || []);
+    const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
+    const KEY = 'argon_goals_v1';
+    const CATS = ['💰 돈', '🏃 건강', '👨‍👩‍👧 가족', '📚 성장', '💼 일', '🎨 취미', '✨ 기타'];
+    const KINDS = [['check', '✅ 해냈다/못했다'], ['count', '🔢 몇 번 (+1씩)'], ['num', '📈 숫자 (저축·몸무게)'], ['steps', '📋 단계 체크리스트']];
+    // 다른 화면 기록으로 자동 세기 (해당 연도)
+    const AUTOS = [['', '직접 셀게요'], ['books', '📚 다 읽은 책 (콘텐츠 기록)'], ['media', '🍿 다 본·한 콘텐츠 전부'], ['workouts', '🏃 운동한 날 수'], ['workmin', '🏃 운동 시간 (시간)'], ['diary', '📔 한줄 일기 쓴 날'], ['wishdrop', '🎁 안 사서 아낀 돈 (원)']];
+    let st = Object.assign({ years: {}, bucket: [], tab: 'goals' }, load(KEY, {})), year = (() => { const d = new Date(); return d.getMonth() === 11 && d.getDate() >= 15 ? d.getFullYear() + 1 : d.getFullYear(); })(), cat = CATS[0], kind = 'count', editId = null, sheetId = null;
+    const persist = () => save(KEY, st);
+    const Y = () => (st.years[year] = st.years[year] || { goals: [], reviews: {} });
+    function autoVal(src) {
+      const y = String(year), inY = s => String(s || '').startsWith(y);
+      if (src === 'books' || src === 'media') return ((load('argon_media_v1', {}) || {}).items || []).filter(i => i.status === 'done' && inY(i.date) && (src === 'media' || i.type === 'book')).length;
+      const wl = ((load('argon_workout_v1', {}) || {}).logs || []).filter(l => inY(l.date));
+      if (src === 'workouts') return new Set(wl.map(l => l.date)).size;
+      if (src === 'workmin') return Math.round(wl.reduce((a, l) => a + l.min, 0) / 6) / 10;
+      if (src === 'diary') return new Set(((load('argon_diary_v1', {}) || {}).entries || []).filter(e => inY(e.date)).map(e => e.date)).size;
+      if (src === 'wishdrop') return ((load('argon_wish_v1', {}) || {}).items || []).filter(i => i.status === 'drop' && inY(i.doneAt)).reduce((a, i) => a + ((i.prices || []).length ? i.prices[i.prices.length - 1].p : i.price || 0), 0);
+      return 0;
+    }
+    // 진행률 0~1
+    function prog(g) {
+      if (g.kind === 'check') return g.done ? 1 : 0;
+      if (g.kind === 'steps') return (g.steps || []).length ? g.steps.filter(s => s.done).length / g.steps.length : 0;
+      if (g.kind === 'count') { const v = g.auto ? autoVal(g.auto) : (g.logs || []).reduce((a, l) => a + l.v, 0); return Math.min(1, v / (g.target || 1)); }
+      if (g.kind === 'num') { const cur = g.auto ? autoVal(g.auto) : g.cur ?? g.start; const span = g.target - g.start; return span ? Math.min(1, Math.max(0, (cur - g.start) / span)) : 0; }
+      return 0;
+    }
+    const curVal = g => g.kind === 'count' ? (g.auto ? autoVal(g.auto) : (g.logs || []).reduce((a, l) => a + l.v, 0)) : g.kind === 'num' ? (g.auto ? autoVal(g.auto) : g.cur ?? g.start) : null;
+    const dueOf = g => g.due || `${year}-12-31`;
+    // 기간 중 지난 비율
+    function timeP(g) { const s = D(g.created && g.created.startsWith(String(year)) ? g.created : `${year}-01-01`), e = D(dueOf(g)), n = new Date(new Date().toDateString()); return Math.min(1, Math.max(0, (n - s) / Math.max(864e5, e - s))); }
+    function setYear(n) { year += n; render(); }
+    function setTab(t) { st.tab = t; persist(); render(); }
+    function openForm(id) {
+      const g = id ? Y().goals.find(x => x.id === id) : null; editId = g ? g.id : null; cat = g ? g.cat : CATS[0]; kind = g ? g.kind : 'count';
+      document.getElementById('fTitle').value = g ? g.title : ''; document.getElementById('fDue').value = g ? g.due || '' : ''; document.getElementById('fWhy').value = g ? g.why || '' : '';
+      document.getElementById('formTitle').textContent = g ? `✏️ ${g.title}` : `🎯 ${year}년 새 목표`; document.getElementById('saveBtn').textContent = g ? '고치기' : '저장';
+      window._g = g; renderForm(); document.getElementById('form').classList.remove('hidden'); document.getElementById('form').scrollIntoView({ behavior: 'smooth' }); if (!g) document.getElementById('fTitle').focus();
+    }
+    function closeForm() { document.getElementById('form').classList.add('hidden'); editId = null; }
+    function setCat(i) { cat = CATS[i]; renderForm(); }
+    function setKind(k) { kind = k; renderForm(); }
+    function renderForm() {
+      const g = window._g || {};
+      document.getElementById('cats').innerHTML = CATS.map((c, i) => chip(cat === c, c, `setCat(${i})`)).join('');
+      document.getElementById('kinds').innerHTML = KINDS.map(([k, l]) => `<span role="button" tabindex="0" onclick="setKind('${k}')" class="cursor-pointer text-center py-2 rounded-xl text-xs font-extrabold ${kind === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
+      const autoSel = allowed => `<label class="block text-[10px] font-bold text-slate-500 mt-2">자동으로 세기<select id="fAuto" class="w-full border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm">${AUTOS.filter(([k]) => allowed.includes(k)).map(([k, l]) => `<option value="${k}" ${g.auto === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
+      document.getElementById('kindBox').innerHTML = kind === 'count' ? `<div class="grid grid-cols-2 gap-2"><label class="text-[10px] font-bold text-slate-500">목표 횟수<input id="fTarget" type="number" min="1" value="${g.target || ''}" placeholder="24" class="num w-full ${inp}"></label><label class="text-[10px] font-bold text-slate-500">단위<input id="fUnit" maxlength="6" value="${esc(g.unit || '')}" placeholder="권, 번, 회" class="w-full ${inp}"></label></div>${autoSel(['', 'books', 'media', 'workouts', 'workmin', 'diary'])}`
+        : kind === 'num' ? `<div class="grid grid-cols-3 gap-2"><label class="text-[10px] font-bold text-slate-500">시작<input id="fStart" type="number" step="any" value="${g.start ?? ''}" placeholder="0" class="num w-full ${inp}"></label><label class="text-[10px] font-bold text-slate-500">목표<input id="fTarget" type="number" step="any" value="${g.target ?? ''}" placeholder="10000000" class="num w-full ${inp}"></label><label class="text-[10px] font-bold text-slate-500">단위<input id="fUnit" maxlength="6" value="${esc(g.unit || '')}" placeholder="원, kg" class="w-full ${inp}"></label></div><p class="text-[10px] text-slate-400 mt-1">몸무게처럼 줄이는 목표는 시작보다 작은 목표를 넣으면 돼요</p>${autoSel(['', 'wishdrop'])}`
+        : kind === 'steps' ? `<textarea id="fSteps" rows="4" maxlength="800" placeholder="단계를 줄마다 하나씩 (예: 학원 알아보기)" class="w-full ${inp}">${esc((g.steps || []).map(s => s.t).join('\n'))}</textarea>` : '<p class="text-[11px] text-slate-500">해내면 ✅만 누르면 돼요</p>';
+    }
+    function saveGoal() {
+      const title = document.getElementById('fTitle').value.trim(); if (!title) { document.getElementById('fTitle').focus(); return; }
+      const v = { title, cat, kind, due: document.getElementById('fDue').value, why: document.getElementById('fWhy').value.trim() }, el = id => document.getElementById(id);
+      if (kind === 'count') Object.assign(v, { target: Math.max(1, Math.round(+el('fTarget').value || 1)), unit: el('fUnit').value.trim(), auto: el('fAuto').value });
+      if (kind === 'num') Object.assign(v, { start: +el('fStart').value || 0, target: +el('fTarget').value || 0, unit: el('fUnit').value.trim(), auto: el('fAuto').value });
+      if (kind === 'steps') { const old = (window._g || {}).steps || []; v.steps = el('fSteps').value.split('\n').map(t => t.trim()).filter(Boolean).map((t, i) => ({ id: i + 1, t, done: !!(old.find(o => o.t === t) || {}).done })); }
+      if (editId) Object.assign(Y().goals.find(x => x.id === editId), v); else Y().goals.push(Object.assign({ id: Date.now(), created: today(), logs: [] }, v));
+      persist(); closeForm(); render();
+    }
+    function plus(id, n = 1) { const g = Y().goals.find(x => x.id === id); if (!g) return; (g.logs = g.logs || []).push({ d: today(), v: n }); if (prog(g) >= 1 && !g.doneAt) g.doneAt = today(); persist(); render(); }
+    function togCheck(id) { const g = Y().goals.find(x => x.id === id); if (!g) return; g.done = !g.done; g.doneAt = g.done ? today() : null; persist(); render(); }
+    function togStep(id, sid) { const g = Y().goals.find(x => x.id === id); const s = g && (g.steps || []).find(x => x.id === sid); if (!s) return; s.done = !s.done; g.doneAt = prog(g) >= 1 ? today() : null; persist(); render(); }
+    function numSheet(id) { const g = Y().goals.find(x => x.id === id); if (!g) return; sheetId = id; document.getElementById('sheetBody').innerHTML = `<h3 class="text-sm font-extrabold text-slate-900">📈 ${esc(g.title)} 지금 값</h3><input id="sv" type="number" step="any" value="${g.cur ?? g.start}" class="num w-full mt-2 ${inp}"><button type="button" onclick="setNum()" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>`; document.getElementById('sheet').classList.remove('hidden'); document.getElementById('sv').focus(); }
+    function setNum() { const g = Y().goals.find(x => x.id === sheetId), v = +document.getElementById('sv').value; if (g && isFinite(v)) { g.cur = v; (g.logs = g.logs || []).push({ d: today(), v, set: true }); g.doneAt = prog(g) >= 1 ? (g.doneAt || today()) : null; persist(); } document.getElementById('sheet').classList.add('hidden'); render(); }
+    const fmtV = (v, g) => `${Number(v).toLocaleString('ko-KR', { maximumFractionDigits: 1 })}${g.unit || ''}`;
+    function goalCard(g) {
+      const p = prog(g), t = timeP(g), k = dday(dueOf(g)), done = p >= 1, diff = p - t, cv = curVal(g);
+      const pace = done ? ['🎉 달성!', 'text-emerald-600'] : k < 0 ? ['기한 지남', 'text-rose-500'] : g.kind === 'check' || g.kind === 'steps' && !(g.steps || []).length ? [`D-${k}`, 'text-slate-500'] : diff >= 0.05 ? ['앞서가는 중 🚀', 'text-emerald-600'] : diff >= -0.1 ? ['딱 맞게 가는 중', 'text-indigo-600'] : ['조금 뒤처졌어요', 'text-amber-600'];
+      const body = g.kind === 'count' ? `<div class="flex items-center gap-2 mt-2"><p class="flex-1 text-sm font-extrabold num text-slate-900">${fmtV(cv, g)} <span class="text-xs text-slate-400">/ ${fmtV(g.target, g)}</span>${g.auto ? ' <span class="text-[10px] font-bold text-indigo-500">자동</span>' : ''}</p>${g.auto ? '' : `<span role="button" tabindex="0" onclick="plus(${g.id})" class="cursor-pointer px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-sm font-extrabold">+1</span>`}</div>`
+        : g.kind === 'num' ? `<div class="flex items-center gap-2 mt-2"><p class="flex-1 text-sm font-extrabold num text-slate-900">${fmtV(cv, g)} <span class="text-xs text-slate-400">→ ${fmtV(g.target, g)} (시작 ${fmtV(g.start, g)})</span>${g.auto ? ' <span class="text-[10px] font-bold text-indigo-500">자동</span>' : ''}</p>${g.auto ? '' : `<span role="button" tabindex="0" onclick="numSheet(${g.id})" class="cursor-pointer px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-extrabold">값 기록</span>`}</div>`
+        : g.kind === 'steps' ? `<div class="mt-2">${(g.steps || []).map(s => `<div role="button" tabindex="0" onclick="togStep(${g.id}, ${s.id})" class="cursor-pointer flex items-center gap-2 py-1"><span class="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center text-[11px] font-extrabold ${s.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">${s.done ? '✓' : ''}</span><span class="text-sm ${s.done ? 'text-slate-400 line-through' : 'text-slate-800'}">${esc(s.t)}</span></div>`).join('')}</div>`
+        : `<div class="mt-2"><span role="button" tabindex="0" onclick="togCheck(${g.id})" class="cursor-pointer inline-block px-3 py-1.5 rounded-xl text-sm font-extrabold ${g.done ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'}">${g.done ? `✅ ${md(g.doneAt)} 해냈어요` : '✅ 해냈어요'}</span></div>`;
+      return `<section class="card p-4 ${done ? 'ring-2 ring-emerald-300' : ''}"><div class="flex items-start gap-2"><span class="text-2xl">${g.cat.split(' ')[0]}</span><div class="flex-1 min-w-0"><p class="text-base font-extrabold text-slate-900">${esc(g.title)}</p><p class="text-[11px] font-bold text-slate-500">${g.due ? `~${md(g.due)}` : `${year}년 안에`}${g.why ? ` · ${esc(g.why)}` : ''}</p></div><span class="text-[11px] font-extrabold shrink-0 ${pace[1]}">${pace[0]}</span></div>
+        <div class="relative h-2.5 rounded-full bg-slate-100 mt-3 overflow-hidden"><div class="h-full rounded-full" style="width:${(p * 100).toFixed(0)}%;background:${done ? '#10b981' : '#6366f1'}"></div></div>
+        ${!done && g.kind !== 'check' ? `<div class="relative h-0"><span class="absolute -top-3.5 w-0.5 h-4 bg-slate-400 rounded" style="left:${(t * 100).toFixed(1)}%" title="오늘까지 지난 기간"></span></div><p class="text-[10px] text-slate-400 mt-1">${Math.round(p * 100)}% · 기간은 ${Math.round(t * 100)}% 지났어요 (막대 위 표시)</p>` : ''}
+        ${body}<div class="flex gap-3 justify-end mt-2"><span role="button" tabindex="0" onclick="openForm(${g.id})" class="cursor-pointer text-[11px] font-bold text-slate-500">고치기</span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { Y().goals = Y().goals.filter(x => x.id !== ${g.id}); persist(); render(); })" class="cursor-pointer text-[11px] font-bold text-slate-300">삭제</span></div></section>`;
+    }
+    function render() {
+      document.getElementById('yearLbl').textContent = year;
+      document.getElementById('tabs').innerHTML = [['goals', '🎯 목표'], ['review', '🗓️ 월간 회고'], ['bucket', '🪣 버킷리스트']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setTab('${k}')" class="cursor-pointer text-center py-1.5 rounded-lg text-xs font-extrabold ${st.tab === k ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}">${l}</span>`).join('');
+      ['goal', 'review', 'bucket'].forEach(k => document.getElementById(k + 'Tab').classList.toggle('hidden', st.tab !== (k === 'goal' ? 'goals' : k)));
+      const gs = Y().goals, done = gs.filter(g => prog(g) >= 1).length, avg = gs.length ? gs.reduce((a, g) => a + prog(g), 0) / gs.length : 0, now = new Date(), yp = year === now.getFullYear() ? (now - new Date(year, 0, 1)) / (new Date(year + 1, 0, 1) - new Date(year, 0, 1)) : year < now.getFullYear() ? 1 : 0;
+      document.getElementById('sub').textContent = gs.length ? `${year}년 목표 ${gs.length}개 · 달성 ${done}` : `${year}년 목표 세우기`;
+      document.getElementById('overview').innerHTML = `<div class="flex items-center gap-3"><div class="flex-1"><p class="text-[11px] font-bold text-slate-500">${year}년 전체 진행률</p><p class="text-2xl font-extrabold num text-slate-900">${Math.round(avg * 100)}% <span class="text-xs font-bold text-slate-400">· 한 해는 ${Math.round(yp * 100)}% 지났어요</span></p></div><button type="button" onclick="openForm()" class="shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-extrabold rounded-xl">+ 목표</button></div>
+        <div class="h-2 rounded-full bg-slate-100 mt-2 overflow-hidden"><div class="h-full rounded-full bg-indigo-500" style="width:${(avg * 100).toFixed(0)}%"></div></div>
+        ${!gs.length ? `<p class="text-xs text-slate-500 mt-3">💡 숫자로 셀 수 있게 정하면 꾸준히 보기 쉬워요. 예: "책 24권 읽기"(콘텐츠 기록과 자동 연결), "운동 100일"(운동 기록과 자동 연결), "비상금 1,000만원", "가족 여행 2번"</p>` : ''}`;
+      document.getElementById('goals').innerHTML = gs.slice().sort((a, b) => (prog(a) >= 1) - (prog(b) >= 1) || dueOf(a).localeCompare(dueOf(b))).map(goalCard).join('');
+      renderReview(); renderBucket();
+    }
+    // ---------- 월간 회고 ----------
+    function saveReview(m) { Y().reviews[m] = document.getElementById('rv' + m).value.trim(); persist(); const el = document.getElementById('rs' + m); if (el) { el.textContent = '저장했어요 ✓'; setTimeout(() => { if (el.isConnected) el.textContent = ''; }, 1500); } }
+    function renderReview() {
+      const now = new Date(), lastM = year < now.getFullYear() ? 12 : year > now.getFullYear() ? 0 : now.getMonth() + 1, ms = [...Array(lastM)].map((_, i) => `${year}-${String(lastM - i).padStart(2, '0')}`);
+      document.getElementById('reviewTab').innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900">🗓️ ${year}년 월간 회고</h2><p class="text-[11px] font-bold text-slate-500 mb-2">한 달에 한 줄. 잘한 것, 아쉬운 것, 다음 달 하고 싶은 것</p>`
+        + (ms.map(m => `<div class="py-2 border-b border-slate-100"><p class="text-xs font-extrabold text-slate-700">${+m.slice(5)}월 <span id="rs${m}" class="text-[10px] font-bold text-emerald-600"></span></p><textarea id="rv${m}" rows="2" maxlength="300" onblur="saveReview('${m}')" placeholder="${m === ms[0] ? '이번 달은 어땠어요?' : ''}" class="w-full mt-1 ${inp}">${esc(Y().reviews[m] || '')}</textarea></div>`).join('') || '<p class="text-xs text-slate-400">아직 시작 안 한 해예요</p>');
+    }
+    // ---------- 버킷리스트 (평생) ----------
+    function addBucket() { const t = document.getElementById('bIn').value.trim(); if (!t) return; st.bucket.unshift({ id: Date.now(), t, done: false }); persist(); renderBucket(); document.getElementById('bIn').focus(); }
+    function togBucket(id) { const b = st.bucket.find(x => x.id === id); if (!b) return; b.done = !b.done; b.doneAt = b.done ? today() : null; persist(); renderBucket(); }
+    function renderBucket() {
+      const n = st.bucket.filter(b => b.done).length;
+      document.getElementById('bucketTab').innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900">🪣 버킷리스트 <span class="text-xs font-bold text-slate-400">${n}/${st.bucket.length}</span></h2><p class="text-[11px] font-bold text-slate-500 mb-2">언젠가 꼭 해 보고 싶은 것 (연도 상관없이)</p>
+        <form onsubmit="event.preventDefault(); addBucket()" class="flex gap-1.5"><input id="bIn" maxlength="60" placeholder="예: 아이랑 제주 한 달 살기" class="flex-1 min-w-0 ${inp}"><button class="px-3 rounded-lg bg-indigo-600 text-white text-sm font-extrabold">추가</button></form>
+        <div class="mt-2">${st.bucket.slice().sort((a, b) => a.done - b.done).map(b => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span role="button" tabindex="0" onclick="togBucket(${b.id})" class="cursor-pointer flex items-center gap-2 flex-1 min-w-0"><span class="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center text-[11px] font-extrabold ${b.done ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">${b.done ? '✓' : ''}</span><span class="text-sm ${b.done ? 'text-slate-400 line-through' : 'text-slate-800 font-bold'}">${esc(b.t)}</span></span>${b.done ? `<span class="text-[10px] font-bold text-emerald-600">${md(b.doneAt)}</span>` : ''}<span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.bucket = st.bucket.filter(x => x.id !== ${b.id}); persist(); renderBucket(); })" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') || '<p class="text-xs text-slate-400 py-1">하나씩 적어 봐요 ✨</p>'}</div>`;
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (/^argon_/.test(e.key || '')) { st = Object.assign(st, load(KEY, {})); render(); } });
+    if (new URLSearchParams(location.search).get('tab') === 'review') st.tab = 'review';
+    render();
+  </script>
+</body>
+</html>
