@@ -276,6 +276,27 @@ module.exports = async (req, res) => {
     }
     if (op === 'pulse') return send(res, 200, await pulse(), 60);
     if (op === 'uspulse') return send(res, 200, await usPulse(), 300);
+    if (op === 'probe') {   // 임시: 이벤트 데이터 출처 확인용
+      const H = { 'User-Agent': UA, Accept: 'application/json, text/plain, */*' };
+      const U = [
+        ['https://query1.finance.yahoo.com/v10/finance/quoteSummary/AAPL?modules=calendarEvents', H],
+        ['https://query2.finance.yahoo.com/v7/finance/quote?symbols=AAPL', H],
+        ['https://api.nasdaq.com/api/analyst/AAPL/earnings-date', { ...H, Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' }],
+        ['https://api.nasdaq.com/api/calendar/earnings?date=2026-12-03', { ...H, Origin: 'https://www.nasdaq.com', Referer: 'https://www.nasdaq.com/' }],
+        ['https://api.stock.naver.com/stock/AAPL.O/basic', NAVER],
+        ['https://api.stock.naver.com/stock/AAPL.O/integration', NAVER],
+        ['https://m.stock.naver.com/api/stock/005930/integration', NAVER],
+        ['https://m.stock.naver.com/api/stock/005930/disclosure?pageSize=5', NAVER],
+        ['https://m.stock.naver.com/api/stock/005930/notice?pageSize=5', NAVER],
+        ['https://m.stock.naver.com/api/news/stock/005930?pageSize=3', NAVER],
+        ['https://m.stock.naver.com/api/stock/005930/finance/quarter', NAVER],
+        ['https://m.stock.naver.com/front-api/marketIndex/economicCalendar?date=20261201', NAVER],
+        ['https://m.stock.naver.com/api/economicIndicator/calendar?startDate=20261201&endDate=20261231', NAVER],
+        ['https://api.stock.naver.com/economic/calendar?startDate=2026-12-01&endDate=2026-12-31', NAVER]
+      ];
+      const out = await Promise.all(U.map(async ([u, h]) => { try { const r = await fetch(u, { headers: h, signal: AbortSignal.timeout(7000) }); const t = await r.text(); return { u: u.replace(/https:\/\//, '').slice(0, 90), s: r.status, body: t.slice(0, 900) }; } catch (e) { return { u, err: e.message }; } }));
+      return send(res, 200, out, 0);
+    }
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
       if (!term) return send(res, 400, { error: '검색어가 없어요' });
