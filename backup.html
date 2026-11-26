@@ -117,6 +117,7 @@
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
     <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
     <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
+    <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
     <a href="./wish.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>위시리스트</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
@@ -137,6 +138,8 @@
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
     <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
+    <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
+    <a href="./santa.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎅 <span>산타 리스트</span></a>
     <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
     <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
@@ -198,16 +201,18 @@
     let pending = null;
     const kb = n => !n ? '0KB' : n > 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB';
     const voiceDB = () => new Promise(res => { const r = indexedDB.open('dd_voice', 1); r.onupgradeneeded = () => r.result.createObjectStore('clips', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+    const growthDB = () => new Promise(res => { const r = indexedDB.open('dd_growth', 1); r.onupgradeneeded = () => r.result.createObjectStore('photos', { keyPath: 'id' }); r.onsuccess = () => res(r.result); r.onerror = () => res(null); });
+    async function growth() { const d = await growthDB(); if (!d) return []; return new Promise(res => { const q = d.transaction('photos').objectStore('photos').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); }
     async function voices() { const d = await voiceDB(); if (!d) return []; return new Promise(res => { const q = d.transaction('clips').objectStore('clips').getAll(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }); }
     const b64 = blob => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
     function keys() { const ks = []; for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && !NOSAVE.test(k)) ks.push(k); } return ks.sort(); }
     async function renderInv() {
-      const ks = keys(), rec = ks.filter(k => !isMedia(k)), med = ks.filter(isMedia), vs = await voices();
-      const sz = a => a.reduce((s, k) => s + (localStorage.getItem(k) || '').length * 2, 0), vsz = vs.reduce((s, v) => s + (v.blob ? v.blob.size * 1.37 : 0), 0);
+      const ks = keys(), rec = ks.filter(k => !isMedia(k)), med = ks.filter(isMedia), vs = await voices(), gr = await growth();
+      const sz = a => a.reduce((s, k) => s + (localStorage.getItem(k) || '').length * 2, 0), vsz = vs.reduce((s, v) => s + (v.blob ? v.blob.size * 1.37 : 0), 0) + gr.reduce((s, g) => s + (g.data || '').length, 0);
       const tx = load('argon_tx_v3', []) || [];
       document.getElementById('inv').innerHTML = `<div class="flex justify-between py-1"><span class="font-bold text-slate-700">📝 기록 (${rec.length}개 화면 데이터)</span><span class="num font-bold text-slate-500">${kb(sz(rec))}</span></div>
-        <div class="flex justify-between py-1"><span class="font-bold text-slate-700">📸 사진 <span class="text-[10px] text-rose-500">기기에만</span></span><span class="num font-bold text-slate-500">${med.length}장 · ${kb(sz(med))}</span></div>
-        <div class="flex justify-between py-1"><span class="font-bold text-slate-700">🎙️ 녹음 <span class="text-[10px] text-rose-500">기기에만</span></span><span class="num font-bold text-slate-500">${vs.length}개 · ${kb(vsz)}</span></div>
+        <div class="flex justify-between py-1"><span class="font-bold text-slate-700">📸 사진 <span class="text-[10px] text-rose-500">기기에만</span></span><span class="num font-bold text-slate-500">${med.length + gr.length}장 · ${kb(sz(med) + gr.reduce((s, g) => s + (g.data || '').length, 0))}</span></div>
+        <div class="flex justify-between py-1"><span class="font-bold text-slate-700">🎙️ 녹음 <span class="text-[10px] text-rose-500">기기에만</span></span><span class="num font-bold text-slate-500">${vs.length}개 · ${kb(vs.reduce((s, v) => s + (v.blob ? v.blob.size * 1.37 : 0), 0))}</span></div>
         <p class="text-[11px] font-bold text-slate-400 mt-1">${Object.entries(NAMES).filter(([k]) => localStorage.getItem(k)).map(([, n]) => n).join(' · ')}${tx.length ? ` · 가계부 ${tx.length.toLocaleString()}건` : ''}</p>`;
       const w = document.getElementById('withMedia').checked;
       document.getElementById('dlBtn').textContent = `📤 백업 파일 받기 (약 ${kb(sz(rec) / 2 + (w ? sz(med) / 2 + vsz : 0))})`;
@@ -219,7 +224,8 @@
       try {
         const ls = {}; keys().filter(k => w || !isMedia(k)).forEach(k => ls[k] = localStorage.getItem(k));
         const voice = w ? await Promise.all((await voices()).filter(v => v.blob).map(async v => ({ id: v.id, data: await b64(v.blob) }))) : [];
-        const out = { app: '든든', kind: 'full-backup', v: 1, at: new Date().toISOString(), appVersion: window.ARGON_VERSION || '', ls, voice };
+        const grow = w ? (await growth()).filter(g => g.data).map(g => ({ id: g.id, data: g.data })) : [];
+        const out = { app: '든든', kind: 'full-backup', v: 1, at: new Date().toISOString(), appVersion: window.ARGON_VERSION || '', ls, voice, growth: grow };
         const blob = new Blob([JSON.stringify(out)], { type: 'application/json' }), a = document.createElement('a'), d = today();
         a.href = URL.createObjectURL(blob); a.download = `든든_전체백업_${d}${w ? '' : '_기록만'}.json`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000);
         try { localStorage.setItem(LAST, d); } catch (e) {}
@@ -234,7 +240,7 @@
         try {
           const p = JSON.parse(r.result); if (!p || p.kind !== 'full-backup' || typeof p.ls !== 'object') throw new Error('든든 전체 백업 파일이 아니에요 (가계부 화면 백업은 가계부 화면에서 불러오세요)');
           pending = p; const ks = Object.keys(p.ls).filter(k => !NOSAVE.test(k)), med = ks.filter(isMedia).length;
-          box.innerHTML = `<div class="rounded-xl p-3" style="background:#eef2ff"><p class="text-sm font-extrabold text-indigo-900">📄 ${md(p.at.slice(0, 10))} 백업${p.appVersion ? ` · v${esc(p.appVersion)}` : ''}</p><p class="text-xs font-bold text-indigo-800 mt-1">기록 ${ks.length - med}개 · 사진 ${med}장 · 녹음 ${(p.voice || []).length}개</p></div>
+          box.innerHTML = `<div class="rounded-xl p-3" style="background:#eef2ff"><p class="text-sm font-extrabold text-indigo-900">📄 ${md(p.at.slice(0, 10))} 백업${p.appVersion ? ` · v${esc(p.appVersion)}` : ''}</p><p class="text-xs font-bold text-indigo-800 mt-1">기록 ${ks.length - med}개 · 사진 ${med + (p.growth || []).length}장 · 녹음 ${(p.voice || []).length}개</p></div>
             <p class="text-[11px] font-bold text-rose-600 mt-2">⚠️ 이 기기의 같은 항목은 파일 내용으로 바뀌어요. ☁️ 동기화를 켜 뒀다면 다른 기기에도 반영돼요.</p>
             <div class="flex gap-2 mt-2"><button type="button" onclick="doBackup()" class="px-3 py-2.5 bg-slate-100 text-slate-600 text-xs font-extrabold rounded-xl">먼저 지금 것 백업</button><button type="button" onclick="sure(this,'정말 되살릴까요?',applyRestore)" class="flex-1 py-2.5 bg-rose-600 text-white font-extrabold rounded-xl">📥 되살리기</button></div>`;
         } catch (er) { pending = null; box.innerHTML = `<p class="text-sm font-bold text-rose-600">😢 ${esc(er.message || '파일을 못 읽었어요')}</p>`; }
@@ -249,7 +255,9 @@
         const d = await voiceDB();
         if (d) for (const v of p.voice) { try { const blob = await (await fetch(v.data)).blob(); await new Promise((res, rej) => { const t = d.transaction('clips', 'readwrite'); t.objectStore('clips').put({ id: v.id, blob }); t.oncomplete = res; t.onerror = () => rej(t.error); }); vok++; } catch (e) { fail++; } }
       }
-      document.getElementById('restore').innerHTML = `<p class="text-sm font-extrabold text-emerald-700">✅ ${ok}개 항목${vok ? ` · 녹음 ${vok}개` : ''} 되살렸어요${fail ? ` (${fail}개는 저장 공간이 부족해 실패)` : ''}</p><button type="button" onclick="location.href='./today.html'" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">☀️ 오늘 화면으로</button>`;
+      let gok = 0;
+      if ((p.growth || []).length) { const d = await growthDB(); if (d) for (const g of p.growth) { try { await new Promise((res, rej) => { const t = d.transaction('photos', 'readwrite'); t.objectStore('photos').put({ id: g.id, data: g.data }); t.oncomplete = res; t.onerror = () => rej(t.error); }); gok++; } catch (e) { fail++; } } }
+      document.getElementById('restore').innerHTML = `<p class="text-sm font-extrabold text-emerald-700">✅ ${ok}개 항목${vok ? ` · 녹음 ${vok}개` : ''}${gok ? ` · 성장 사진 ${gok}장` : ''} 되살렸어요${fail ? ` (${fail}개는 저장 공간이 부족해 실패)` : ''}</p><button type="button" onclick="location.href='./today.html'" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">☀️ 오늘 화면으로</button>`;
       pending = null; document.getElementById('file').value = ''; renderInv();
     }
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
