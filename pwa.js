@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.95';
+  const VERSION = '9.96';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -149,7 +149,7 @@
     const box = document.createElement('div'); box.className = 'mb-1';
     box.innerHTML = '<div class="relative"><input id="navQ" type="search" autocomplete="off" placeholder="🔍 메뉴 찾기 (예: 넷플릭스, ㄱㄷ)" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800 placeholder:text-slate-400 placeholder:font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-300"></div><div id="navRes" class="hidden flex flex-col gap-0.5 mt-1"></div>';
     const q = box.querySelector('#navQ'), res = box.querySelector('#navRes');
-    const items = links.map(a => { const f = file(a), label = a.textContent.replace(/\s+/g, ' ').trim(); return { a, f, label, name: norm(label.replace(/^\S+\s/, '')), kw: norm(NAV_KW[f] || ''), kws: (NAV_KW[f] || '').split(' ').map(norm), g: groupOf(a) }; });
+    const items = links.map(a => { const f = file(a), label = [...a.childNodes].filter(n => !(n.classList && n.classList.contains('nav-ed'))).map(n => n.textContent).join('').replace(/\s+/g, ' ').trim(); return { a, f, label, name: norm(label.replace(/^\S+\s/, '')), kw: norm(NAV_KW[f] || ''), kws: (NAV_KW[f] || '').split(' ').map(norm), g: groupOf(a) }; });
     let recent = []; try { recent = JSON.parse(localStorage.getItem('nav_recent') || '[]'); } catch (e) {}
     const tdy = links.find(a => file(a) === 'today.html'), show = on => { wrap.classList.toggle('hidden', !on); if (tdy) tdy.classList.toggle('hidden', !on); };
     const row = (it, i) => `<a href="${it.a.getAttribute('href')}" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'}">${it.a.innerHTML}<span class="ml-auto text-[10px] font-bold text-slate-400">${it.g}</span></a>`;
@@ -176,39 +176,78 @@
     document.addEventListener('keydown', e => { const t = (document.activeElement || {}).tagName; if (((e.key === '/' && !/INPUT|TEXTAREA|SELECT/.test(t)) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k'))) { e.preventDefault(); if (window.openSideNav) window.openSideNav(); setTimeout(() => q.focus(), 50); } });
     return box;
   }
-  function rememberPage() { try { const f = location.pathname.split('/').pop() || ''; if (f === 'today.html') return; let r = JSON.parse(localStorage.getItem('nav_recent') || '[]'); r = [f, ...r.filter(x => x !== f)].slice(0, 8); localStorage.setItem('nav_recent', JSON.stringify(r)); } catch (e) {} }
+  // 메뉴 방문 점수 (기기별, 오래되면 줄어듦) → ⭐ 자주 쓰는 것
+  const NAVC = 'nav_count_v1', NAVS = 'argon_nav_v1';   // NAVS = 고정·숨김 (기기 간 동기화)
+  const navCount = () => { try { return JSON.parse(localStorage.getItem(NAVC) || '{}'); } catch (e) { return {}; } };
+  const navScore = c => c ? c.n * Math.pow(0.97, (Date.now() - c.t) / 864e5) : 0;
+  function rememberPage() { try { const f = location.pathname.split('/').pop() || ''; if (f === 'today.html') return; let r = JSON.parse(localStorage.getItem('nav_recent') || '[]'); r = [f, ...r.filter(x => x !== f)].slice(0, 8); localStorage.setItem('nav_recent', JSON.stringify(r));
+    const c = navCount(), k = f || 'index.html', o = c[k]; c[k] = { n: navScore(o) + 1, t: Date.now() }; localStorage.setItem(NAVC, JSON.stringify(c)); } catch (e) {} }
   function groupNav() {
     const nav = document.getElementById('sideNav');
     if (!nav || nav.dataset.grouped) return; nav.dataset.grouped = '1';
     const css = document.createElement('style');
-    css.textContent = '.dark .nav-group{color:#e2e8f0}.dark .nav-group:hover{background:#334155}.dark #sideNav .border-slate-100{border-color:#334155}';
+    css.textContent = '.dark .nav-group{color:#e2e8f0}.dark .nav-group:hover{background:#334155}.dark #sideNav .border-slate-100{border-color:#334155}'
+      + '.nav-ed{display:none}#sideNav.nav-editing .nav-ed{display:inline-flex}#sideNav.nav-editing a.nav-item{padding-right:.25rem}.nav-ed span{width:1.75rem;height:1.75rem;align-items:center;justify-content:center;display:inline-flex;border-radius:.5rem;font-size:.8rem}.nav-ed .off{opacity:.25;filter:grayscale(1)}';
     document.head.appendChild(css);
     const file = a => (a.getAttribute('href') || '').replace(/^\.\//, '').replace(/[?#].*$/, '');
+    const key = a => file(a) || 'index.html';
     const links = [...nav.querySelectorAll(':scope > a.nav-item')];
     const today = links.find(a => file(a) === 'today.html'), foot = nav.querySelector('.mt-auto');
     let open = {}; try { open = JSON.parse(localStorage.getItem('nav_open') || '{}'); } catch (e) {}
-    const used = new Set(today ? [today] : []);
-    const groups = NAV_GROUPS.map(g => [g, links.filter(a => g[3].includes(file(a))).sort((a, b) => g[3].indexOf(file(a)) - g[3].indexOf(file(b)))]);
-    const rest = links.filter(a => !used.has(a) && !groups.some(([, ls]) => ls.includes(a)));
-    if (rest.length) groups.push([['etc', '✨', '더보기', []], rest]);
+    let ns = { pins: [], hidden: [] }; try { ns = Object.assign(ns, JSON.parse(localStorage.getItem(NAVS) || '{}')); } catch (e) {}
+    const saveNs = () => { try { localStorage.setItem(NAVS, JSON.stringify(ns)); } catch (e) {} };
+    let editing = false;
+    const base = NAV_GROUPS.map(g => [g, links.filter(a => g[3].includes(file(a))).sort((a, b) => g[3].indexOf(file(a)) - g[3].indexOf(file(b)))]);
+    const rest = links.filter(a => a !== today && !base.some(([, ls]) => ls.includes(a)));
+    if (rest.length) base.push([['etc', '✨', '더보기', []], rest]);
+    // 편집용 📌 👁 버튼 (편집 모드에서만 보임)
+    links.filter(a => a !== today).forEach(a => {
+      const ed = document.createElement('span'); ed.className = 'nav-ed ml-auto gap-0.5 shrink-0';
+      ed.innerHTML = '<span data-act="pin" title="자주 쓰는 것에 고정">📌</span><span data-act="hide" title="숨기기">👁</span>';
+      ed.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); const act = e.target.closest('[data-act]'); if (!act) return; const k = key(a), arr = act.dataset.act === 'pin' ? ns.pins : ns.hidden, i = arr.indexOf(k); if (i >= 0) arr.splice(i, 1); else { arr.push(k); if (act.dataset.act === 'hide') ns.pins = ns.pins.filter(x => x !== k); } saveNs(); build(); });
+      a.appendChild(ed);
+      a.addEventListener('click', e => { if (editing) e.preventDefault(); });
+    });
     const wrap = document.createElement('div'); wrap.className = 'flex-1 flex flex-col gap-0.5 overflow-y-auto -mx-1 px-1 min-h-0';
-    groups.forEach(([[id, emoji, name], ls]) => {
-      if (!ls.length) return;
-      const active = ls.some(a => a.classList.contains('active')), isOpen = open[id] !== undefined ? open[id] : active;
+    const mkGroup = (id, emoji, name, ls, extra) => {
+      const active = ls.some(a => a.classList.contains('active')), isOpen = editing || (open[id] !== undefined ? open[id] : active);
       const head = document.createElement('button'); head.type = 'button';
       head.className = 'nav-group flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-extrabold text-slate-800 hover:bg-slate-100 w-full text-left mt-1';
       head.setAttribute('aria-expanded', String(isOpen));
-      head.innerHTML = `<span>${emoji}</span><span class="flex-1">${name}</span><span class="text-[10px] font-bold text-slate-400">${ls.length}</span><span class="nav-chev text-xs text-slate-400 transition-transform" style="transform:rotate(${isOpen ? 90 : 0}deg)">▸</span>`;
+      head.innerHTML = `<span>${emoji}</span><span class="flex-1">${name}</span>${extra || ''}<span class="text-[10px] font-bold text-slate-400">${ls.length}</span><span class="nav-chev text-xs text-slate-400 transition-transform" style="transform:rotate(${isOpen ? 90 : 0}deg)">▸</span>`;
       const box = document.createElement('div'); box.className = 'flex flex-col gap-0.5 pl-3 ml-3 border-l-2 border-slate-100' + (isOpen ? '' : ' hidden');
       ls.forEach(a => { a.classList.remove('py-2.5'); a.classList.add('py-2'); box.appendChild(a); });
-      head.addEventListener('click', () => {
+      head.addEventListener('click', e => {
+        if (e.target.closest('[data-edit]')) return;
         const now = box.classList.toggle('hidden') === false;
         head.setAttribute('aria-expanded', String(now)); head.querySelector('.nav-chev').style.transform = `rotate(${now ? 90 : 0}deg)`;
         open[id] = now; try { localStorage.setItem('nav_open', JSON.stringify(open)); } catch (e) {}
       });
       wrap.appendChild(head); wrap.appendChild(box);
-    });
+    };
+    function build() {
+      wrap.innerHTML = '';
+      nav.classList.toggle('nav-editing', editing);
+      const hid = new Set(ns.hidden), byKey = k => links.find(a => key(a) === k);
+      // ⭐ 자주 쓰는 것: 고정한 것 + 많이 연 것 (합쳐 6개까지, 숨긴 것·오늘 제외)
+      const c = navCount(), pins = ns.pins.map(byKey).filter(a => a && !hid.has(key(a)));
+      const auto = links.filter(a => a !== today && !hid.has(key(a)) && !pins.includes(a) && navScore(c[key(a)]) >= 2).sort((x, y) => navScore(c[key(y)]) - navScore(c[key(x)])).slice(0, Math.max(0, 6 - pins.length));
+      const fav = [...pins, ...auto];
+      const fh = document.createElement('div'); fh.className = 'flex items-center gap-2 px-3 pt-1 pb-0.5';
+      fh.innerHTML = `<span class="flex-1 text-[11px] font-extrabold text-slate-400">${fav.length ? '⭐ 자주 쓰는 것' : ''}</span><button type="button" data-edit class="text-[11px] font-extrabold ${editing ? 'text-white bg-indigo-600' : 'text-slate-400'} px-2 py-0.5 rounded-lg">${editing ? '✅ 편집 끝' : '✏️ 메뉴 편집'}</button>`;
+      fh.querySelector('[data-edit]').addEventListener('click', () => { editing = !editing; build(); });
+      wrap.appendChild(fh);
+      if (editing) { const tip = document.createElement('p'); tip.className = 'px-3 pb-1 text-[11px] font-bold text-indigo-600'; tip.textContent = '📌 누르면 위에 고정, 👁 누르면 숨겨요 (메뉴 검색으론 계속 찾아져요)'; wrap.appendChild(tip); }
+      if (fav.length && !editing) fav.forEach(a => { const cl = a.cloneNode(true); cl.querySelector('.nav-ed')?.remove(); cl.classList.remove('py-2.5'); cl.classList.add('py-2'); if (ns.pins.includes(key(a))) cl.insertAdjacentHTML('beforeend', '<span class="ml-auto text-[10px] opacity-50">📌</span>'); wrap.appendChild(cl); });
+      base.forEach(([[id, emoji, name], ls]) => { const v = ls.filter(a => !hid.has(key(a))); if (v.length) mkGroup(id, emoji, name, v); });
+      const hl = links.filter(a => hid.has(key(a)));
+      if (hl.length) mkGroup('hidden', '🙈', '숨긴 메뉴', hl);
+      links.forEach(a => { const ed = a.querySelector('.nav-ed'); if (!ed) return; const k = key(a); ed.querySelector('[data-act=pin]').classList.toggle('off', !ns.pins.includes(k)); ed.querySelector('[data-act=hide]').textContent = hid.has(k) ? '🙈' : '👁'; ed.querySelector('[data-act=hide]').classList.toggle('off', !hid.has(k)); });
+    }
+    build();
+    window.addEventListener('storage', e => { if (e.key === NAVS) { try { ns = Object.assign({ pins: [], hidden: [] }, JSON.parse(e.newValue || '{}')); } catch (er) {} build(); } });
     if (today) today.after(wrap); else if (foot) nav.insertBefore(wrap, foot); else nav.appendChild(wrap);
+    const groups = base;
     const groupOf = a => { const g = groups.find(([, ls]) => ls.includes(a)); return g ? g[0][2] : ''; };
     const sbox = navSearch(nav, links, wrap, file, groupOf);
     const first = today || wrap; first.parentNode.insertBefore(sbox, first);
