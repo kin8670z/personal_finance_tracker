@@ -188,6 +188,12 @@
           <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">미국 지수는 한국 시간 밤~새벽에 열려서, 낮에는 어젯밤 마감 기준이에요.</p>
         </section>
 
+        <!-- 시장 흐름 -->
+        <section id="pulseSection" class="card p-4">
+          <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 시장 흐름</h2><span id="pulseAt" class="text-[10px] font-bold text-slate-400"></span></div>
+          <div id="pulseBox"><div class="skel" style="height:120px"></div></div>
+        </section>
+
         <!-- 관심 종목 -->
         <section class="card p-4">
           <div class="flex justify-between items-center gap-2 mb-1">
@@ -204,6 +210,18 @@
           </form>
           <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
         </section>
+
+        <!-- 실시간 랭킹 -->
+        <section id="rankSection" class="card p-4">
+          <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🏆 실시간 랭킹</h2><span id="rankAt" class="text-[10px] font-bold text-slate-400"></span></div>
+          <div id="rankKinds" class="flex flex-wrap gap-1.5"></div>
+          <div id="rankMarkets" class="flex gap-1.5 mt-2"></div>
+          <div id="rankList" class="mt-2"></div>
+          <button type="button" id="rankMore" onclick="rankN = rankN === 10 ? 30 : 10; renderRank()" class="w-full mt-2 py-1.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-lg"></button>
+        </section>
+
+        <!-- 투자 원칙 -->
+        <section id="tipSection" class="card p-4"></section>
       </div>
 
       <!-- 상세 차트 -->
@@ -343,7 +361,7 @@
 
     // ---------- 데이터 ----------
     async function fetchQuotes() {
-      const kr = watch.filter(w => isKrStock(w.symbol)).map(w => codeOf(w.symbol)), us = watch.filter(w => isUsStock(w.symbol)).map(w => codeOf(w.symbol));
+      const syms = [...new Set([...watch.map(w => w.symbol), target])], kr = syms.filter(isKrStock).map(codeOf), us = syms.filter(isUsStock).map(codeOf);
       const params = new URLSearchParams({ op: 'quotes', kr: kr.join(','), us: us.join(','), idx: 'KOSPI,KOSDAQ', world: WORLD_MARKETS.map(m => codeOf(m[0])).join(','), fx: '1', spark: '1' });
       const r = await fetch(`${API}?${params}`, { cache: 'no-store' });
       const ct = r.headers.get('content-type') || '';
@@ -1081,6 +1099,126 @@
       renderAll(); loadChart();
     }
 
+    // ===================== 🧭 시장 흐름 (숫자로 보는 자동 요약) =====================
+    // 지수 3달 차트 + 투자자별 순매수 + 업종 등락으로 '지금 시장이 어떤지'를 문장으로 정리.
+    // 규칙 기반 요약이라 예측·추천이 아님.
+    let pulseData = null, series = {}, pulseAt = 0;
+    const SER = [['IDX:KOSPI', 'idx', 'KOSPI', '코스피'], ['IDX:KOSDAQ', 'idx', 'KOSDAQ', '코스닥'], ['WLD:.INX', 'world', '.INX', 'S&P 500'], ['WLD:.IXIC', 'world', '.IXIC', '나스닥'], ['FX:USD', 'fx', 'USD', '원/달러']];
+    function stats(pts) {
+      const v = pts.map(p => p[1]).filter(x => x != null); if (v.length < 25) return null;
+      const last = v[v.length - 1], at = n => v[Math.max(0, v.length - 1 - n)], pct = (a, b) => (a / b - 1) * 100;
+      const ma20 = v.slice(-20).reduce((a, b) => a + b, 0) / 20, hi = Math.max(...v), lo = Math.min(...v);
+      const ret = v.slice(1).map((x, i) => pct(x, v[i])), sd = a => { const m = a.reduce((x, y) => x + y, 0) / a.length; return Math.sqrt(a.reduce((x, y) => x + (y - m) ** 2, 0) / a.length); };
+      let streak = 0; for (let i = ret.length - 1; i >= 0; i--) { const s = Math.sign(ret[i]); if (!s) break; if (!streak || Math.sign(streak) === s) streak += s; else break; }
+      return { last, w1: pct(last, at(5)), m1: pct(last, at(21)), m3: pct(last, v[0]), ma20, aboveMa: last >= ma20, dd: pct(last, hi), fromLo: pct(last, lo), streak, vol20: sd(ret.slice(-20)), volAll: sd(ret) };
+    }
+    const mood = m => m >= 5 ? ['강한 오름세', 'up'] : m >= 1.5 ? ['오름세', 'up'] : m > -1.5 ? ['옆걸음', 'flat'] : m > -5 ? ['내림세', 'down'] : ['강한 내림세', 'down'];
+    const sgn = n => `${n > 0 ? '+' : ''}${n.toFixed(1)}%`;
+    const eok = n => n == null ? '-' : `${n > 0 ? '+' : ''}${fmt(n)}억`;
+    async function loadPulse(force) {
+      if (!force && Date.now() - pulseAt < 55000) return;
+      pulseAt = Date.now();
+      try {
+        const cached = (() => { try { const c = JSON.parse(sessionStorage.getItem('pulse_series')); return c && Date.now() - c.t < 15 * 6e4 ? c.s : null; } catch (e) { return null; } })();
+        const [p, ...charts] = await Promise.all([
+          fetch(`${API}?op=pulse`).then(r => r.ok ? r.json() : null).catch(() => null),
+          ...(cached ? [] : SER.map(([, k, c]) => fetch(`${API}?op=chart&kind=${k}&code=${encodeURIComponent(c)}&range=3m`).then(r => r.ok ? r.json() : null).catch(() => null)))
+        ]);
+        pulseData = p;
+        if (cached) series = cached; else { series = {}; SER.forEach(([t], i) => { const st = charts[i] && charts[i].points ? stats(charts[i].points) : null; if (st) series[t] = st; }); try { sessionStorage.setItem('pulse_series', JSON.stringify({ t: Date.now(), s: series })); } catch (e) {} }
+      } catch (e) { console.warn(e); }
+      renderPulse(); renderTips();
+    }
+    function renderPulse() {
+      const box = document.getElementById('pulseBox'), K = series['IDX:KOSPI'], Q = series['IDX:KOSDAQ'], S = series['WLD:.INX'], N = series['WLD:.IXIC'], F = series['FX:USD'], p = pulseData || {};
+      const kq = quotes['idx:KOSPI'], today = kq ? kq.rate : null;
+      if (!K && !p.industry) { box.innerHTML = '<p class="text-xs text-slate-400">시장 데이터를 불러오지 못했어요. 🔄 다시 시도해 보세요.</p>'; return; }
+      // 한 줄 날씨: 한 달 흐름 + 오늘
+      const m1 = K ? K.m1 : 0, wx = m1 >= 4 ? ['☀️', '맑음'] : m1 >= 1 ? ['🌤️', '대체로 맑음'] : m1 > -1 ? ['⛅', '구름 조금'] : m1 > -4 ? ['🌥️', '흐림'] : ['🌧️', '비'];
+      const lines = [];
+      if (K) {
+        const [w, c] = mood(K.m1);
+        lines.push([c, `코스피는 최근 한 달 <b class="${c}">${sgn(K.m1)}</b>로 <b>${w}</b>예요. 3달로 보면 ${sgn(K.m3)}, 20일 평균선 ${K.aboveMa ? '<b class="up">위</b>' : '<b class="down">아래</b>'}에 있어요.`]);
+        if (K.dd > -1.5) lines.push(['up', `3달 사이 가장 높은 곳 근처예요 (고점 대비 ${sgn(K.dd)}).`]);
+        else if (K.dd < -8) lines.push(['down', `3달 고점보다 <b>${sgn(K.dd)}</b> 내려와 있어요. 조정 구간이에요.`]);
+        if (Math.abs(K.streak) >= 3) lines.push([K.streak > 0 ? 'up' : 'down', `${Math.abs(K.streak)}거래일 연속 ${K.streak > 0 ? '올랐어요' : '내렸어요'}.`]);
+        if (K.vol20 > K.volAll * 1.35) lines.push(['flat', `요즘 하루 출렁임(±${K.vol20.toFixed(1)}%)이 평소(±${K.volAll.toFixed(1)}%)보다 커요.`]);
+      }
+      if (K && Q && Math.abs(K.m1 - Q.m1) >= 4) lines.push(['flat', `코스닥은 한 달 ${sgn(Q.m1)}로 코스피와 ${Q.m1 > K.m1 ? '달리 더 강해요' : '달리 약해요'}.`]);
+      if (S && N) { const [w] = mood((S.m1 + N.m1) / 2); lines.push([S.m1 >= 0 ? 'up' : 'down', `미국은 S&P 500 ${sgn(S.m1)}, 나스닥 ${sgn(N.m1)} — 한 달 <b>${w}</b>.${K && Math.sign(K.m1) !== Math.sign(S.m1) && Math.abs(K.m1 - S.m1) > 3 ? ' 한국과 반대로 움직이고 있어요.' : ''}`]); }
+      if (F) lines.push([F.m1 > 0 ? 'up' : 'down', `원/달러 ${fmt(F.last, 1)}원, 한 달 ${sgn(F.m1)}. ${F.m1 >= 1.5 ? '원화가 약해지는 중이라 해외 주식 원화 평가액은 커지고, 외국인 매도 압력이 될 수 있어요.' : F.m1 <= -1.5 ? '원화가 강해지는 중이라 해외 주식 원화 평가액은 줄어요.' : '환율은 비교적 잠잠해요.'}`]);
+      // 오늘: 투자자 · 종목 수 · 업종
+      const tk = (p.trend || {}).KOSPI, tq = (p.trend || {}).KOSDAQ, br = p.breadth || {}, ind = (p.industry || []).filter(g => g.n >= 5).sort((a, b) => b.rate - a.rate);
+      if (tk) { const who = [['외국인', tk.frn], ['기관', tk.ins], ['개인', tk.ind]].sort((a, b) => b[1] - a[1]); lines.push([who[0][1] > 0 ? 'up' : 'flat', `오늘 코스피는 <b>${who[0][0]}</b>이 가장 많이 샀고(${eok(who[0][1])}), <b>${who[2][0]}</b>이 가장 많이 팔았어요(${eok(who[2][1])}).${tk.frn > 0 && tk.ins > 0 ? ' 외국인·기관이 같이 사는 날이에요.' : tk.frn < 0 && tk.ins < 0 ? ' 외국인·기관이 같이 파는 날이에요.' : ''}`]); }
+      const tot = (br.up || 0) + (br.down || 0) + (br.flat || 0);
+      const bar = (a, b, c, label) => `<div class="mt-2"><div class="flex justify-between text-[10px] font-bold text-slate-500"><span>${label}</span><span><span class="up">▲${fmt(a)}</span> · <span class="flat">${fmt(c)}</span> · <span class="down">▼${fmt(b)}</span></span></div><div class="h-2 rounded-full overflow-hidden flex mt-1 bg-slate-100"><div style="width:${a / (a + b + c) * 100}%;background:#f43f5e"></div><div style="width:${c / (a + b + c) * 100}%;background:#94a3b8"></div><div style="width:${b / (a + b + c) * 100}%;background:#3b82f6"></div></div></div>`;
+      const flow = t => t ? `<div class="grid grid-cols-3 gap-1 text-center">${[['개인', t.ind], ['외국인', t.frn], ['기관', t.ins]].map(([n, v]) => `<div class="rounded-lg bg-slate-50 py-1"><p class="text-[10px] font-bold text-slate-500">${n}</p><p class="text-xs font-extrabold num ${v > 0 ? 'up' : v < 0 ? 'down' : 'flat'}">${eok(v)}</p></div>`).join('')}</div>` : '';
+      box.innerHTML = `<div class="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5"><span class="text-3xl">${wx[0]}</span><span class="flex-1"><span class="block text-[11px] font-bold text-slate-500">한 달 흐름으로 본 시장 날씨</span><span class="block text-base font-extrabold text-slate-900">${wx[1]}${today != null ? ` <span class="text-xs font-bold ${today > 0 ? 'up' : today < 0 ? 'down' : 'flat'}">· 오늘 ${rateText(today)}</span>` : ''}</span></span></div>
+        <ul class="mt-2 space-y-1.5">${lines.map(([c, t]) => `<li class="flex gap-1.5 text-[13px] leading-snug text-slate-700"><span class="${c} shrink-0">•</span><span>${t}</span></li>`).join('')}</ul>
+        ${tk || tq ? `<p class="text-[11px] font-extrabold text-slate-600 mt-3">💸 오늘 투자자별 순매수 <span class="font-bold text-slate-400">(억원)</span></p>${tk ? `<p class="text-[10px] font-bold text-slate-400 mt-1">코스피</p>${flow(tk)}` : ''}${tq ? `<p class="text-[10px] font-bold text-slate-400 mt-1">코스닥</p>${flow(tq)}` : ''}` : ''}
+        ${tot ? bar(br.up, br.down, br.flat, '오른 종목 · 보합 · 내린 종목') : ''}
+        ${ind.length ? `<p class="text-[11px] font-extrabold text-slate-600 mt-3">🏭 오늘 업종</p><div class="grid grid-cols-2 gap-2 mt-1"><div>${ind.slice(0, 5).map(g => `<div class="flex justify-between text-xs py-0.5"><span class="font-bold text-slate-700 truncate">${esc(g.name)}</span><span class="font-extrabold num up">${rateText(g.rate)}</span></div>`).join('')}</div><div>${ind.slice(-5).reverse().map(g => `<div class="flex justify-between text-xs py-0.5"><span class="font-bold text-slate-700 truncate">${esc(g.name)}</span><span class="font-extrabold num ${g.rate < 0 ? 'down' : 'flat'}">${rateText(g.rate)}</span></div>`).join('')}</div></div>` : ''}
+        <p class="text-[10px] text-slate-400 mt-3">숫자로 정리한 자동 요약이에요. 앞으로의 방향을 예측하거나 매수·매도를 권하는 게 아니에요.</p>`;
+      document.getElementById('pulseAt').textContent = p.status === 'OPEN' ? '장중 · 1분마다' : p.status ? '장 마감 기준' : '';
+    }
+
+    // ===================== 🏆 실시간 랭킹 =====================
+    const RANKS = [['searchTop', '🔥 인기 검색'], ['up', '📈 상승'], ['down', '📉 하락'], ['priceTop', '💰 거래대금'], ['quantTop', '📊 거래량'], ['marketValue', '🏢 시가총액']];
+    const RMK = [['KOSPI', '코스피'], ['KOSDAQ', '코스닥'], ['NASDAQ', '나스닥'], ['NYSE', '뉴욕']];
+    let rankKind = load('argon_rank_kind', 'searchTop'), rankMk = load('argon_rank_mk', 'KOSPI'), rankN = 10, rankCache = {}, rankAtMs = 0;
+    function setRank(k, m) { if (k) rankKind = k; if (m) rankMk = m; save('argon_rank_kind', rankKind); save('argon_rank_mk', rankMk); loadRank(true); }
+    async function loadRank(force) {
+      const key = `${rankKind}:${rankKind === 'searchTop' ? '' : rankMk}`;
+      renderRank();
+      if (!force && rankCache[key] && Date.now() - rankCache[key].at < 55000) return;
+      try { const r = await fetch(`${API}?op=rank&kind=${rankKind}&market=${rankMk}&n=30`); const j = await r.json(); if (!r.ok) throw 0; rankCache[key] = { at: Date.now(), items: j.items || [] }; }
+      catch (e) { rankCache[key] = { at: Date.now(), items: null }; }
+      renderRank();
+    }
+    function renderRank() {
+      const us = ['NASDAQ', 'NYSE'].includes(rankMk), key = `${rankKind}:${rankKind === 'searchTop' ? '' : rankMk}`, c = rankCache[key];
+      document.getElementById('rankKinds').innerHTML = RANKS.map(([k, l]) => `<button type="button" onclick="setRank('${k}')" class="px-2.5 py-1 rounded-full text-xs font-bold ${rankKind === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</button>`).join('');
+      document.getElementById('rankMarkets').innerHTML = rankKind === 'searchTop' ? '<p class="text-[10px] font-bold text-slate-400">네이버 증권에서 지금 많이 찾는 국내 종목</p>' : RMK.map(([k, l]) => `<button type="button" onclick="setRank(null, '${k}')" class="flex-1 py-1 rounded-lg text-[11px] font-extrabold ${rankMk === k ? 'bg-slate-700 text-white' : 'bg-slate-50 text-slate-500'}">${l}</button>`).join('');
+      const L = document.getElementById('rankList'), more = document.getElementById('rankMore');
+      if (!c) { L.innerHTML = '<div class="skel" style="height:220px"></div>'; more.classList.add('hidden'); return; }
+      if (!c.items || !c.items.length) { L.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center">${us && ['priceTop', 'quantTop'].includes(rankKind) ? '해외는 이 순위를 제공하지 않아요' : '순위를 불러오지 못했어요'}</p>`; more.classList.add('hidden'); return; }
+      const watched = new Set(watch.map(w => w.symbol)), sub = x => rankKind === 'marketValue' ? x.mcap : rankKind === 'quantTop' ? `${fmt(x.volume)}주` : x.value;
+      L.innerHTML = c.items.slice(0, rankN).map((x, i) => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100">
+          <span class="w-5 text-center text-xs font-extrabold ${i < 3 ? 'text-indigo-600' : 'text-slate-400'} num">${i + 1}</span>
+          <button type="button" onclick="pickRank('${x.sym}', '${esc(x.name).replace(/'/g, '')}')" class="flex-1 min-w-0 text-left"><span class="block text-sm font-extrabold text-slate-900 truncate">${esc(x.name)}${x.etf ? ' <span class="text-[9px] font-bold px-1 rounded bg-slate-100 text-slate-500">ETF</span>' : ''}</span><span class="block text-[10px] font-bold text-slate-400 truncate">${esc(x.mk)}${sub(x) ? ` · ${esc(sub(x))}` : ''}</span></button>
+          <span class="text-right shrink-0"><span class="block text-sm font-extrabold num text-slate-900">${fmt(x.price, x.sym.startsWith('US:') ? 2 : 0)}</span><span class="block text-[11px] font-bold num ${x.dir}">${rateText(x.rate)}</span></span>
+          <button type="button" onclick="starRank('${x.sym}', '${esc(x.name).replace(/'/g, '')}')" aria-label="관심 종목" class="shrink-0 w-7 text-base ${watched.has(x.sym) ? '' : 'opacity-30'}">⭐</button></div>`).join('');
+      more.classList.remove('hidden'); more.textContent = rankN === 10 ? `더 보기 (${Math.min(30, c.items.length)}위까지)` : '접기';
+      document.getElementById('rankAt').textContent = `${new Date(c.at).getHours()}:${String(new Date(c.at).getMinutes()).padStart(2, '0')} 기준`;
+    }
+    function pickRank(sym) { selectTarget(sym); refreshAll(true); }
+    function starRank(sym, name) { if (watch.some(w => w.symbol === sym)) { selectTarget(sym); return; } addWatch(sym.slice(sym.indexOf(':') + 1), name, sym.startsWith('US:') ? 'USA' : 'KOR'); renderRank(); }
+
+    // ===================== 💡 투자 원칙 (일반 정보) =====================
+    const TIPS = [
+      ['🛟', '비상금 먼저', '생활비 3~6개월 치는 투자와 따로 두는 게 기본이에요. 급할 때 주식을 손해 보고 팔지 않게요.'],
+      ['🧺', '나눠 담기', '한 종목·한 업종에 몰기보다 여러 자산에 나눠 두면 한 곳이 크게 떨어져도 버틸 수 있어요.'],
+      ['📅', '나눠 사기', '정해진 날 일정 금액씩 사는 적립식은 언제 살지 고민을 줄여 줘요.'],
+      ['📝', '이유 적어 두기', '살 때 왜 샀는지, 어떤 일이 생기면 팔지 적어 두면 감정적으로 사고파는 걸 줄일 수 있어요.'],
+      ['🧾', '비용도 수익률', '수수료·세금·환전 비용은 자주 사고팔수록 커져요.'],
+      ['🔥', '추격 조심', '급등 뉴스나 인기 검색 상위 종목은 이미 많이 오른 경우가 많아요. 사기 전에 한 번 더 확인해요.'],
+      ['⛓️', '빚투 주의', '신용·미수로 하는 투자는 손실이 원금보다 커질 수 있어요.'],
+      ['🏦', '절세 계좌', 'ISA·연금저축·IRP처럼 세금 혜택이 있는 계좌를 먼저 채우는 방법도 있어요.'],
+      ['⚖️', '리밸런싱', '1년에 한두 번 처음 정한 비중으로 되돌리면 많이 오른 걸 조금 팔고 덜 오른 걸 사게 돼요.'],
+      ['🕰️', '긴 호흡', '하루 등락에 일일이 반응하기보다 기간을 길게 보는 편이 마음이 편해요. 다만 과거 수익이 앞날을 보장하진 않아요.']
+    ];
+    function renderTips() {
+      const K = series['IDX:KOSPI'], pick = [];
+      // 지금 시장 상황에 맞는 원칙 하나를 먼저
+      if (K && K.vol20 > K.volAll * 1.35) pick.push(2); else if (K && K.dd < -8) pick.push(9); else if (K && K.m1 >= 5) pick.push(5);
+      const day = Math.floor(Date.now() / 864e5); while (pick.length < 3) { const i = (day + pick.length * 3) % TIPS.length; if (!pick.includes(i)) pick.push(i); else pick.push((i + 1) % TIPS.length); }
+      const t = TIPS.map((x, i) => [x, i]);
+      document.getElementById('tipSection').innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">💡 투자 원칙</h2>`
+        + pick.slice(0, 3).map(i => TIPS[i]).map(([e, h, b], k) => `<div class="flex gap-2 py-1.5 ${k ? 'border-t border-slate-100' : ''}"><span class="text-xl">${e}</span><span><span class="block text-sm font-extrabold text-slate-900">${h}${k === 0 && K && (K.vol20 > K.volAll * 1.35 || K.dd < -8 || K.m1 >= 5) ? ' <span class="text-[10px] font-bold text-indigo-600">요즘 시장에 맞는</span>' : ''}</span><span class="block text-xs text-slate-600 leading-snug">${b}</span></span></div>`).join('')
+        + `<details class="mt-1"><summary class="cursor-pointer text-[11px] font-bold text-slate-500">전체 ${TIPS.length}가지 보기</summary>${t.filter(([, i]) => !pick.slice(0, 3).includes(i)).map(([[e, h, b]]) => `<div class="flex gap-2 py-1.5 border-t border-slate-100"><span class="text-lg">${e}</span><span><span class="block text-xs font-extrabold text-slate-800">${h}</span><span class="block text-[11px] text-slate-500 leading-snug">${b}</span></span></div>`).join('')}</details>
+        <p class="text-[10px] text-slate-400 mt-2">누구에게나 적용되는 일반적인 이야기예요. 특정 종목 추천이 아니고, 투자 판단과 책임은 본인에게 있어요.</p>`;
+    }
+
     // 화면을 보고 있을 때만 30초마다 새로고침
     setInterval(() => { if (document.visibilityState === 'visible') refreshAll(false); }, 30000);
     document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Date.now() - lastAt > 20000) refreshAll(false); });
@@ -1090,6 +1228,8 @@
     watch.forEach(w => { if (w.trades) recalc(w); });
     renderAll();
     refreshAll(true);
+    renderTips(); loadPulse(true); loadRank(true);
+    setInterval(() => { if (document.visibilityState === 'visible') { loadPulse(); loadRank(); } }, 60000);
   </script>
 </body>
 </html>

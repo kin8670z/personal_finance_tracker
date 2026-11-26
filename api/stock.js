@@ -5,6 +5,8 @@
 //   /api/stock?op=chart&kind=kr|us|idx|world|fx&code=005930&range=1d|1m|3m|1y|3y
 //   /api/stock?op=search&q=카카오
 //   /api/stock?op=div&kr=005930&us=AAPL.O   → 최근 3년 배당 기록 (배당락일, 주당 배당금) — 야후 파이낸스
+//   /api/stock?op=rank&kind=searchTop|up|down|marketValue|quantTop|priceTop&market=KOSPI|KOSDAQ|NASDAQ|NYSE  → 실시간 순위
+//   /api/stock?op=pulse                     → 투자자별 순매수·업종 등락·상승/하락 종목 수
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const NAVER = { 'User-Agent': UA, Referer: 'https://m.stock.naver.com/' };
@@ -175,6 +177,35 @@ async function search(q) {
       : { code: it.code, name: it.name, market: it.typeName || it.typeCode || '', nation: 'KOR' });
 }
 
+
+// ---------- 시장 랭킹 · 흐름 (네이버 증권 모바일 공개 API) ----------
+const RANK_KINDS = ['searchTop', 'up', 'down', 'marketValue', 'quantTop', 'priceTop'];
+const KR_MK = ['KOSPI', 'KOSDAQ'], US_MK = ['NASDAQ', 'NYSE', 'AMEX'];
+const dirName = n => /RISING|UPPER/.test(n || '') ? 'up' : /FALLING|LOWER/.test(n || '') ? 'down' : 'flat';
+async function rank(kind, market, n) {
+  const us = US_MK.includes(market);
+  const url = kind === 'searchTop' ? `https://m.stock.naver.com/api/stocks/searchTop?page=1&pageSize=${n}`
+    : us ? `https://api.stock.naver.com/stock/exchange/${market}/${kind}?page=1&pageSize=${n}`
+    : `https://m.stock.naver.com/api/stocks/${kind}/${market}?page=1&pageSize=${n}`;
+  const j = await get(url);
+  return (j.stocks || []).slice(0, n).map(x => {
+    const kr = x.stockType !== 'worldstock';
+    return { sym: kr ? `KRX:${x.itemCode}` : `US:${x.reutersCode}`, name: x.stockName, price: num(x.closePrice), rate: num(x.fluctuationsRatio), dir: dirName((x.compareToPreviousPrice || {}).name),
+      value: x.accumulatedTradingValueKrwHangeul || '', volume: num(x.accumulatedTradingVolume), mcap: x.marketValueHangeul || x.marketValueKrwHangeul || '', etf: x.stockEndType === 'etf', mk: kr ? (x.sosok === '1' ? '코스닥' : '코스피') : ((x.stockExchangeType || {}).name || '') };
+  });
+}
+// 투자자별 순매수(억원) + 업종 등락 + 상승/하락 종목 수
+async function pulse() {
+  const [tk, tq, ind] = await Promise.all([
+    get('https://m.stock.naver.com/api/index/KOSPI/trend').catch(() => null),
+    get('https://m.stock.naver.com/api/index/KOSDAQ/trend').catch(() => null),
+    get('https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=100').catch(() => null)
+  ]);
+  const tr = t => t ? { date: t.bizdate, ind: num(t.personalValue), frn: num(t.foreignValue), ins: num(t.institutionalValue) } : null;
+  const groups = ((ind || {}).groups || []).map(g => ({ name: g.name, rate: num(g.changeRate), up: g.riseCount || 0, down: g.fallCount || 0, flat: g.steadyCount || 0, n: g.totalCount || 0 }));
+  const breadth = groups.reduce((a, g) => ({ up: a.up + g.up, down: a.down + g.down, flat: a.flat + g.flat }), { up: 0, down: 0, flat: 0 });
+  return { trend: { KOSPI: tr(tk), KOSDAQ: tr(tq) }, industry: groups, breadth, status: (ind || {}).marketStatus || '' };
+}
 function send(res, status, body, maxAge) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -230,26 +261,12 @@ module.exports = async (req, res) => {
       const div = {}; jobs.forEach(([k], i) => { if (got[i]) div[k] = got[i]; });
       return send(res, 200, { div }, 43200);
     }
-    if (op === 'probe') {   // 임시: 네이버 순위 엔드포인트 확인용
-      const U = [
-        'https://m.stock.naver.com/api/stocks/up/KOSPI?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/down/KOSDAQ?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/marketValue/KOSPI?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/quantTop/KOSPI?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/priceTop/KOSPI?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/searchTop?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/stocks/popular?page=1&pageSize=3',
-        'https://api.stock.naver.com/stock/exchange/NASDAQ/marketValue?page=1&pageSize=3',
-        'https://api.stock.naver.com/stock/exchange/NASDAQ/up?page=1&pageSize=3',
-        'https://m.stock.naver.com/api/index/KOSPI/basic',
-        'https://m.stock.naver.com/api/index/KOSPI/trend',
-        'https://m.stock.naver.com/api/index/KOSPI/investor',
-        'https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=3',
-        'https://m.stock.naver.com/front-api/stock/domestic/ranking?type=SEARCH&page=1&pageSize=3'
-      ];
-      const out = await Promise.all(U.map(async u => { try { const r = await fetch(u, { headers: NAVER, signal: AbortSignal.timeout(6000) }); const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) {} const first = j ? (Array.isArray(j) ? j[0] : (j.stocks || j.result || j.datas || j)[0] || j.stocks || j) : t.slice(0, 120); return { u: u.replace(/https:\/\/[^/]+/, ''), s: r.status, keys: j && !Array.isArray(j) ? Object.keys(j).slice(0, 20) : null, first: JSON.stringify(first).slice(0, 600) }; } catch (e) { return { u, err: e.message }; } }));
-      return send(res, 200, out, 0);
+    if (op === 'rank') {
+      const kind = RANK_KINDS.includes(q.get('kind')) ? q.get('kind') : 'searchTop', market = [...KR_MK, ...US_MK].includes(q.get('market')) ? q.get('market') : 'KOSPI';
+      const n = Math.min(30, Math.max(5, +q.get('n') || 20));
+      return send(res, 200, { kind, market, items: await rank(kind, market, n), at: Date.now() }, 30);
     }
+    if (op === 'pulse') return send(res, 200, await pulse(), 60);
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
       if (!term) return send(res, 400, { error: '검색어가 없어요' });
