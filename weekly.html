@@ -171,10 +171,10 @@
         const cat = {}; tx.filter(t => inW(days, t.date)).forEach(t => cat[t.category] = (cat[t.category] || 0) + (+t.amount || 0));
         const top = Object.entries(cat).sort((a, b) => b[1] - a[1]).slice(0, 3), big = tx.filter(t => inW(days, t.date)).sort((a, b) => b.amount - a.amount)[0], dif = sum - psum;
         const maxI = sw.indexOf(Math.max(...sw));
-        cards.push(card('💸 지출', `<p class="text-2xl font-extrabold num text-slate-900">${won(sum)} <span class="text-xs font-bold ${dif > 0 ? 'text-rose-500' : 'text-emerald-600'}">${psum ? `지난주보다 ${won(Math.abs(dif))} ${dif > 0 ? '↑' : '↓'}` : ''}</span></p>` + bars(sw, days, v => v >= 10000 ? Math.round(v / 10000) + '만' : Math.round(v / 1000) + '천', 'bg-rose-400', maxI)
+        cards.push(card('💸 지출', `<p class="text-2xl font-extrabold num text-slate-900">${won(sum)} <span class="text-xs font-bold ${dif > 0 ? 'text-rose-500' : 'text-emerald-600'}">${psum ? `지난주보다 ${won(Math.abs(dif))} ${dif > 0 ? '↑' : '↓'}` : ''}</span></p>` + bars(sw, days, v => v >= 10000 ? (v / 10000).toFixed(v >= 100000 ? 0 : 1).replace(/\.0$/, '') + '만' : (v / 1000).toFixed(1).replace(/\.0$/, '') + '천', 'bg-rose-400', maxI)
           + (top.length ? `<div class="flex flex-wrap gap-1.5 mt-2">${top.map(([c, v]) => `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">${esc(c)} ${won(v)}</span>`).join('')}</div>` : ''),
           big ? `제일 큰 지출: ${esc(big.merchant || big.category)} ${won(big.amount)} (${label(big.date)})` : ''));
-        lines.push(`💸 지출 ${won(sum)}${psum ? ` (지난주 ${dif > 0 ? '+' : '-'}${won(Math.abs(dif))})` : ''}${top[0] ? ` · 최다 ${top[0][0]}` : ''}`);
+        lines.push(`💸 지출 ${won(sum)}${psum ? ` (지난주보다 ${won(Math.abs(dif))} ${dif > 0 ? '더' : '덜'})` : ''}${top[0] ? ` · 최다 ${top[0][0]}` : ''}`);
       }
       // 😴 수면 (나, 밤잠)
       const sl = ((load('argon_sleep_v1', {}) || {}).logs || []).filter(l => l.end && l.type === 'night' && (l.who || 'me') === 'me' && inW(days, ymd(new Date(l.end))));
