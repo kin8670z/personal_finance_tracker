@@ -1,6 +1,10 @@
 // 식약처 식품영양성분DB (공공데이터포털) 검색 — 키는 Vercel 환경변수 MFDS_KEY
 //   GET /api/food?q=신라면 → { items: [{ name, kcal, per, weight, maker, cat }], total }
+// 활용신청한 서비스는 03 (2026.11), 기능 이름이 확실치 않아서 후보를 차례로
 const EP = [
+  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo03/getFoodNtrCpntDbInq03',
+  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo03/getFoodNtrCpntDbInq02',
+  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo03/getFoodNtrCpntDbInq',
   'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02'
 ];
 function send(res, status, body, maxAge) {
@@ -24,10 +28,10 @@ module.exports = async (req, res) => {
       const url = `${ep}?serviceKey=${k}&pageNo=1&numOfRows=40&type=json&FOOD_NM_KR=${encodeURIComponent(q)}`;
       const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
       const text = await r.text();
-      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***').replace(k, '***')}`; errs.push(lastErr); continue; }
-      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***').replace(k, '***'); continue; }
+      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***').replace(k, '***')}`; errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
+      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***').replace(k, '***'); errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
       const body = j.body || (j.response && j.response.body) || {}, head = j.header || (j.response && j.response.header) || {};
-      if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; continue; }
+      if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
       let items = body.items; if (items && items.item) items = items.item; if (!Array.isArray(items)) items = items ? [items] : [];
       if (p.get('debug') === '1') return send(res, 200, { ep: ep.split('/').slice(-2).join('/'), keys: items[0] ? Object.keys(items[0]) : [], sample: items[0] || null, total: body.totalCount }, 0);
       const out = items.map(it => {
@@ -42,7 +46,7 @@ module.exports = async (req, res) => {
         };
       }).filter(x => x.name && x.kcal != null);
       return send(res, 200, { items: out, total: body.totalCount || out.length });
-    } catch (e) { lastErr = e.message; }
+    } catch (e) { lastErr = e.message; errs.push(ep.split('/').slice(-2).join('/') + ' ' + e.message); }
   }
   console.error('mfds', errs.join(' | '));
   if (p.get('debug') === '1') return send(res, 502, { errs }, 0);
