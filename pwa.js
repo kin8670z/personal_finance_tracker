@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.61';
+  const VERSION = '9.62';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -123,7 +123,7 @@
   // 메뉴 검색용 다른 이름들 (메뉴 이름에 없는 말로 찾을 때)
   const NAV_KW = {
     'today.html': '오늘 홈 메인 브리핑', '': '가계부 지출 수입 돈 소비 카드 결제', 'index.html': '가계부 지출 수입 돈 소비 카드 결제', 'report.html': '리포트 소비 분석 통계 줄일',
-    'ceremony.html': '축의금 조의금 결혼 장례 부조 돌잔치', 'subs.html': '구독 넷플릭스 유튜브 정기결제 OTT 티빙 쿠팡', 'stocks.html': '주식 증권 코스피 코스닥 토스 관심종목', 'assets.html': '자산 순자산 계좌 예금',
+    'ceremony.html': '축의금 조의금 결혼 장례 부조 돌잔치', 'subs.html': '구독 넷플릭스 유튜브 정기결제 OTT 티빙 쿠팡', 'stocks.html': '주식 증권 코스피 코스닥 토스 관심종목 랭킹 인기검색 상승 하락 외국인 기관 업종 시장흐름 투자원칙', 'assets.html': '자산 순자산 계좌 예금',
     'tax.html': '연말정산 세금 공제', 'lotto.html': '로또 복권 당첨', 'weather.html': '날씨 기온 일출 일몰 미세먼지 비 눈 주간', 'subway.html': '지하철 출근 퇴근 열차 도착 막차',
     'lunch.html': '점심 메뉴 룰렛 밥 뭐먹지', 'places.html': '맛집 장소 카페 식당', 'gift.html': '기프티콘 쿠폰 선물 바코드', 'groupbuy.html': '공구 공동구매 오픈 마감', 'parking.html': '주차 몇층',
     'stash.html': '물건 위치 어디뒀 보관', 'trash.html': '쓰레기 재활용 분리배출 음식물 페트', 'supplies.html': '필터 칫솔 교체 소모품 청소 주기', 'warranty.html': '보증 영수증 AS 가전 시리얼',
