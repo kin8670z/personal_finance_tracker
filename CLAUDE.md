@@ -14,9 +14,9 @@
 - 사이드 메뉴 그룹: `pwa.js`의 `NAV_GROUPS` (새 페이지는 여기에 넣지 않으면 "✨ 더보기"로 감). 메뉴 검색용 관련 단어는 `NAV_KW`에 같이 넣기.
 - 다크 모드 보정: `theme.css` (연한 배경·색 글자 → 다크 톤). 새 색 클래스를 쓰면 여기도 확인.
 - 버전: index.html `APP_VERSION`·제목·릴리즈 노트, `pwa.js` `VERSION`, `sw.js` 캐시 이름을 같이 올린다.
-- 비밀값(Upstash, 서울 지하철·열린데이터, STDICT_KEY, MFDS_KEY, FOODSAFETY_KEY, DATA_GO_KR_KEY 등)은 Vercel 환경변수에만. 코드·응답에 노출 금지.
+- 비밀값(Upstash, 서울 지하철·열린데이터, STDICT_KEY, MFDS_KEY, FOODSAFETY_KEY, DATA_GO_KR_KEY, TMDB_KEY 등)은 Vercel 환경변수에만. 코드·응답에 노출 금지.
 - Vercel Hobby는 하루 배포 100회(미리보기 포함) — 작은 수정은 모아서 push.
-- Vercel Hobby는 **함수(api/ 파일) 12개까지** — 넘으면 배포 실패. 새 API는 `lib/`에 두고 기존 함수가 넘겨주기 (예: `api/food.js?svc=medical` → `lib/medical.js`, `api/games.js?svc=anime` → `lib/anime.js` AniList).
+- Vercel Hobby는 **함수(api/ 파일) 12개까지** — 넘으면 배포 실패. 새 API는 `lib/`에 두고 기존 함수가 넘겨주기 (예: `api/food.js?svc=medical` → `lib/medical.js`, `api/games.js?svc=anime` → `lib/anime.js` AniList, `svc=tmdb` → `lib/tmdb.js` 국내 OTT). TMDB를 쓰는 화면엔 TMDB·JustWatch 출처 문구 필수(신청서 약속).
 - 인라인 `onclick="x='..'"`로 전역 변수를 바꿀 때, 요소 속성과 이름이 겹치면(`dir`·`title`·`lang`·`hidden`·`id` 등) 요소 쪽이 바뀐다. 함수로 감싸서 바꾸기.
 - 새로운 데이터 키를 만들면 연말 결산(recap.html)에 넣을 만한지 같이 보기. 전체 백업(backup.html)은 localStorage 전부 + `dd_voice`·`dd_growth`를 담음 (동기화 키·캐시 제외) — 새 IndexedDB를 쓰면 백업에도 추가.
 - 아이 목소리 녹음은 IndexedDB `dd_voice` + `voice_index_v1`, 성장 사진은 `dd_growth` + `growth_index_v1` (argon_ 아님 → 동기화 X, 기기에만).
