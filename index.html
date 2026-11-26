@@ -22,7 +22,7 @@
     } catch (e) {}
   </script>
   <script src="sync.js" defer></script>
-  <title>든든 · 가계부 v9.83</title>
+  <title>든든 · 가계부 v9.86</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -75,6 +75,9 @@
     <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
     <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
     <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./recap.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎆 <span>연말 결산</span></a>
+    <a href="./search.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔎 <span>기록 검색</span></a>
+    <a href="./backup.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💾 <span>백업·복원</span></a>
     <a href="./goals.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎯 <span>목표</span></a>
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
@@ -164,7 +167,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v9.83</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v9.86</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -498,7 +501,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v9.83</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v9.86</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -527,6 +530,7 @@
         <button type="button" onclick="downloadBackupFile()" class="py-2.5 px-3 bg-indigo-600 text-white font-bold text-xs rounded-xl">📤 백업 파일 다운로드</button>
         <button type="button" onclick="document.getElementById('backupFileInput').click()" class="py-2.5 px-3 bg-white dark:bg-slate-800 border border-indigo-200 text-indigo-700 font-bold text-xs rounded-xl">📥 백업 파일 불러오기</button>
         <input type="file" id="backupFileInput" accept=".json,application/json" onchange="handleBackupFileUpload(event)" class="hidden">
+        <a href="./backup.html" class="col-span-2 text-center py-2 px-3 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-xl">💾 모든 화면 전체 백업 (사진·녹음 포함) →</a>
       </div>
       <div class="space-y-2 border border-emerald-100 bg-emerald-50/30 dark:bg-slate-900 p-3.5 rounded-xl">
         <button type="button" onclick="copyBackupCode()" class="w-full py-2.5 bg-emerald-600 text-white font-bold text-xs rounded-xl">📋 현재 가계부 데이터 코드 복사하기</button>
@@ -539,9 +543,23 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '9.83';
+    const APP_VERSION = '9.86';
     const releaseNotesData = [
-      { version: 'v9.83', date: '2026.11.26 (최신)', badge: '🏥 병원 검색', isLatest: true, items: [
+      { version: 'v9.86', date: '2026.11.26 (최신)', badge: '🔎 기록 검색', isLatest: true, items: [
+        '🔎 전체 기록 검색: 가계부·일기·어록·콘텐츠·여행·장소… 모든 기록에서 한 번에',
+        '☰ 메뉴 검색에서 \'기록에서 찾기\'로 바로, 오늘 화면 사전 찾기 옆 🔎'
+      ] },
+      { version: 'v9.85', date: '2026.11.26', badge: '💾 백업', isLatest: false, items: [
+        '💾 전체 백업·복원: 모든 화면 기록 + 기기에만 있는 사진·녹음을 파일 하나로',
+        '📥 파일 속 항목만 되살리기, 동기화 비밀번호는 안 담아요',
+        '🔔 매달 1~3일, 30일 넘게 백업 안 했으면 오늘 화면에서 알려줘요'
+      ] },
+      { version: 'v9.84', date: '2026.11.26', badge: '🎆 연말 결산', isLatest: false, items: [
+        '🎆 연말 결산: 한 해 기록을 카드로 넘겨 보기',
+        '💸 지출·🍿 콘텐츠·🏃 운동·🗺️ 가 본 곳·👶 아이·😊 기분·🧠 TIL/게임·🌱 아낀 것',
+        '📅 12월 15일~1월 10일엔 오늘 화면에 결산 카드'
+      ] },
+      { version: 'v9.83', date: '2026.11.26', badge: '🏥 병원 검색', isLatest: false, items: [
         '🔍 병원·약국 이름·동네 검색',
         '🎯 과목 필터를 \'전문 병원만\'으로 (여러 과를 같이 보는 의원은 끄면 같이 보여요)'
       ] },

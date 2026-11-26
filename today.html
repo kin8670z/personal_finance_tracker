@@ -87,6 +87,9 @@
     <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
     <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
     <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./recap.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎆 <span>연말 결산</span></a>
+    <a href="./search.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔎 <span>기록 검색</span></a>
+    <a href="./backup.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💾 <span>백업·복원</span></a>
     <a href="./goals.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎯 <span>목표</span></a>
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
@@ -155,7 +158,7 @@
       </div>
       <form id="dictForm" onsubmit="return goDict(event)" class="mt-3 flex gap-1.5" role="search">
         <input id="dictQ" type="search" enterkeyhint="search" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="📖 사전 찾기 (영어·국어·일본어)" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white text-sm">
-        <button type="submit" class="shrink-0 px-3 rounded-xl bg-indigo-600 text-white text-sm font-extrabold">찾기</button>
+        <button type="submit" class="shrink-0 px-3 rounded-xl bg-indigo-600 text-white text-sm font-extrabold">찾기</button><button type="button" onclick="goSearch()" title="내 기록에서 찾기" aria-label="내 기록에서 찾기" class="shrink-0 px-2.5 rounded-xl bg-slate-100 text-sm font-extrabold">🔎</button>
       </form>
       <div id="dictRecent" class="hidden flex flex-wrap gap-1.5 mt-2"></div>
     </header>
@@ -208,6 +211,8 @@
     <section id="renewCard" class="hidden card p-4"></section>
     <section id="parcelCard" class="hidden card p-4"></section>
     <section id="voiceCard" class="hidden card p-4"></section>
+    <section id="recapCard" class="hidden card p-4"></section>
+    <section id="backupCard" class="hidden card p-4"></section>
     <section id="workoutCard" class="hidden card p-4"></section>
     <section id="mkev" class="hidden card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
@@ -588,6 +593,7 @@
 
     // ---------- 📖 사전 찾기 → 사전 화면에서 결과 ----------
     const dictSrc = q => /[\u3040-\u30ff\u4e00-\u9faf]/.test(q) && !/[가-힣]/.test(q) ? 'ja' : /[가-힣]/.test(q) ? 'ko' : 'en';
+    function goSearch() { const q = document.getElementById('dictQ').value.trim(); location.href = './search.html' + (q ? '?q=' + encodeURIComponent(q) : ''); }
     function goDict(e) { if (e) e.preventDefault(); const q = document.getElementById('dictQ').value.trim(); if (!q) { document.getElementById('dictQ').focus(); return false; } location.href = `./dict.html?src=${dictSrc(q)}&q=${encodeURIComponent(q)}`; return false; }
     function showDictRecent(on) {
       const box = document.getElementById('dictRecent'), rs = ((load('argon_dict_v1', {}) || {}).recent || []).slice(0, 6);
@@ -660,6 +666,22 @@
       box.innerHTML = head(`🎙️ ${now.getMonth() + 1}월의 목소리`, './voice.html', '목소리') + `<a href="./voice.html" class="block text-sm font-bold text-slate-700">${need.map(k => esc(k.name)).join('·')} 이번 달 목소리 아직이에요 — 30초만 녹음해 둘까요? 💛</a>`;
     }
 
+    // ---------- 🎆 연말 결산: 12/15 ~ 1/10 ----------
+    function renderRecapCard() {
+      const box = document.getElementById('recapCard'), n = new Date(), m = n.getMonth() + 1, d = n.getDate();
+      const on = (m === 12 && d >= 15) || (m === 1 && d <= 10), y = m === 1 ? n.getFullYear() - 1 : n.getFullYear();
+      if (!on || !(load('argon_tx_v3', []) || []).length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = `<a href="./recap.html?y=${y}" class="block rounded-2xl p-4 text-white" style="background:linear-gradient(135deg,#4f46e5,#db2777)"><p class="text-xs font-extrabold opacity-90">🎆 ${y} 연말 결산</p><p class="text-base font-extrabold mt-1">올해 든든에 쌓인 기록으로 1년을 돌아봐요 →</p></a>`;
+    }
+    // ---------- 💾 백업: 매달 1~3일, 30일 넘게 안 했을 때 ----------
+    function renderBackupCard() {
+      const box = document.getElementById('backupCard'), n = new Date(), last = localStorage.getItem('backup_last_v1');
+      const old = !last || (n - new Date(last + 'T00:00:00')) / 864e5 > 30;
+      if (n.getDate() > 3 || !old || (load('argon_tx_v3', []) || []).length < 20) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('💾 이번 달 백업', './backup.html', '백업') + `<a href="./backup.html" class="block text-sm font-bold text-slate-700">${last ? `마지막 백업이 ${Math.round((n - new Date(last + 'T00:00:00')) / 864e5)}일 전이에요` : '아직 백업한 적이 없어요'}. 사진·녹음은 이 기기에만 있으니 파일로 한 번 받아 둘까요?</a>`;
+    }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
       const box = document.getElementById('mkev'), ME = window.MarketEvents; if (!ME) { box.classList.add('hidden'); return; }
@@ -993,7 +1015,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
