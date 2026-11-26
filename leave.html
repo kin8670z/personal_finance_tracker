@@ -173,7 +173,7 @@
     const pad = n => String(n).padStart(2, '0');
     const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const D = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
-    const W = '일월화수목금토', md = s => { const d = D(s); return `${d.getMonth() + 1}/${d.getDate()}(${W[d.getDay()]})`; };
+    const W = '일월화수목금토', ymdK = s => { const d = D(s); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}(${W[d.getDay()]})`; }, md = s => { const d = D(s); return `${d.getMonth() + 1}/${d.getDate()}(${W[d.getDay()]})`; };
     function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
     const KEY = 'argon_leave_v1';
     const KINDS = [['연차', 1, '🏖️'], ['오전 반차', 0.5, '🌅'], ['오후 반차', 0.5, '🌇'], ['반반차', 0.25, '⏱️'], ['병가', 0, '🤒'], ['경조 휴가', 0, '💐'], ['기타 휴가', 0, '🎈']];
@@ -230,8 +230,8 @@
       const bs = bridges(maxK);
       document.getElementById('bridges').innerHTML = bs.map(b => { const planned = b.leave.every(s => st.uses.some(u => u.date === s));
         return `<div class="py-2.5 border-b border-slate-100"><div class="flex items-start gap-2"><div class="flex-1 min-w-0">
-          <p class="text-sm font-extrabold text-slate-900">${md(b.s)} ~ ${md(b.e)} <span class="text-indigo-600">${b.len}일 쉬기</span></p>
-          <p class="text-[11px] font-bold text-slate-500">🎌 ${esc(b.hols.join('·'))} · 연차 <b class="text-rose-500">${b.leave.map(md).join(', ')}</b></p></div>
+          <p class="text-sm font-extrabold text-slate-900">${ymdK(b.s)} ~ ${b.s.slice(0, 4) === b.e.slice(0, 4) ? ymdK(b.e).slice(5) : ymdK(b.e)} <span class="text-indigo-600">${b.len}일 쉬기</span></p>
+          <p class="text-[11px] font-bold text-slate-500">🎌 ${esc(b.hols.join('·'))} · 연차 <b class="text-rose-500">${b.leave.map(ymdK).join(', ')}</b></p></div>
           <span class="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">×${(b.len / b.k).toFixed(1)}</span></div>
           <div class="flex gap-0.5 mt-1.5">${(() => { const a = [], d = D(b.s); while (ymd(d) <= b.e) { const s = ymd(d), lv = b.leave.includes(s); a.push(`<span title="${md(s)}" class="flex-1 h-5 rounded text-[9px] font-extrabold flex items-center justify-center" style="${lv ? 'background:#fb7185;color:#fff' : HOL.has(s) ? 'background:#fcd34d;color:#78350f' : 'background:#bae6fd;color:#075985'}">${W[d.getDay()]}</span>`); d.setDate(d.getDate() + 1); } return a.join(''); })()}</div>
           <div class="text-right mt-1.5">${planned ? '<span class="text-[11px] font-bold text-emerald-600">✅ 계획에 있어요</span>' : `<span role="button" tabindex="0" onclick='addUse(${JSON.stringify(b.leave)})' class="cursor-pointer text-[11px] font-extrabold text-indigo-600">+ 계획에 넣기</span>`}</div></div>`; }).join('')
