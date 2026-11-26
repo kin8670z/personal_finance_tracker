@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>애니·웹툰 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./recap.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎆 <span>연말 결산</span></a>
+    <a href="./search.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔎 <span>기록 검색</span></a>
+    <a href="./backup.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💾 <span>백업·복원</span></a>
+    <a href="./goals.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎯 <span>목표</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./worklog.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💼 <span>업무일지</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./supplies.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔧 <span>교체 주기</span></a>
+    <a href="./warranty.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>보증서</span></a>
+    <a href="./renew.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📅 <span>만료·갱신</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./leave.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏖️ <span>연차</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./workout.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏃 <span>운동</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
+    <a href="./medical.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏥 <span>문 연 병원·약국</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
+    <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
+    <a href="./wish.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>위시리스트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./recipes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍳 <span>레시피</span></a>
+    <a href="./fridge.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🥛 <span>냉장고 유통기한</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./mygames.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕹️ <span>내 게임</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
+    <a href="./anime.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">📺 <span>애니·웹툰</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
+    <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
+    <a href="./santa.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎅 <span>산타 리스트</span></a>
+    <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
+    <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./visited.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗺️ <span>가 본 곳</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./til.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧑‍💻 <span>오늘 배운 것</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">📺 애니·웹툰</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+      </div>
+      <div id="tabs" class="grid grid-cols-3 gap-1 mt-3 bg-slate-100 rounded-xl p-1"></div>
+    </header>
+
+    <div id="mineV" class="space-y-3 md:space-y-4">
+      <section id="todayS" class="card p-4"></section>
+      <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗓️ 내 요일표</h2><div id="week" class="grid grid-cols-7 gap-1"></div></section>
+      <section class="card p-4"><div class="flex items-center justify-between mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">📺 보는 애니</h2><span id="upd" class="text-[10px] font-bold text-slate-400"></span></div><div id="myAni"></div></section>
+    </div>
+
+    <div id="seasonV" class="hidden space-y-3 md:space-y-4">
+      <section class="card p-4">
+        <div id="seasons" class="flex flex-wrap gap-1.5"></div>
+        <form id="sF" class="flex gap-1.5 mt-2" autocomplete="off"><input id="sQ" type="search" placeholder="🔍 지난 작품 찾기 (영어·일본어·로마자)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"><button class="px-3 bg-slate-100 text-slate-600 text-sm font-extrabold rounded-lg">찾기</button></form>
+        <div id="days" class="flex flex-wrap gap-1 mt-2"></div>
+      </section>
+      <section class="card p-4"><div id="sList"><p class="text-xs text-slate-400">불러오는 중…</p></div></section>
+      <p class="text-[10px] text-slate-400 text-center">방영 정보: <a href="https://anilist.co" target="_blank" rel="noopener" class="underline">AniList</a> · 시간은 일본 방영 기준을 한국 시간으로 바꾼 거예요 (국내 서비스는 보통 같은 날 밤~다음 날)</p>
+    </div>
+
+    <div id="toonV" class="hidden space-y-3 md:space-y-4">
+      <section class="card p-4">
+        <h2 id="tTitle" class="text-sm md:text-base font-extrabold text-slate-900">📖 웹툰 추가</h2>
+        <div class="flex gap-2 mt-2"><input id="wT" maxlength="40" placeholder="제목 (예: 화산귀환)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm"><input id="wLast" inputmode="numeric" placeholder="본 화" class="num w-20 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm"></div>
+        <div id="wPlat" class="flex flex-wrap gap-1.5 mt-2"></div>
+        <div id="wDays" class="flex gap-1 mt-2"></div>
+        <input id="wLink" maxlength="300" inputmode="url" placeholder="바로가기 링크 (선택 — 비우면 검색으로 열려요)" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
+        <div class="flex gap-2 mt-3"><button type="button" id="wCancel" onclick="resetToon()" class="hidden px-4 py-2.5 bg-slate-100 text-slate-600 font-extrabold rounded-xl">취소</button><button type="button" onclick="saveToon()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">저장</button></div>
+      </section>
+      <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">📚 보는 웹툰</h2><div id="toons"></div></section>
+    </div>
+  </div>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const D = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+    const W = '일월화수목금토', md = s => { const d = D(s); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}(${W[d.getDay()]})`; };
+    const dday = s => Math.round((D(s) - new Date(new Date().toDateString())) / 864e5);
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const num = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+    const today = () => ymd(new Date());
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    function shrink(file, max = 1200) { return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.72)); }; img.src = URL.createObjectURL(file); }); }
+    const chip = (on, label, fn) => `<span role="button" tabindex="0" onclick="${fn}" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${label}</span>`;
+    const kids = () => (load('argon_kid_v1', {}).kids || []);
+    const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
+    const KEY = 'argon_otaku_v1', WK = 7 * 864e5, DN = '일월화수목금토';
+    const PLATS = [['라프텔', 'https://laftel.net/search?keyword='], ['넷플릭스', 'https://www.netflix.com/search?q='], ['애니플러스', 'https://www.aniplustv.com/'], ['티빙', 'https://www.tving.com/search?keyword='], ['기타', '']];
+    const TPL = [['naver', '네이버', 'https://comic.naver.com/search?keyword='], ['kakao', '카카오웹툰', 'https://webtoon.kakao.com/search?keyword='], ['kpage', '카카오페이지', 'https://page.kakao.com/search/result?keyword='], ['etc', '기타', 'https://search.naver.com/search.naver?query=']];
+    let st = Object.assign({ anime: [], toons: [], seen: {} }, load(KEY, {})), tab = 'mine', season = null, sData = {}, dayF = 'all', sRes = null, wPlat = 'naver', wDaysSel = [], editT = null;
+    const q0 = new URLSearchParams(location.search).get('tab'); if (q0) tab = q0;
+    const persist = () => save(KEY, st);
+    const SEAS = [['WINTER', '겨울', 0], ['SPRING', '봄', 3], ['SUMMER', '여름', 6], ['FALL', '가을', 9]];
+    const curSeason = (off = 0) => { const n = new Date(), i = Math.floor(n.getMonth() / 3) + off, y = n.getFullYear() + Math.floor(i / 4), k = ((i % 4) + 4) % 4; return { y, s: SEAS[k][0], l: `${y} ${SEAS[k][1]}` }; };
+    const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    // 마지막으로 받은 다음 화(at, ep)에서 매주 한 화씩 → 지금 기준 '나온 화'와 '다음 화' 계산 (+ 내가 보는 곳 딜레이)
+    function proj(a) {
+      if (!a.at) return { aired: a.eps && a.st === 'FINISHED' ? a.eps : null, next: null };
+      const base = a.at * 1000 + (a.delay || 0) * 864e5, now = Date.now();
+      let k = now >= base ? Math.floor((now - base) / WK) + 1 : 0, aired = a.ep + k - 1, nextEp = a.ep + k, nextAt = base + k * WK;
+      if (a.eps && nextEp > a.eps) return { aired: Math.min(aired, a.eps), next: null };
+      return { aired, next: { ep: nextEp, at: new Date(nextAt) } };
+    }
+    const title = a => a.ko || a.t;
+    async function api(qs) { const r = await fetch('/api/games?svc=anime&' + qs); const j = await r.json(); if (!r.ok || j.error) throw new Error(j.error || '조회 실패'); return j; }
+    async function refreshMine() {
+      const ids = st.anime.filter(a => !a.done).map(a => a.id); if (!ids.length) return;
+      try {
+        const j = await api('op=ids&ids=' + ids.join(','));
+        j.items.forEach(m => { const a = st.anime.find(x => x.id === m.id); if (!a) return; Object.assign(a, { t: m.t, cover: m.cover, eps: m.eps, st: m.st }); if (m.next) { a.at = m.next.at; a.ep = m.next.ep; } else if (m.st === 'FINISHED') { a.at = null; } });
+        st.upd = Date.now(); persist(); render();
+      } catch (e) { document.getElementById('upd').textContent = '😢 방영 정보 새로고침 실패'; }
+    }
+    function follow(m) {
+      if (st.anime.some(a => a.id === m.id)) return;
+      st.anime.push({ id: m.id, t: m.t, ko: '', cover: m.cover, eps: m.eps, st: m.st, at: m.next ? m.next.at : null, ep: m.next ? m.next.ep : null, seen: m.next ? m.next.ep - 1 : 0,   // 지금까지 나온 화는 봤다고 치고 시작 (✏️에서 고쳐요)
+      plat: st.lastPlat || '라프텔', delay: 0, added: today() });
+      persist(); render();
+    }
+    function followId(id) { const m = [...(sRes || []), ...Object.values(sData).flatMap(x => x.items || [])].find(x => x.id === id); if (m) follow(m); }
+    function unfollow(id) { st.anime = st.anime.filter(a => a.id !== id); persist(); render(); }
+    function seenAni(id, n) { const a = st.anime.find(x => x.id === id); a.seen = Math.max(0, (a.seen || 0) + n); persist(); render(); }
+    function aniEdit(id) {
+      const a = st.anime.find(x => x.id === id);
+      const ko = prompt('한국어 제목 (비우면 원래 제목)', a.ko || ''); if (ko === null) return; a.ko = ko.trim();
+      const sn = prompt('몇 화까지 봤어요?', String(a.seen || 0)); if (sn !== null && sn.trim() !== '') a.seen = Math.max(0, Number(sn) || 0);
+      const pl = prompt('어디서 봐요? (라프텔·넷플릭스·애니플러스·티빙·기타)', a.plat || '라프텔'); if (pl !== null && pl.trim()) { a.plat = pl.trim(); st.lastPlat = a.plat; }
+      const dl = prompt('일본 방영보다 며칠 늦게 올라와요? (0 = 같은 날, 1, 7…)', String(a.delay || 0)); if (dl !== null) a.delay = Math.max(0, Math.min(14, Number(dl) || 0));
+      persist(); render();
+    }
+    function finish(id) {
+      const a = st.anime.find(x => x.id === id); a.done = today();
+      const md0 = load('argon_media_v1', {}) || {}; md0.items = md0.items || [];
+      if (!md0.items.some(i => i.type === 'anime' && i.title === title(a))) { md0.items.push({ id: Date.now(), type: 'anime', title: title(a), status: 'done', star: 0, review: '', date: today() }); save('argon_media_v1', md0); }
+      persist(); render();
+    }
+    function watchUrl(a) { const p = PLATS.find(x => x[0] === a.plat); return p && p[1] ? (p[1].endsWith('=') ? p[1] + encodeURIComponent(title(a)) : p[1]) : ''; }
+    // ---------- 웹툰 ----------
+    const TP = k => TPL.find(t => t[0] === k) || TPL[TPL.length - 1];
+    function setWPlat(k) { wPlat = k; renderToonForm(); }
+    function togWDay(d) { wDaysSel = wDaysSel.includes(d) ? wDaysSel.filter(x => x !== d) : [...wDaysSel, d]; renderToonForm(); }
+    function renderToonForm() {
+      document.getElementById('wPlat').innerHTML = TPL.map(([k, l]) => chip(wPlat === k, l, `setWPlat('${k}')`)).join('');
+      document.getElementById('wDays').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => `<span role="button" tabindex="0" onclick="togWDay(${d})" class="cursor-pointer flex-1 text-center py-1.5 rounded-lg text-xs font-extrabold ${wDaysSel.includes(d) ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${DN[d]}</span>`).join('');
+    }
+    function resetToon() { editT = null; wDaysSel = []; ['wT', 'wLast', 'wLink'].forEach(i => document.getElementById(i).value = ''); document.getElementById('tTitle').textContent = '📖 웹툰 추가'; document.getElementById('wCancel').classList.add('hidden'); renderToonForm(); }
+    function editToon(id) {
+      const t = st.toons.find(x => x.id === id); editT = id; wPlat = t.plat; wDaysSel = t.days.slice();
+      document.getElementById('wT').value = t.t; document.getElementById('wLast').value = t.last || ''; document.getElementById('wLink').value = t.link || '';
+      document.getElementById('tTitle').textContent = `✏️ ${t.t}`; document.getElementById('wCancel').classList.remove('hidden'); renderToonForm(); scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    function saveToon() {
+      const t = document.getElementById('wT').value.trim(); if (!t) return document.getElementById('wT').focus();
+      if (!wDaysSel.length) { document.getElementById('wDays').classList.add('ring-2', 'ring-rose-400'); setTimeout(() => document.getElementById('wDays').classList.remove('ring-2', 'ring-rose-400'), 1200); return; }
+      const v = { t, plat: wPlat, days: wDaysSel.slice().sort(), last: num(document.getElementById('wLast').value), link: document.getElementById('wLink').value.trim() };
+      if (editT) Object.assign(st.toons.find(x => x.id === editT), v); else st.toons.push(Object.assign({ id: Date.now(), hiatus: false }, v));
+      persist(); resetToon(); render();
+    }
+    function seenToon(id) { const t = st.toons.find(x => x.id === id); t.last = (t.last || 0) + 1; t.seenAt = today(); persist(); render(); }
+    function hiatus(id) { const t = st.toons.find(x => x.id === id); t.hiatus = !t.hiatus; persist(); render(); }
+    function delToon(id) { st.toons = st.toons.filter(x => x.id !== id); persist(); render(); }
+    const toonUrl = t => t.link || (TP(t.plat)[2] + encodeURIComponent(t.t));
+    // ---------- 그리기 ----------
+    function setTab(t) { tab = t; render(); if (t === 'season') loadSeason(); }
+    function setSeason(i) { season = curSeason(i); sRes = null; document.getElementById('sQ').value = ''; loadSeason(); }
+    function setDay(d) { dayF = d; renderSeason(); }
+    async function loadSeason() {
+      season = season || curSeason(0); const k = season.y + season.s;
+      if (!sData[k]) { renderSeason(); try { sData[k] = await api(`op=season&y=${season.y}&s=${season.s}`); } catch (e) { sData[k] = { error: e.message }; } }
+      renderSeason();
+    }
+    document.getElementById('sF').addEventListener('submit', async e => { e.preventDefault(); const q = document.getElementById('sQ').value.trim(); if (!q) { sRes = null; return renderSeason(); } document.getElementById('sList').innerHTML = '<p class="text-xs text-slate-400">찾는 중…</p>'; try { sRes = (await api('op=search&q=' + encodeURIComponent(q))).items; } catch (er) { sRes = []; } renderSeason(); });
+    function renderSeason() {
+      document.getElementById('seasons').innerHTML = [-1, 0, 1].map(i => { const s = curSeason(i); return chip(season && s.y === season.y && s.s === season.s, (i === 0 ? '📺 이번 분기 ' : i < 0 ? '지난 ' : '다음 ') + s.l, `setSeason(${i})`); }).join('');
+      document.getElementById('days').innerHTML = sRes ? '' : chip(dayF === 'all', '전체', "setDay('all')") + [1, 2, 3, 4, 5, 6, 0].map(d => chip(dayF === d, DN[d], `setDay(${d})`)).join('');
+      const box = document.getElementById('sList'), k = season && season.y + season.s, j = sRes ? { items: sRes } : sData[k];
+      if (!j) { box.innerHTML = '<p class="text-xs text-slate-400">불러오는 중…</p>'; return; }
+      if (j.error) { box.innerHTML = `<p class="text-sm font-bold text-slate-500">😢 ${esc(j.error)}</p>`; return; }
+      const xs = j.items.map(m => Object.assign({ nd: m.next ? new Date(m.next.at * 1000) : null }, m)).filter(m => sRes || dayF === 'all' || (m.nd && m.nd.getDay() === dayF));
+      box.innerHTML = xs.map(m => { const on = st.anime.some(a => a.id === m.id); return `<div class="flex items-center gap-2.5 py-2 border-b border-slate-100 last:border-0">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy" class="w-11 h-16 object-cover rounded-lg shrink-0 bg-slate-100">` : '<div class="w-11 h-16 rounded-lg bg-slate-100 shrink-0"></div>'}
+        <div class="min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800 leading-tight line-clamp-2">${esc(m.t)}</p>${m.jp && m.jp !== m.t ? `<p class="text-[10px] text-slate-400 truncate">${esc(m.jp)}</p>` : ''}<p class="text-[11px] font-bold text-slate-500 mt-0.5">${m.nd ? `${DN[m.nd.getDay()]} ${hm(m.nd)} · ${m.next.ep}화${m.eps ? '/' + m.eps : ''}` : m.st === 'FINISHED' ? `완결${m.eps ? ' · ' + m.eps + '화' : ''}` : m.st === 'NOT_YET_RELEASED' ? '방영 예정' : ''}${m.sites.some(s => /Laftel|Netflix|Crunchyroll/.test(s)) ? ` · ${m.sites.filter(s => /Laftel|Netflix/.test(s)).join('·')}` : ''}</p></div>
+        <span role="button" tabindex="0" onclick="${on ? `unfollow(${m.id})` : `followId(${m.id})`}" class="cursor-pointer shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-extrabold ${on ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'}">${on ? '✅ 보는 중' : '+ 볼래요'}</span></div>`; }).join('') || '<p class="text-xs text-slate-400 py-2">없어요</p>';
+    }
+    function todayItems() {
+      const n = new Date(), t = today(), dw = n.getDay(), out = [];
+      st.anime.filter(a => !a.done).forEach(a => { const p = proj(a), back = p.aired != null ? p.aired - (a.seen || 0) : 0, todayAir = p.next && ymd(p.next.at) === t;
+        if (todayAir || back > 0) out.push({ k: 'a', a, p, back, todayAir }); });
+      st.toons.filter(w => !w.hiatus && w.days.includes(dw)).forEach(w => out.push({ k: 't', w, done: w.seenAt === t }));
+      return out;
+    }
+    function render() {
+      document.getElementById('tabs').innerHTML = [['mine', '📺 내 것'], ['season', '🗓️ 이번 분기'], ['toon', '📖 웹툰']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setTab('${k}')" class="cursor-pointer text-center py-1.5 rounded-lg text-xs font-extrabold ${tab === k ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}">${l}</span>`).join('');
+      ['mine', 'season', 'toon'].forEach(k => document.getElementById(k + 'V').classList.toggle('hidden', tab !== k));
+      const live = st.anime.filter(a => !a.done);
+      document.getElementById('sub').textContent = `애니 ${live.length} · 웹툰 ${st.toons.length}`;
+      // 오늘
+      const ti = todayItems(), ts = document.getElementById('todayS');
+      ts.innerHTML = `<h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🍿 오늘 볼 것 <span class="text-xs text-slate-400">${DN[new Date().getDay()]}요일</span></h2>` + (ti.map(x => x.k === 'a'
+        ? `<div class="flex items-center gap-2 py-1.5"><span class="shrink-0">📺</span><a href="${esc(watchUrl(x.a) || x.a.url || '#')}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-sm font-bold text-slate-800">${esc(title(x.a))}</a><span class="text-[11px] font-extrabold ${x.back > 0 ? 'text-rose-500' : 'text-indigo-600'}">${x.back > 0 ? `${(x.a.seen || 0) + 1}화${x.back > 1 ? ` 외 ${x.back - 1}` : ''}` : `${hm(x.p.next.at)} ${x.p.next.ep}화`}</span>${x.back > 0 ? `<span role="button" tabindex="0" onclick="seenAni(${x.a.id},1)" class="cursor-pointer shrink-0 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold">봤어요</span>` : ''}</div>`
+        : `<div class="flex items-center gap-2 py-1.5 ${x.done ? 'opacity-50' : ''}"><span class="shrink-0">📖</span><a href="${esc(toonUrl(x.w))}" target="_blank" rel="noopener" class="flex-1 min-w-0 truncate text-sm font-bold text-slate-800">${esc(x.w.t)}</a><span class="text-[11px] font-bold text-slate-400">${TP(x.w.plat)[1]}${x.w.last ? ` · ${x.w.last + 1}화` : ''}</span>${x.done ? '<span class="text-[11px] font-extrabold text-emerald-600">✅</span>' : `<span role="button" tabindex="0" onclick="seenToon(${x.w.id})" class="cursor-pointer shrink-0 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold">봤어요</span>`}</div>`).join('') || '<p class="text-xs text-slate-400 py-1">오늘은 볼 게 없어요. 🗓️ 이번 분기에서 볼 애니를 골라 보세요</p>');
+      // 요일표
+      const col = Array.from({ length: 7 }, () => []);
+      live.forEach(a => { const p = proj(a); if (p.next) col[p.next.at.getDay()].push(`<p class="text-[10px] leading-tight font-bold text-indigo-700 truncate" title="${esc(title(a))}">📺${esc(title(a))}</p>`); });
+      st.toons.filter(w => !w.hiatus).forEach(w => w.days.forEach(d => col[d].push(`<p class="text-[10px] leading-tight font-bold text-emerald-700 truncate" title="${esc(w.t)}">📖${esc(w.t)}</p>`)));
+      const td = new Date().getDay();
+      document.getElementById('week').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => `<div class="rounded-lg p-1 min-h-[70px] ${d === td ? 'ring-2 ring-indigo-400' : ''}" style="background:rgba(148,163,184,.1)"><p class="text-[11px] font-extrabold text-center ${d === 0 ? 'text-rose-500' : d === 6 ? 'text-sky-600' : 'text-slate-500'}">${DN[d]}</p>${col[d].join('')}</div>`).join('');
+      document.getElementById('upd').textContent = st.upd ? `${hm(new Date(st.upd))} 방영 정보` : '';
+      document.getElementById('myAni').innerHTML = live.map(a => { const p = proj(a), tot = a.eps || p.aired || 0, pc = tot ? Math.min(100, Math.round((a.seen || 0) / tot * 100)) : 0; return `<div class="flex items-center gap-2.5 py-2 border-b border-slate-100 last:border-0">${a.cover ? `<img src="${esc(a.cover)}" alt="" loading="lazy" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-slate-100">` : ''}
+        <div class="min-w-0 flex-1"><p role="button" tabindex="0" onclick="aniEdit(${a.id})" class="cursor-pointer text-sm font-extrabold text-slate-800 truncate">${esc(title(a))} <span class="text-[10px] text-slate-400 font-bold">✏️</span></p><p class="text-[11px] font-bold text-slate-500">${esc(a.plat || '')}${a.delay ? ` (+${a.delay}일)` : ''} · ${a.seen || 0}화 봄${p.aired != null ? ` / ${p.aired}화 나옴` : ''}${p.next ? ` · 다음 ${DN[p.next.at.getDay()]} ${hm(p.next.at)}` : a.st === 'FINISHED' ? ' · 완결' : ''}</p><div class="h-1.5 rounded-full mt-1" style="background:rgba(148,163,184,.25)"><div class="h-1.5 rounded-full bg-indigo-500" style="width:${pc}%"></div></div></div>
+        <div class="flex flex-col gap-1 shrink-0"><span role="button" tabindex="0" onclick="seenAni(${a.id},1)" class="cursor-pointer px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold text-center">+1화</span>${a.st === 'FINISHED' || (a.eps && (a.seen || 0) >= a.eps) ? `<span role="button" tabindex="0" onclick="finish(${a.id})" class="cursor-pointer px-2 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-extrabold text-center">🏁 완주</span>` : `<span role="button" tabindex="0" onclick="sure(this,'그만?',()=>unfollow(${a.id}))" class="cursor-pointer px-2 py-1 text-slate-300 text-[11px] text-center">그만</span>`}</div></div>`; }).join('') || '<p class="text-xs text-slate-400 py-2">🗓️ 이번 분기 탭에서 "+ 볼래요"를 눌러요</p>';
+      // 웹툰
+      document.getElementById('toons').innerHTML = st.toons.slice().sort((a, b) => a.days[0] - b.days[0]).map(w => `<div class="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0 ${w.hiatus ? 'opacity-50' : ''}"><div role="button" tabindex="0" onclick="editToon(${w.id})" class="cursor-pointer min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800 truncate">${esc(w.t)}${w.hiatus ? ' <span class="text-[10px] text-amber-600">휴재</span>' : ''}</p><p class="text-[11px] font-bold text-slate-500">${TP(w.plat)[1]} · ${w.days.map(d => DN[d]).join('·')} · ${w.last || 0}화까지 봄</p></div><a href="${esc(toonUrl(w))}" target="_blank" rel="noopener" class="shrink-0 px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-extrabold">열기</a><span role="button" tabindex="0" onclick="seenToon(${w.id})" class="cursor-pointer shrink-0 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold">+1화</span><span role="button" tabindex="0" onclick="hiatus(${w.id})" class="cursor-pointer shrink-0 text-xs px-1" title="휴재">${w.hiatus ? '▶' : '⏸'}</span><span role="button" tabindex="0" onclick="sure(this,'삭제?',()=>delToon(${w.id}))" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') || '<p class="text-xs text-slate-400 py-2">보는 웹툰과 연재 요일을 넣으면 그날 알려줘요</p>';
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ anime: [], toons: [], seen: {} }, load(KEY, {})); render(); } });
+    renderToonForm(); render(); if (tab === 'season') loadSeason();
+    if (!st.upd || Date.now() - st.upd > 3 * 3600e3) refreshMine();
+  </script>
+</body>
+</html>
