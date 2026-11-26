@@ -17,3 +17,10 @@
 - Vercel Hobby는 하루 배포 100회(미리보기 포함) — 작은 수정은 모아서 push.
 - 인라인 `onclick="x='..'"`로 전역 변수를 바꿀 때, 요소 속성과 이름이 겹치면(`dir`·`title`·`lang`·`hidden`·`id` 등) 요소 쪽이 바뀐다. 함수로 감싸서 바꾸기.
 - 경제 일정(FOMC·CPI·고용·금통위)은 `market-events.js`에 직접 적어 둔 것 — 연말마다 다음 해 일정 확인해서 추가하기.
+
+## 🚀 배포 흐름 (사용자 요청: 머지까지만 하고 배포는 물어보기)
+- 작업 브랜치 `claude/*` → PR → **`dev`에 머지** (vercel.json `git.deploymentEnabled`로 `dev`·`claude/*`는 자동 배포 안 됨).
+- 배포는 사용자가 OK 했을 때만 `dev` → `main` PR(merge commit)로 한 번에. `main` 머지 = 운영 배포 1회.
+- 미리보기가 꼭 필요하면(예: api/ 새 엔드포인트 확인) 배포 1회가 드니 먼저 물어보기.
+- 새 작업 브랜치는 항상 최신 `dev`에서 따기.
+
