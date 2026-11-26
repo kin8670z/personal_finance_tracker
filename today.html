@@ -116,6 +116,7 @@
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
     <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
     <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
+    <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
     <a href="./wish.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>위시리스트</span></a>
     <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
     <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
@@ -136,6 +137,8 @@
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
     <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
     <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
+    <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
+    <a href="./santa.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎅 <span>산타 리스트</span></a>
     <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
     <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
@@ -213,6 +216,8 @@
     <section id="voiceCard" class="hidden card p-4"></section>
     <section id="recapCard" class="hidden card p-4"></section>
     <section id="backupCard" class="hidden card p-4"></section>
+    <section id="billsCard" class="hidden card p-4"></section>
+    <section id="santaCard" class="hidden card p-4"></section>
     <section id="workoutCard" class="hidden card p-4"></section>
     <section id="mkev" class="hidden card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
@@ -660,10 +665,12 @@
     function renderVoiceCard() {
       const box = document.getElementById('voiceCard'), now = new Date(), last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(), m = ymd(now).slice(0, 7);
       const ks = ((load('argon_kid_v1', {}) || {}).kids) || [], idx = load('voice_index_v1', []) || [];
+      const gi = load('growth_index_v1', []) || [];
       const need = ks.filter(k => !idx.some(i => String(i.kid) === String(k.id) && String(i.date).startsWith(m)));
-      if (!ks.length || last - now.getDate() > 2 || !need.length) { box.classList.add('hidden'); return; }
+      const needP = ks.filter(k => !gi.some(i => String(i.kid) === String(k.id) && i.ym === m));
+      if (!ks.length || last - now.getDate() > 2 || (!need.length && !needP.length)) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-      box.innerHTML = head(`🎙️ ${now.getMonth() + 1}월의 목소리`, './voice.html', '목소리') + `<a href="./voice.html" class="block text-sm font-bold text-slate-700">${need.map(k => esc(k.name)).join('·')} 이번 달 목소리 아직이에요 — 30초만 녹음해 둘까요? 💛</a>`;
+      box.innerHTML = head(`💛 ${now.getMonth() + 1}월의 아이 기록`, '', '') + (needP.length ? `<a href="./growth.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-700">📸 ${needP.map(k => esc(k.name)).join('·')} 이번 달 사진</span><span class="text-xs font-extrabold text-indigo-600">찍기 →</span></a>` : '') + (need.length ? `<a href="./voice.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-700">🎙️ ${need.map(k => esc(k.name)).join('·')} 이번 달 목소리</span><span class="text-xs font-extrabold text-indigo-600">녹음 →</span></a>` : '');
     }
 
     // ---------- 🎆 연말 결산: 12/15 ~ 1/10 ----------
@@ -681,6 +688,24 @@
       if (n.getDate() > 3 || !old || (load('argon_tx_v3', []) || []).length < 20) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
       box.innerHTML = head('💾 이번 달 백업', './backup.html', '백업') + `<a href="./backup.html" class="block text-sm font-bold text-slate-700">${last ? `마지막 백업이 ${Math.round((n - new Date(last + 'T00:00:00')) / 864e5)}일 전이에요` : '아직 백업한 적이 없어요'}. 사진·녹음은 이 기기에만 있으니 파일로 한 번 받아 둘까요?</a>`;
+    }
+    // ---------- 🏢 관리비: 고지서 오는 날 이후, 이번 달 아직 (기록이 있을 때만) ----------
+    function renderBillsCard() {
+      const box = document.getElementById('billsCard'), b = load('argon_bills_v1', null), n = new Date(), m = ymd(n).slice(0, 7);
+      if (!b || !(b.items || []).length || n.getDate() < (b.day || 20) || b.items.some(i => i.ym === m)) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🏢 관리비 고지서', './bills.html', '관리비') + `<a href="./bills.html" class="block text-sm font-bold text-slate-700">${n.getMonth() + 1}월 관리비 나왔나요? 숫자만 적으면 작년이랑 비교해 줘요</a>`;
+    }
+    // ---------- 🎅 산타: 크리스마스·생일·어린이날 14일 안, 후보나 준비한 게 있을 때 ----------
+    function renderSantaCard() {
+      const box = document.getElementById('santaCard'), s = load('argon_santa_v1', null), its = ((s || {}).items || []).filter(i => i.status !== 'given');
+      if (!its.length) { box.classList.add('hidden'); return; }
+      const T = new Date(new Date().toDateString()), y = T.getFullYear(), nx = (m, d) => { let x = new Date(y, m - 1, d); if (x < T) x = new Date(y + 1, m - 1, d); return Math.round((x - T) / 864e5); };
+      const ev = [['🎄 크리스마스', nx(12, 25)], ['🎈 어린이날', nx(5, 5)], ...(((load('argon_kid_v1', {}) || {}).kids) || []).filter(k => k.birth).map(k => [`🎂 ${k.name} 생일`, nx(+k.birth.slice(5, 7), +k.birth.slice(8, 10))])].filter(e => e[1] <= 14).sort((a, b) => a[1] - b[1]);
+      if (!ev.length) { box.classList.add('hidden'); return; }
+      const bo = its.filter(i => i.status === 'bought').length, id = its.filter(i => i.status === 'idea').length;
+      box.classList.remove('hidden');
+      box.innerHTML = head(`🎅 ${ev[0][0]} ${ev[0][1] ? 'D-' + ev[0][1] : '오늘!'}`, './santa.html', '산타 리스트') + `<a href="./santa.html" class="block text-sm font-bold ${bo ? 'text-slate-700' : 'text-rose-500'}">${bo ? `🎁 준비한 선물 ${bo}개${ev[0][1] === 0 ? ' — 오늘 짠! 🎉' : ''}` : `아직 준비한 선물이 없어요${id ? ` (후보 ${id}개)` : ''}`}</a>`;
     }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
@@ -1015,7 +1040,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderBillsCard(); renderSantaCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
