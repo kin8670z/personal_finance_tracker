@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.52';
+  const VERSION = '9.55';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -95,6 +95,8 @@
         tomica: Object.keys((L('argon_tomica_v1') || {}).own || {}).length,
         ceremony: ((L('argon_ceremony_v1') || {}).items || []).filter(x => x.dir === 'plan').map(x => ({ p: x.person, k: x.kind, d: x.date })),
         health: ((L('argon_health_v1') || {}).eps || []).filter(x => !x.end).map(x => ({ p: String(x.part).replace(/^\S+\s/, ''), s: x.start, w: x.who })),
+        trash: ((L('argon_trash_v1') || {}).items || []).map(x => ({ n: String(x.name).replace(/^\S+\s/, ''), e: String(x.name).split(' ')[0], d: x.days || [] })),
+        leave: ((L('argon_leave_v1') || {}).uses || []).filter(u => u.date >= new Date(Date.now() - 864e5).toISOString().slice(0, 10)).map(u => ({ d: u.date, k: u.kind })),
         groupbuy: ((L('argon_groupbuy_v1') || {}).items || []).filter(x => !x.status || x.status === 'wait').map(x => ({ n: x.name, o: x.open || '', c: x.close || '' })),
         place: L('argon_today_place_v1') || { name: '하남시', lat: 37.5393, lng: 127.2149 }
       };
@@ -107,10 +109,10 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
   // 사이드 메뉴를 카테고리로 묶기 (오늘은 맨 위 그대로, 나머지는 접었다 펴는 그룹)
   const NAV_GROUPS = [
-    ['rec', '📝', '기록', ['diary.html', 'mood.html', 'todo.html', 'habits.html', 'food.html', 'timer.html', 'sleep.html', 'health.html', 'dday.html']],
+    ['rec', '📝', '기록', ['weekly.html', 'diary.html', 'mood.html', 'todo.html', 'habits.html', 'food.html', 'timer.html', 'sleep.html', 'health.html', 'dday.html']],
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html', 'firsts.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'ceremony.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
-    ['life', '🚇', '생활', ['weather.html', 'subway.html', 'lunch.html', 'places.html', 'gift.html', 'groupbuy.html', 'parking.html', 'stash.html', 'car.html']],
+    ['life', '🚇', '생활', ['weather.html', 'subway.html', 'lunch.html', 'places.html', 'gift.html', 'groupbuy.html', 'parking.html', 'stash.html', 'trash.html', 'car.html', 'leave.html']],
     ['hobby', '🎮', '취미', ['games.html', 'tomica.html', 'media.html']],
     ['trip', '✈️', '여행·공부', ['trip.html', 'fx.html', 'english.html', 'dict.html']]
   ];

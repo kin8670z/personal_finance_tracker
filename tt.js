@@ -47,5 +47,5 @@
     if (!j.needKey) { mem[k] = j; try { sessionStorage.setItem(k, JSON.stringify({ t: Date.now(), j })); } catch (e) {} }
     return j;
   }
-  window.ArgonTT = { normNo, findTrain, delayOf, disp, dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
+  window.ArgonTT = { holidays: () => [...HOLIDAYS], isHoliday: s => HOLIDAYS.has(s), normNo, findTrain, delayOf, disp, dayType, load, upcoming, untilText, minsOf, nowMins, WEEK: { 1: '평일', 2: '토요일', 3: '휴일' } };
 })();
