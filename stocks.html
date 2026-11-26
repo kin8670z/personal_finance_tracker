@@ -150,50 +150,6 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4 items-start">
       <div class="lg:col-span-2 space-y-3 md:space-y-4">
-        <!-- 내 포트폴리오 (보유 종목이 있을 때만) -->
-        <section id="pfSection" class="card p-4 hidden">
-          <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🍩 내 포트폴리오</h2><span id="pfTotal" class="text-xs font-bold text-slate-500 num"></span></div>
-          <div class="flex items-center gap-4">
-            <div class="relative w-28 h-28 shrink-0"><canvas id="pfChart" aria-label="보유 종목 비중 도넛 차트"></canvas><div id="pfCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"></div></div>
-            <ul id="pfList" class="flex-1 min-w-0 space-y-1"></ul>
-          </div>
-        </section>
-        <!-- 손익 캘린더 (보유·매매 기록이 있을 때만) -->
-        <section id="calSection" class="card p-4 hidden">
-          <div class="flex justify-between items-center mb-2">
-            <h2 class="text-sm md:text-base font-extrabold text-slate-900">📅 손익 캘린더</h2>
-            <div class="flex items-center gap-1 text-xs font-bold">
-              <button type="button" id="calPrev" onclick="calMove(-1)" aria-label="이전 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">‹</button>
-              <span id="calTitle" class="w-20 text-center text-slate-700"></span>
-              <button type="button" id="calNext" onclick="calMove(1)" aria-label="다음 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">›</button>
-            </div>
-          </div>
-          <div id="calBody"></div>
-        </section>
-        <!-- 배당 캘린더 (보유 종목이 있을 때만) -->
-        <section id="divSection" class="card p-4 hidden">
-          <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">💰 배당 캘린더</h2><span class="text-[10px] font-bold text-slate-400">앞으로 12개월 예상</span></div>
-          <div id="divBody"><div class="skel" style="height:120px"></div></div>
-        </section>
-        <!-- 시장 지수 -->
-        <section class="card p-4">
-          <div class="flex justify-between items-center gap-2 mb-3">
-            <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2>
-            <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장">
-              <button type="button" data-market="kr" class="px-3 py-1.5 rounded-lg">국내</button>
-              <button type="button" data-market="world" class="px-3 py-1.5 rounded-lg">해외</button>
-            </div>
-          </div>
-          <div id="marketGrid" class="grid grid-cols-2 gap-2"></div>
-          <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">미국 지수는 한국 시간 밤~새벽에 열려서, 낮에는 어젯밤 마감 기준이에요.</p>
-        </section>
-
-        <!-- 시장 흐름 -->
-        <section id="pulseSection" class="card p-4">
-          <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 시장 흐름</h2><span id="pulseAt" class="text-[10px] font-bold text-slate-400"></span></div>
-          <div id="pulseBox"><div class="skel" style="height:120px"></div></div>
-        </section>
-
         <!-- 관심 종목 -->
         <section class="card p-4">
           <div class="flex justify-between items-center gap-2 mb-1">
@@ -211,17 +167,33 @@
           <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
         </section>
 
-        <!-- 실시간 랭킹 -->
-        <section id="rankSection" class="card p-4">
-          <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🏆 실시간 랭킹</h2><span id="rankAt" class="text-[10px] font-bold text-slate-400"></span></div>
-          <div id="rankKinds" class="flex flex-wrap gap-1.5"></div>
-          <div id="rankMarkets" class="flex gap-1.5 mt-2"></div>
-          <div id="rankList" class="mt-2"></div>
-          <button type="button" id="rankMore" onclick="rankN = rankN === 10 ? 30 : 10; renderRank()" class="w-full mt-2 py-1.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-lg"></button>
+        <!-- 내 포트폴리오 (보유 종목이 있을 때만) -->
+        <section id="pfSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-3"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🍩 내 포트폴리오</h2><span id="pfTotal" class="text-xs font-bold text-slate-500 num"></span></div>
+          <div class="flex items-center gap-4">
+            <div class="relative w-28 h-28 shrink-0"><canvas id="pfChart" aria-label="보유 종목 비중 도넛 차트"></canvas><div id="pfCenter" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"></div></div>
+            <ul id="pfList" class="flex-1 min-w-0 space-y-1"></ul>
+          </div>
         </section>
 
-        <!-- 투자 원칙 -->
-        <section id="tipSection" class="card p-4"></section>
+        <!-- 손익 캘린더 (보유·매매 기록이 있을 때만) -->
+        <section id="calSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-2">
+            <h2 class="text-sm md:text-base font-extrabold text-slate-900">📅 손익 캘린더</h2>
+            <div class="flex items-center gap-1 text-xs font-bold">
+              <button type="button" id="calPrev" onclick="calMove(-1)" aria-label="이전 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">‹</button>
+              <span id="calTitle" class="w-20 text-center text-slate-700"></span>
+              <button type="button" id="calNext" onclick="calMove(1)" aria-label="다음 달" class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 disabled:opacity-30">›</button>
+            </div>
+          </div>
+          <div id="calBody"></div>
+        </section>
+
+        <!-- 배당 캘린더 (보유 종목이 있을 때만) -->
+        <section id="divSection" class="card p-4 hidden">
+          <div class="flex justify-between items-center mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">💰 배당 캘린더</h2><span class="text-[10px] font-bold text-slate-400">앞으로 12개월 예상</span></div>
+          <div id="divBody"><div class="skel" style="height:120px"></div></div>
+        </section>
       </div>
 
       <!-- 상세 차트 -->
@@ -244,6 +216,44 @@
         <div id="detailMeta" class="grid grid-cols-4 gap-2 mt-3"></div>
         <a id="detailLink" href="#" target="_blank" rel="noopener" class="block text-center text-xs font-bold text-indigo-600 mt-3">네이버 증권에서 더 보기 ↗</a>
       </section>
+    </div>
+
+    <!-- 시장 정보 (내 종목 아래) -->
+    <div class="flex items-center gap-2 pt-2"><span class="h-px flex-1 bg-slate-200"></span><span class="text-xs font-extrabold text-slate-500">🌏 시장 정보</span><span class="h-px flex-1 bg-slate-200"></span></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4 items-start">
+      <div class="space-y-3 md:space-y-4">
+          <!-- 시장 지수 -->
+          <section class="card p-4">
+            <div class="flex justify-between items-center gap-2 mb-3">
+              <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌏 시장 지수</h2>
+              <div class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold" role="group" aria-label="시장">
+                <button type="button" data-market="kr" class="px-3 py-1.5 rounded-lg">국내</button>
+                <button type="button" data-market="world" class="px-3 py-1.5 rounded-lg">해외</button>
+              </div>
+            </div>
+            <div id="marketGrid" class="grid grid-cols-2 gap-2"></div>
+            <p id="worldNote" class="text-[11px] text-slate-400 mt-2 hidden">미국 지수는 한국 시간 밤~새벽에 열려서, 낮에는 어젯밤 마감 기준이에요.</p>
+          </section>
+
+          <!-- 시장 흐름 -->
+          <section id="pulseSection" class="card p-4">
+            <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🧭 시장 흐름</h2><span id="pulseAt" class="text-[10px] font-bold text-slate-400"></span></div>
+            <div id="pulseBox"><div class="skel" style="height:120px"></div></div>
+          </section>
+      </div>
+      <div class="space-y-3 md:space-y-4">
+          <!-- 실시간 랭킹 -->
+          <section id="rankSection" class="card p-4">
+            <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">🏆 실시간 랭킹</h2><span id="rankAt" class="text-[10px] font-bold text-slate-400"></span></div>
+            <div id="rankKinds" class="flex flex-wrap gap-1.5"></div>
+            <div id="rankMarkets" class="flex gap-1.5 mt-2"></div>
+            <div id="rankList" class="mt-2"></div>
+            <button type="button" id="rankMore" onclick="rankN = rankN === 10 ? 30 : 10; renderRank()" class="w-full mt-2 py-1.5 text-xs font-bold text-slate-500 bg-slate-50 rounded-lg"></button>
+          </section>
+
+          <!-- 투자 원칙 -->
+          <section id="tipSection" class="card p-4"></section>
+      </div>
     </div>
 
     <p class="text-[11px] text-slate-400 text-center px-2 leading-relaxed">시세는 네이버 증권·야후 파이낸스의 공개 데이터예요. 화면을 보고 있는 동안 30초마다 새로 불러오고,<br class="hidden sm:inline"> 실제 거래 가격과 조금 다를 수 있어요. 투자 판단은 증권사 앱에서 꼭 다시 확인하세요.</p>
