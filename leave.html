@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>연차 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./leave.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🏖️ <span>연차</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🏖️ 연차</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <div class="flex items-center gap-1 shrink-0"><button type="button" onclick="setYear(-1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold">‹</button><span id="yearLbl" class="text-sm font-extrabold text-slate-800 num w-12 text-center"></span><button type="button" onclick="setYear(1)" class="w-8 h-8 rounded-lg bg-slate-100 text-slate-600 font-bold">›</button></div>
+      </div>
+    </header>
+    <section id="summary" class="card p-4"></section>
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">✍️ 연차 넣기</h2>
+      <div class="grid grid-cols-2 gap-2"><input id="fDate" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><input id="fMemo" maxlength="30" placeholder="메모 (선택) 예: 아이 병원" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></div>
+      <div id="kinds" class="flex flex-wrap gap-1.5 mt-2"></div>
+      <p id="dayHint" class="text-[11px] font-bold mt-1.5"></p>
+      <button type="button" onclick="addUse()" class="w-full mt-2 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">기록</button>
+    </section>
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900">🌉 징검다리 추천</h2>
+      <p class="text-[11px] font-bold text-slate-500 mb-2">공휴일 사이에 연차를 끼우면 이만큼 쉴 수 있어요</p>
+      <div class="flex gap-1.5 mb-2" id="kBtns"></div>
+      <div id="bridges"></div>
+    </section>
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗓️ 다가오는 공휴일</h2>
+      <div id="holis"></div>
+    </section>
+    <section class="card p-4">
+      <h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗂️ 기록</h2>
+      <div id="list"></div>
+    </section>
+    <p class="text-center text-[10px] text-slate-400 pb-2">공휴일은 관공서 공휴일(대체공휴일 포함) 기준이에요. 회사 휴무일은 다를 수 있어요.</p>
+  </div>
+  <script src="tt.js"></script>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const D = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+    const W = '일월화수목금토', md = s => { const d = D(s); return `${d.getMonth() + 1}/${d.getDate()}(${W[d.getDay()]})`; };
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    const KEY = 'argon_leave_v1';
+    const KINDS = [['연차', 1, '🏖️'], ['오전 반차', 0.5, '🌅'], ['오후 반차', 0.5, '🌇'], ['반반차', 0.25, '⏱️'], ['병가', 0, '🤒'], ['경조 휴가', 0, '💐'], ['기타 휴가', 0, '🎈']];
+    const HNAME = { '01-01': '신정', '03-01': '삼일절', '05-05': '어린이날', '06-06': '현충일', '08-15': '광복절', '10-03': '개천절', '10-09': '한글날', '12-25': '성탄절',
+      '2026-02-16': '설 연휴', '2026-02-17': '설날', '2026-02-18': '설 연휴', '2026-03-02': '삼일절 대체', '2026-05-25': '부처님오신날 대체', '2026-06-03': '지방선거', '2026-08-17': '광복절 대체', '2026-09-24': '추석 연휴', '2026-09-25': '추석', '2026-09-26': '추석 연휴', '2026-10-05': '개천절 대체',
+      '2027-02-06': '설 연휴', '2027-02-08': '설 연휴', '2027-02-09': '설 대체', '2027-05-13': '부처님오신날', '2027-08-16': '광복절 대체', '2027-09-14': '추석 연휴', '2027-09-15': '추석', '2027-09-16': '추석 연휴', '2027-10-04': '개천절 대체', '2027-10-11': '한글날 대체', '2027-12-27': '성탄절 대체' };
+    const hname = s => HNAME[s] || HNAME[s.slice(5)] || '공휴일';
+    const HOL = new Set(window.ArgonTT ? ArgonTT.holidays() : []);
+    const lastHol = [...HOL].sort().pop() || `${new Date().getFullYear()}-12-31`;
+    let st = Object.assign({ totals: {}, uses: [] }, load(KEY, {})), year = new Date().getFullYear(), kind = 0, maxK = 1;
+    const persist = () => save(KEY, st), today = () => ymd(new Date());
+    const total = () => st.totals[year] ?? 15;
+    const isOff = s => { const d = D(s).getDay(); return d === 0 || d === 6 || HOL.has(s); };
+    const full = s => st.uses.some(u => u.date === s && (u.amt >= 1 || u.amt === 0));
+    function setYear(n) { year += n; render(); }
+    function setTotal() { const v = prompt(`${year}년 연차는 모두 며칠이에요?`, total()); if (v == null) return; const n = Math.max(0, Math.min(60, Math.round(+v * 4) / 4)); if (!isFinite(n)) return; st.totals[year] = n; persist(); render(); }
+    function setKind(i) { kind = i; renderForm(); }
+    function renderForm() {
+      document.getElementById('kinds').innerHTML = KINDS.map(([n, a, e], i) => `<span role="button" tabindex="0" onclick="setKind(${i})" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${kind === i ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${e} ${n}${a && a < 1 ? ` (${a})` : ''}</span>`).join('');
+      const s = document.getElementById('fDate').value, h = document.getElementById('dayHint');
+      if (!s) { h.textContent = ''; return; }
+      h.className = 'text-[11px] font-bold mt-1.5 ' + (isOff(s) ? 'text-rose-500' : s >= today() ? 'text-indigo-600' : 'text-slate-500');
+      h.textContent = HOL.has(s) ? `${md(s)}은 ${hname(s)}이라 쉬는 날이에요` : isOff(s) ? `${md(s)}은 주말이에요` : `${md(s)} · ${s >= today() ? '계획으로 들어가요' : '쓴 걸로 들어가요'}`;
+    }
+    document.getElementById('fDate').addEventListener('input', renderForm);
+    function addUse(dates) {
+      const list = dates || [document.getElementById('fDate').value]; if (!list[0]) { document.getElementById('fDate').focus(); return; }
+      const [n, a] = dates ? KINDS[0] : KINDS[kind], memo = dates ? '징검다리' : document.getElementById('fMemo').value.trim();
+      list.forEach((s, i) => { if (!st.uses.some(u => u.date === s && u.kind === n)) st.uses.push({ id: Date.now() + i, date: s, kind: n, amt: a, memo }); });
+      persist(); document.getElementById('fMemo').value = ''; render();
+    }
+    // ---------- 징검다리: k일 연차로 공휴일 낀 연속 휴일 최대 ----------
+    function bridges(k) {
+      const start = new Date(new Date().toDateString()), end = D(lastHol); end.setDate(end.getDate() + 7);
+      const days = []; for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) days.push(ymd(d));
+      const off = days.map(s => isOff(s) || full(s)), out = [];
+      for (let s = 0; s < days.length; s++) {
+        if (s > 0 && off[s - 1]) continue;              // 왼쪽 끝 (전날은 출근)
+        let need = 0, hasHol = false;
+        for (let e = s; e < days.length; e++) {
+          if (!off[e]) need++; if (need > k) break; if (HOL.has(days[e])) hasHol = true;
+          if ((e + 1 >= days.length || !off[e + 1]) && need === k && hasHol) {
+            const len = e - s + 1; if (len >= k + 3 || (k === 1 && len >= 4)) out.push({ s: days[s], e: days[e], len, k, leave: days.slice(s, e + 1).filter((x, i) => !off[s + i]), hols: [...new Set(days.slice(s, e + 1).filter(x => HOL.has(x)).map(hname))] });
+          }
+        }
+      }
+      // 같은 휴일 묶음에서는 가장 긴 것 하나
+      const best = {}; out.forEach(b => { const key = b.hols.join(); if (!best[key] || b.len > best[key].len || (b.len === best[key].len && b.s < best[key].s)) best[key] = b; });
+      return Object.values(best).sort((a, b) => a.s.localeCompare(b.s));
+    }
+    function setK(k) { maxK = k; renderBridges(); }
+    function renderBridges() {
+      document.getElementById('kBtns').innerHTML = [1, 2, 3].map(k => `<span role="button" tabindex="0" onclick="setK(${k})" class="cursor-pointer flex-1 text-center py-1.5 rounded-xl text-xs font-extrabold ${maxK === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">연차 ${k}개</span>`).join('');
+      const bs = bridges(maxK);
+      document.getElementById('bridges').innerHTML = bs.map(b => { const planned = b.leave.every(s => st.uses.some(u => u.date === s));
+        return `<div class="py-2.5 border-b border-slate-100"><div class="flex items-start gap-2"><div class="flex-1 min-w-0">
+          <p class="text-sm font-extrabold text-slate-900">${md(b.s)} ~ ${md(b.e)} <span class="text-indigo-600">${b.len}일 쉬기</span></p>
+          <p class="text-[11px] font-bold text-slate-500">🎌 ${esc(b.hols.join('·'))} · 연차 <b class="text-rose-500">${b.leave.map(md).join(', ')}</b></p></div>
+          <span class="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">×${(b.len / b.k).toFixed(1)}</span></div>
+          <div class="flex gap-0.5 mt-1.5">${(() => { const a = [], d = D(b.s); while (ymd(d) <= b.e) { const s = ymd(d), lv = b.leave.includes(s); a.push(`<span title="${md(s)}" class="flex-1 h-5 rounded text-[9px] font-extrabold flex items-center justify-center" style="${lv ? 'background:#fb7185;color:#fff' : HOL.has(s) ? 'background:#fcd34d;color:#78350f' : 'background:#bae6fd;color:#075985'}">${W[d.getDay()]}</span>`); d.setDate(d.getDate() + 1); } return a.join(''); })()}</div>
+          <div class="text-right mt-1.5">${planned ? '<span class="text-[11px] font-bold text-emerald-600">✅ 계획에 있어요</span>' : `<span role="button" tabindex="0" onclick='addUse(${JSON.stringify(b.leave)})' class="cursor-pointer text-[11px] font-extrabold text-indigo-600">+ 계획에 넣기</span>`}</div></div>`; }).join('')
+        + (bs.length ? `<p class="text-[10px] text-slate-400 mt-1"><span class="inline-block w-2 h-2 rounded" style="background:#fb7185"></span> 연차 <span class="inline-block w-2 h-2 rounded ml-1" style="background:#fcd34d"></span> 공휴일 <span class="inline-block w-2 h-2 rounded ml-1" style="background:#bae6fd"></span> 주말 · ${lastHol.slice(0, 4)}년까지</p>` : '<p class="text-xs text-slate-400 py-1">이 조건으로는 없어요. 연차 수를 늘려 보세요.</p>');
+    }
+    function render() {
+      document.getElementById('yearLbl').textContent = year;
+      const ys = String(year), mine = st.uses.filter(u => u.date.startsWith(ys)), used = mine.filter(u => u.date <= today()).reduce((a, u) => a + u.amt, 0), plan = mine.filter(u => u.date > today()).reduce((a, u) => a + u.amt, 0), T = total(), left = T - used - plan;
+      const f = n => Number.isInteger(n) ? n : n.toFixed(2).replace(/0$/, '');
+      // 올해 남은 근무일
+      let work = 0; if (year === new Date().getFullYear()) for (let d = new Date(new Date().toDateString()); d.getFullYear() === year; d.setDate(d.getDate() + 1)) if (!isOff(ymd(d))) work++;
+      const next = st.uses.filter(u => u.date >= today()).sort((a, b) => a.date.localeCompare(b.date))[0];
+      document.getElementById('summary').innerHTML = `<div class="grid grid-cols-3 gap-2 text-center">
+          <div role="button" tabindex="0" onclick="setTotal()" class="cursor-pointer rounded-xl bg-slate-50 py-2"><p class="text-[10px] font-bold text-slate-500">전체 ✏️</p><p class="text-xl font-extrabold num text-slate-800">${f(T)}</p></div>
+          <div class="rounded-xl bg-slate-50 py-2"><p class="text-[10px] font-bold text-slate-500">썼어요 · 계획</p><p class="text-xl font-extrabold num text-slate-800">${f(used)}<span class="text-sm text-indigo-500"> + ${f(plan)}</span></p></div>
+          <div class="rounded-xl ${left < 0 ? 'bg-rose-50' : 'bg-indigo-50'} py-2"><p class="text-[10px] font-bold text-slate-500">남았어요</p><p class="text-xl font-extrabold num ${left < 0 ? 'text-rose-600' : 'text-indigo-700'}">${f(left)}</p></div></div>
+        <div class="h-2 rounded-full bg-slate-100 mt-3 overflow-hidden flex"><div class="h-full bg-slate-500" style="width:${Math.min(100, used / (T || 1) * 100)}%"></div><div class="h-full bg-indigo-400" style="width:${Math.min(100, plan / (T || 1) * 100)}%"></div></div>
+        <p class="text-[11px] font-bold text-slate-500 mt-2">${next ? `다음 휴가 ${md(next.date)} ${next.kind} · ${Math.round((D(next.date) - D(today())) / 864e5) || '오늘'}${next.date === today() ? '' : '일 남음'}` : '잡아 둔 휴가가 없어요'}${work && left > 0 ? ` · 올해 남은 근무일 ${work}일` : ''}</p>
+        ${work && left >= 3 && work < 45 ? `<p class="text-[11px] font-bold text-amber-700 bg-amber-50 rounded-lg px-2.5 py-1.5 mt-2">⏳ 올해 연차 ${f(left)}개가 남았어요. 아래 추천에서 골라 보세요</p>` : ''}`;
+      document.getElementById('sub').textContent = `${year}년 · 남은 연차 ${f(left)}일`;
+      // 공휴일
+      const hs = [...HOL].filter(s => s >= today()).sort().slice(0, 8);
+      document.getElementById('holis').innerHTML = hs.map(s => { const d = D(s), dd = Math.round((d - D(today())) / 864e5), wk = d.getDay();
+        return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="w-20 text-sm font-extrabold num ${wk === 0 ? 'text-rose-500' : wk === 6 ? 'text-sky-600' : 'text-slate-800'}">${md(s)}</span><span class="flex-1 text-sm font-bold text-slate-700">${esc(hname(s))}</span>${wk === 0 || wk === 6 ? '<span class="text-[10px] font-bold text-slate-400">주말이라 아쉬워요</span>' : wk === 1 || wk === 5 ? '<span class="text-[10px] font-bold text-emerald-600">3일 연휴</span>' : ''}<span class="text-[11px] font-bold text-slate-500 num w-12 text-right">${dd ? `D-${dd}` : '오늘'}</span></div>`; }).join('') || '<p class="text-xs text-slate-400">공휴일 정보가 없어요</p>';
+      // 기록
+      const ls = mine.slice().sort((a, b) => b.date.localeCompare(a.date));
+      document.getElementById('list').innerHTML = ls.map(u => { const k = KINDS.find(x => x[0] === u.kind) || KINDS[0], fut = u.date > today();
+        return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span class="text-lg">${k[2]}</span><span class="w-20 text-sm font-bold num ${fut ? 'text-indigo-600' : 'text-slate-700'}">${md(u.date)}</span><span class="flex-1 min-w-0 text-sm text-slate-700 truncate">${esc(u.kind)}${u.memo ? ` <span class="text-[11px] text-slate-400">${esc(u.memo)}</span>` : ''}</span><span class="text-[11px] font-bold ${fut ? 'text-indigo-500' : 'text-slate-400'}">${fut ? '계획' : ''} ${u.amt ? `-${u.amt}` : ''}</span><span role="button" tabindex="0" onclick="sure(this, '삭제?', () => { st.uses = st.uses.filter(x => x.id !== ${u.id}); persist(); render(); })" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`; }).join('') || `<p class="text-xs text-slate-400 py-1">${year}년 기록이 없어요</p>`;
+      renderForm(); renderBridges();
+    }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ totals: {}, uses: [] }, load(KEY, {})); render(); } });
+    document.getElementById('fDate').value = today(); render();
+  </script>
+</body>
+</html>
