@@ -197,7 +197,7 @@
     let st = Object.assign({ fav: [], mine: [], fridge: [], tab: 'find', eaten: {} }, load(KEY, {})), all = null, type = '', sort = 'name', shown = 30, mType = '반찬', editMine = null, photo = null, cur = null;
     const persist = () => save(KEY, st);
     // 재료 문자열 → 줄 단위 (식약처 데이터는 줄바꿈·쉼표가 섞여 있음)
-    const partList = s => String(s || '').replace(/●[^:]*:/g, '\n').split(/\n|,(?![^(]*\))/).map(x => x.replace(/^[-·•\s]+/, '').trim()).filter(x => x && x.length < 40);
+    const partList = (s, name) => String(s || '').replace(/●[^:]*:/g, '\n').split(/\n|,(?![^(]*\))/).map(x => x.replace(/^[-·•\s]+/, '').trim()).filter(x => x && x.length < 40 && (!name || norm(x) !== norm(name)) && !/^(재료|주재료|부재료)$/.test(x));   // 데이터 맨 앞에 요리 이름이 붙어 있음
     const norm = s => String(s || '').replace(/\s/g, '').toLowerCase();
     function setTab(t) { st.tab = t; persist(); shown = 30; render(); }
     function render() {
@@ -271,7 +271,7 @@
     function closeDetail() { document.getElementById('detail').classList.add('hidden'); document.body.style.overflow = ''; cur = null; }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDetail(); });
     function renderDetail() {
-      const x = cur; if (!x) return; const fav = st.fav.includes(String(x.id)), parts = partList(x.partsFull || x.parts), have = st.fridge.map(norm);
+      const x = cur; if (!x) return; const fav = st.fav.includes(String(x.id)), parts = partList(x.partsFull || x.parts, x.name), have = st.fridge.map(norm);
       const nut = [['열량', x.kcal, 'kcal'], ['탄수화물', x.carb, 'g'], ['단백질', x.pro, 'g'], ['지방', x.fat, 'g'], ['나트륨', x.na, 'mg']].filter(n => n[1] != null);
       document.getElementById('dBody').innerHTML = `${x.imgL || x.img ? `<img src="${esc(x.imgL || x.img)}" alt="" class="w-full aspect-[4/3] object-cover bg-slate-100 rounded-t-2xl">` : ''}
         <div class="p-4"><div class="flex items-start gap-2"><div class="flex-1 min-w-0"><p class="text-[11px] font-bold text-slate-500">${esc(x.type || '')}${x.way ? ` · ${esc(x.way)}` : ''}${x.weight ? ` · 1인분 ${x.weight}g` : ''}</p><h2 class="text-xl font-extrabold text-slate-900">${esc(x.name)}</h2></div>
@@ -294,7 +294,7 @@
     }
     // 냉장고에 없는 재료만 장보기로
     function toShop(el) {
-      const have = st.fridge.map(norm), parts = partList(cur.partsFull || cur.parts).map(p => p.replace(/\s*\(?[\d./]+\s*(g|kg|ml|L|개|큰술|작은술|컵|T|t|장|모|쪽|대|줌|봉|마리|알|cm)?\)?\s*$/i, '').trim()).filter(p => p && !have.some(i => norm(p).includes(i)));
+      const have = st.fridge.map(norm), parts = partList(cur.partsFull || cur.parts, cur.name).map(p => p.replace(/\s*\(?[\d./]+\s*(g|kg|ml|L|개|큰술|작은술|컵|T|t|장|모|쪽|대|줌|봉|마리|알|cm)?\)?\s*$/i, '').trim()).filter(p => p && !have.some(i => norm(p).includes(i)));
       const t = Object.assign({ todos: [], shop: [], hist: [], tab: 'todo' }, load('argon_todo_v1', {})), names = new Set(t.shop.filter(x => !x.done).map(x => x.name)); let n = 0;
       parts.forEach(p => { if (!names.has(p)) { t.shop.push({ id: Math.max(Date.now(), ...t.shop.map(x => x.id + 1)) + n, name: p, qty: '', done: false, price: null, from: cur.name }); n++; } });
       save('argon_todo_v1', t); el.textContent = n ? `✓ ${n}개 넣었어요` : '이미 다 있어요'; el.disabled = true;
