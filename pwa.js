@@ -143,13 +143,14 @@
     const q = box.querySelector('#navQ'), res = box.querySelector('#navRes');
     const items = links.map(a => { const f = file(a), label = a.textContent.replace(/\s+/g, ' ').trim(); return { a, f, label, name: norm(label.replace(/^\S+\s/, '')), kw: norm(NAV_KW[f] || ''), kws: (NAV_KW[f] || '').split(' ').map(norm), g: groupOf(a) }; });
     let recent = []; try { recent = JSON.parse(localStorage.getItem('nav_recent') || '[]'); } catch (e) {}
+    const tdy = links.find(a => file(a) === 'today.html'), show = on => { wrap.classList.toggle('hidden', !on); if (tdy) tdy.classList.toggle('hidden', !on); };
     const row = (it, i) => `<a href="${it.a.getAttribute('href')}" class="nav-item flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold ${i === 0 ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-100'}">${it.a.innerHTML}<span class="ml-auto text-[10px] font-bold text-slate-400">${it.g}</span></a>`;
     function run() {
       const v = norm(q.value);
       if (!v) {
         const rs = recent.map(f => items.find(it => it.f === f)).filter(Boolean).slice(0, 5);
-        if (document.activeElement === q && rs.length) { res.innerHTML = '<p class="px-3 pt-1 text-[10px] font-bold text-slate-400">최근 본 메뉴</p>' + rs.map((it, i) => row(it, -1)).join(''); res.classList.remove('hidden'); wrap.classList.add('hidden'); }
-        else { res.classList.add('hidden'); wrap.classList.remove('hidden'); }
+        if (document.activeElement === q && rs.length) { res.innerHTML = '<p class="px-3 pt-1 text-[10px] font-bold text-slate-400">최근 본 메뉴</p>' + rs.map((it, i) => row(it, -1)).join(''); res.classList.remove('hidden'); show(false); }
+        else { res.classList.add('hidden'); show(true); }
         return;
       }
       const onlyCho = /^[ㄱ-ㅎ]+$/.test(v);
@@ -157,7 +158,7 @@
         return n === v ? 7 : n.startsWith(v) ? 6 : n.includes(v) ? 5 : it.kws.includes(v) ? 4.5 : it.kws.some(k => k.startsWith(v)) ? 4 : it.kw.includes(v) ? 3 : norm(it.g).includes(v) ? 2 : 0; };
       const hit = items.map(it => [it, score(it)]).filter(x => x[1]).sort((a, b) => b[1] - a[1]).map(x => x[0]);
       res.innerHTML = hit.length ? hit.map(row).join('') : '<p class="px-3 py-2 text-xs font-bold text-slate-400">찾는 메뉴가 없어요</p>';
-      res.classList.remove('hidden'); wrap.classList.add('hidden');
+      res.classList.remove('hidden'); show(false);
     }
     q.addEventListener('input', run); q.addEventListener('focus', run);
     q.addEventListener('blur', () => setTimeout(() => { if (!q.value) run(); }, 150));
