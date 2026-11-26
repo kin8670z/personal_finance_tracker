@@ -164,7 +164,7 @@
     <div id="mineV" class="space-y-3 md:space-y-4">
       <section id="todayS" class="card p-4"></section>
       <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-2">🗓️ 내 요일표</h2><div id="week" class="grid grid-cols-7 gap-1"></div></section>
-      <section class="card p-4"><div class="flex items-center justify-between mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">📺 보는 애니</h2><span id="upd" class="text-[10px] font-bold text-slate-400"></span></div><div id="myAni"></div></section>
+      <section class="card p-4"><div class="flex items-center justify-between mb-1"><h2 class="text-sm md:text-base font-extrabold text-slate-900">📺 보는 애니</h2><span id="upd" class="text-[10px] font-bold text-slate-400"></span></div><div id="myAni"></div><p class="text-[9px] text-slate-400 mt-2">🇰🇷 국내 OTT·한국어 제목: <a href="https://www.themoviedb.org" target="_blank" rel="noopener" class="font-extrabold" style="color:#01b4e4">TMDB</a> · 시청 정보 <a href="https://www.justwatch.com/kr" target="_blank" rel="noopener" class="underline">JustWatch</a> — This product uses the TMDB API but is not endorsed or certified by TMDB.</p></section>
     </div>
 
     <div id="seasonV" class="hidden space-y-3 md:space-y-4">
@@ -174,7 +174,7 @@
         <div id="days" class="flex flex-wrap gap-1 mt-2"></div>
       </section>
       <section class="card p-4"><div id="sList"><p class="text-xs text-slate-400">불러오는 중…</p></div></section>
-      <p class="text-[10px] text-slate-400 text-center">방영 정보: <a href="https://anilist.co" target="_blank" rel="noopener" class="underline">AniList</a> · 시간은 일본 방영 기준을 한국 시간으로 바꾼 거예요 (국내 서비스는 보통 같은 날 밤~다음 날)</p>
+      <p class="text-[10px] text-slate-400 text-center">방영 정보: <a href="https://anilist.co" target="_blank" rel="noopener" class="underline">AniList</a> · 🇰🇷 한국어 제목·국내 OTT: <a href="https://www.themoviedb.org" target="_blank" rel="noopener" class="font-extrabold" style="color:#01b4e4">TMDB</a>, 시청 정보 제공 <a href="https://www.justwatch.com/kr" target="_blank" rel="noopener" class="underline">JustWatch</a><br>This product uses the TMDB API but is not endorsed or certified by TMDB.<br> · 시간은 일본 방영 기준을 한국 시간으로 바꾼 거예요 (국내 서비스는 보통 같은 날 밤~다음 날)</p>
     </div>
 
     <div id="toonV" class="hidden space-y-3 md:space-y-4">
@@ -224,7 +224,30 @@
       if (a.eps && nextEp > a.eps) return { aired: Math.min(aired, a.eps), next: null };
       return { aired, next: { ep: nextEp, at: new Date(nextAt) } };
     }
-    const title = a => a.ko || a.t;
+    const title = a => a.ko || (a.tm && a.tm.ko) || a.t;
+    // ---------- 🇰🇷 TMDB: 한국어 제목·국내 OTT (기기에 3일 캐시) ----------
+    const TMC = 'tmdb_cache_v1';
+    const OTT = { 'Netflix': ['넷플릭스', 'https://www.netflix.com/search?q='], 'Laftel': ['라프텔', 'https://laftel.net/search?keyword='], 'TVING': ['티빙', 'https://www.tving.com/search?keyword='], 'wavve': ['웨이브', 'https://www.wavve.com/search?searchWord='], 'Watcha': ['왓챠', 'https://watcha.com/search?query='], 'Disney Plus': ['디즈니+', 'https://www.disneyplus.com/search?q='], 'Coupang Play': ['쿠팡플레이', 'https://www.coupangplay.com/search?keyword='], 'Amazon Prime Video': ['프라임 비디오', 'https://www.primevideo.com/search?phrase='], 'Apple TV': ['애플TV', ''], 'Crunchyroll': ['크런치롤', ''] };
+    const ottName = n => (OTT[n] || [n])[0];
+    let tmc = load(TMC, {}), tmBusy = false, tmErr = '';
+    const tmGet = id => { const c = tmc[id]; return c && Date.now() - c.at < (c.d ? 3 : 7) * 864e5 ? c : null; };
+    async function ensureTm(list) {
+      if (tmBusy || tmErr) return; const need = list.filter(m => !tmGet(m.id)).slice(0, 40); if (!need.length) return;
+      tmBusy = true;
+      try {
+        for (let i = 0; i < need.length; i += 20) {
+          const rows = need.slice(i, i + 20).map(m => [m.id, m.en || '', m.ro || '', m.jp || '', m.y || (season && season.y) || new Date().getFullYear()]);
+          const r = await fetch('/api/games?svc=tmdb&q=' + encodeURIComponent(JSON.stringify(rows))), j = await r.json();
+          if (j.needKey || j.error) { tmErr = j.needKey ? 'TMDB 키가 아직 없어요' : j.error; break; }
+          rows.forEach(([id]) => { if (id in j.items) tmc[id] = { d: j.items[id], at: Date.now() }; });
+        }
+        const ks = Object.keys(tmc); if (ks.length > 600) ks.sort((a, b) => tmc[a].at - tmc[b].at).slice(0, ks.length - 600).forEach(k => delete tmc[k]);
+        save(TMC, tmc);
+        let ch = false; st.anime.forEach(a => { const c = tmGet(a.id); if (c && c.d && JSON.stringify(a.tm) !== JSON.stringify(c.d)) { a.tm = c.d; ch = true; } }); if (ch) persist();
+      } catch (e) {} finally { tmBusy = false; }
+      render(); if (tab === 'season') renderSeason();
+    }
+    const krChips = (d, small) => !d ? '' : d.kr && d.kr.length ? d.kr.filter(p => p.t !== 'buy' && p.t !== 'rent').slice(0, 3).map(p => `<span class="inline-block mr-1 px-1.5 py-0.5 rounded ${small ? 'text-[9px]' : 'text-[10px]'} font-extrabold" style="background:#dcfce7;color:#15803d">🇰🇷 ${esc(ottName(p.n))}</span>`).join('') + (d.kr.every(p => p.t === 'buy' || p.t === 'rent') ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold" style="background:#f1f5f9;color:#64748b">🇰🇷 구매·대여만</span>` : '') : '';
     async function api(qs) { const r = await fetch('/api/games?svc=anime&' + qs); const j = await r.json(); if (!r.ok || j.error) throw new Error(j.error || '조회 실패'); return j; }
     async function refreshMine() {
       const ids = st.anime.filter(a => !a.done).map(a => a.id); if (!ids.length) return;
@@ -236,8 +259,9 @@
     }
     function follow(m) {
       if (st.anime.some(a => a.id === m.id)) return;
-      st.anime.push({ id: m.id, t: m.t, ko: '', cover: m.cover, eps: m.eps, st: m.st, at: m.next ? m.next.at : null, ep: m.next ? m.next.ep : null, seen: m.next ? m.next.ep - 1 : 0,   // 지금까지 나온 화는 봤다고 치고 시작 (✏️에서 고쳐요)
+      st.anime.push({ id: m.id, t: m.t, en: m.en, ro: m.ro, jp: m.jp, y: m.y, ko: '', cover: m.cover, eps: m.eps, st: m.st, at: m.next ? m.next.at : null, ep: m.next ? m.next.ep : null, seen: m.next ? m.next.ep - 1 : 0,   // 지금까지 나온 화는 봤다고 치고 시작 (✏️에서 고쳐요)
       plat: st.lastPlat || '라프텔', delay: 0, added: today() });
+      const c = tmGet(m.id), a = st.anime[st.anime.length - 1]; if (c && c.d) a.tm = c.d; else ensureTm([m]);
       persist(); render();
     }
     function followId(id) { const m = [...(sRes || []), ...Object.values(sData).flatMap(x => x.items || [])].find(x => x.id === id); if (m) follow(m); }
@@ -257,7 +281,7 @@
       if (!md0.items.some(i => i.type === 'anime' && i.title === title(a))) { md0.items.push({ id: Date.now(), type: 'anime', title: title(a), status: 'done', star: 0, review: '', date: today() }); save('argon_media_v1', md0); }
       persist(); render();
     }
-    function watchUrl(a) { const p = PLATS.find(x => x[0] === a.plat); return p && p[1] ? (p[1].endsWith('=') ? p[1] + encodeURIComponent(title(a)) : p[1]) : ''; }
+    function watchUrl(a) { const k = a.tm && (a.tm.kr || []).find(p => p.t !== 'buy' && p.t !== 'rent' && OTT[p.n] && OTT[p.n][1]); if (k && (!a.plat || a.plat === ottName(k.n) || a.platAuto !== false)) return OTT[k.n][1] + encodeURIComponent(title(a)); const p = PLATS.find(x => x[0] === a.plat); return p && p[1] ? (p[1].endsWith('=') ? p[1] + encodeURIComponent(title(a)) : p[1]) : ''; }
     // ---------- 웹툰 ----------
     const TP = k => TPL.find(t => t[0] === k) || TPL[TPL.length - 1];
     function setWPlat(k) { wPlat = k; renderToonForm(); }
@@ -286,7 +310,9 @@
     // ---------- 그리기 ----------
     function setTab(t) { tab = t; render(); if (t === 'season') loadSeason(); }
     function setSeason(i) { season = curSeason(i); sRes = null; document.getElementById('sQ').value = ''; loadSeason(); }
+    let krOnly = false;
     function setDay(d) { dayF = d; renderSeason(); }
+    function togKr() { krOnly = !krOnly; renderSeason(); }
     async function loadSeason() {
       season = season || curSeason(0); const k = season.y + season.s;
       if (!sData[k]) { renderSeason(); try { sData[k] = await api(`op=season&y=${season.y}&s=${season.s}`); } catch (e) { sData[k] = { error: e.message }; } }
@@ -295,13 +321,14 @@
     document.getElementById('sF').addEventListener('submit', async e => { e.preventDefault(); const q = document.getElementById('sQ').value.trim(); if (!q) { sRes = null; return renderSeason(); } document.getElementById('sList').innerHTML = '<p class="text-xs text-slate-400">찾는 중…</p>'; try { sRes = (await api('op=search&q=' + encodeURIComponent(q))).items; } catch (er) { sRes = []; } renderSeason(); });
     function renderSeason() {
       document.getElementById('seasons').innerHTML = [-1, 0, 1].map(i => { const s = curSeason(i); return chip(season && s.y === season.y && s.s === season.s, (i === 0 ? '📺 이번 분기 ' : i < 0 ? '지난 ' : '다음 ') + s.l, `setSeason(${i})`); }).join('');
-      document.getElementById('days').innerHTML = sRes ? '' : chip(dayF === 'all', '전체', "setDay('all')") + [1, 2, 3, 4, 5, 6, 0].map(d => chip(dayF === d, DN[d], `setDay(${d})`)).join('');
+      document.getElementById('days').innerHTML = (sRes ? '' : chip(dayF === 'all', '전체', "setDay('all')")) + chip(krOnly, '🇰🇷 국내 OTT', 'togKr()') + (sRes ? '' : '') + (sRes ? '' : [1, 2, 3, 4, 5, 6, 0].map(d => chip(dayF === d, DN[d], `setDay(${d})`)).join(''));
       const box = document.getElementById('sList'), k = season && season.y + season.s, j = sRes ? { items: sRes } : sData[k];
       if (!j) { box.innerHTML = '<p class="text-xs text-slate-400">불러오는 중…</p>'; return; }
       if (j.error) { box.innerHTML = `<p class="text-sm font-bold text-slate-500">😢 ${esc(j.error)}</p>`; return; }
-      const xs = j.items.map(m => Object.assign({ nd: m.next ? new Date(m.next.at * 1000) : null }, m)).filter(m => sRes || dayF === 'all' || (m.nd && m.nd.getDay() === dayF));
+      const xs = j.items.map(m => Object.assign({ nd: m.next ? new Date(m.next.at * 1000) : null }, m)).filter(m => sRes || dayF === 'all' || (m.nd && m.nd.getDay() === dayF)).filter(m => !krOnly || ((tmGet(m.id) || {}).d || { kr: [] }).kr.some(p => p.t !== 'buy' && p.t !== 'rent'));
+      ensureTm(j.items.slice(0, krOnly ? 100 : 40));
       box.innerHTML = xs.map(m => { const on = st.anime.some(a => a.id === m.id); return `<div class="flex items-center gap-2.5 py-2 border-b border-slate-100 last:border-0">${m.cover ? `<img src="${esc(m.cover)}" alt="" loading="lazy" class="w-11 h-16 object-cover rounded-lg shrink-0 bg-slate-100">` : '<div class="w-11 h-16 rounded-lg bg-slate-100 shrink-0"></div>'}
-        <div class="min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800 leading-tight line-clamp-2">${esc(m.t)}</p>${m.jp && m.jp !== m.t ? `<p class="text-[10px] text-slate-400 truncate">${esc(m.jp)}</p>` : ''}<p class="text-[11px] font-bold text-slate-500 mt-0.5">${m.nd ? `${DN[m.nd.getDay()]} ${hm(m.nd)} · ${m.next.ep}화${m.eps ? '/' + m.eps : ''}` : m.st === 'FINISHED' ? `완결${m.eps ? ' · ' + m.eps + '화' : ''}` : m.st === 'NOT_YET_RELEASED' ? '방영 예정' : ''}${m.sites.some(s => /Laftel|Netflix|Crunchyroll/.test(s)) ? ` · ${m.sites.filter(s => /Laftel|Netflix/.test(s)).join('·')}` : ''}</p></div>
+        <div class="min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800 leading-tight line-clamp-2">${esc(((tmGet(m.id) || {}).d || {}).ko || m.t)}</p>${m.jp && m.jp !== m.t ? `<p class="text-[10px] text-slate-400 truncate">${esc(m.jp)}</p>` : ''}<p class="text-[11px] font-bold text-slate-500 mt-0.5">${m.nd ? `${DN[m.nd.getDay()]} ${hm(m.nd)} · ${m.next.ep}화${m.eps ? '/' + m.eps : ''}` : m.st === 'FINISHED' ? `완결${m.eps ? ' · ' + m.eps + '화' : ''}` : m.st === 'NOT_YET_RELEASED' ? '방영 예정' : ''}</p><div class="mt-0.5">${tmGet(m.id) ? krChips(tmGet(m.id).d, true) || '<span class="text-[9px] font-bold text-slate-400">🇰🇷 국내 OTT 정보 없음</span>' : '<span class="text-[9px] text-slate-300">🇰🇷 …</span>'}</div></div>
         <span role="button" tabindex="0" onclick="${on ? `unfollow(${m.id})` : `followId(${m.id})`}" class="cursor-pointer shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-extrabold ${on ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-600 text-white'}">${on ? '✅ 보는 중' : '+ 볼래요'}</span></div>`; }).join('') || '<p class="text-xs text-slate-400 py-2">없어요</p>';
     }
     function todayItems() {
@@ -329,7 +356,7 @@
       document.getElementById('week').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(d => `<div class="rounded-lg p-1 min-h-[70px] ${d === td ? 'ring-2 ring-indigo-400' : ''}" style="background:rgba(148,163,184,.1)"><p class="text-[11px] font-extrabold text-center ${d === 0 ? 'text-rose-500' : d === 6 ? 'text-sky-600' : 'text-slate-500'}">${DN[d]}</p>${col[d].join('')}</div>`).join('');
       document.getElementById('upd').textContent = st.upd ? `${hm(new Date(st.upd))} 방영 정보` : '';
       document.getElementById('myAni').innerHTML = live.map(a => { const p = proj(a), tot = a.eps || p.aired || 0, pc = tot ? Math.min(100, Math.round((a.seen || 0) / tot * 100)) : 0; return `<div class="flex items-center gap-2.5 py-2 border-b border-slate-100 last:border-0">${a.cover ? `<img src="${esc(a.cover)}" alt="" loading="lazy" class="w-10 h-14 object-cover rounded-lg shrink-0 bg-slate-100">` : ''}
-        <div class="min-w-0 flex-1"><p role="button" tabindex="0" onclick="aniEdit(${a.id})" class="cursor-pointer text-sm font-extrabold text-slate-800 truncate">${esc(title(a))} <span class="text-[10px] text-slate-400 font-bold">✏️</span></p><p class="text-[11px] font-bold text-slate-500">${esc(a.plat || '')}${a.delay ? ` (+${a.delay}일)` : ''} · ${a.seen || 0}화 봄${p.aired != null ? ` / ${p.aired}화 나옴` : ''}${p.next ? ` · 다음 ${DN[p.next.at.getDay()]} ${hm(p.next.at)}` : a.st === 'FINISHED' ? ' · 완결' : ''}</p><div class="h-1.5 rounded-full mt-1" style="background:rgba(148,163,184,.25)"><div class="h-1.5 rounded-full bg-indigo-500" style="width:${pc}%"></div></div></div>
+        <div class="min-w-0 flex-1"><p role="button" tabindex="0" onclick="aniEdit(${a.id})" class="cursor-pointer text-sm font-extrabold text-slate-800 truncate">${esc(title(a))} <span class="text-[10px] text-slate-400 font-bold">✏️</span></p><p class="text-[11px] font-bold text-slate-500">${esc(a.plat || '')}${a.delay ? ` (+${a.delay}일)` : ''} · ${a.seen || 0}화 봄${p.aired != null ? ` / ${p.aired}화 나옴` : ''}${p.next ? ` · 다음 ${DN[p.next.at.getDay()]} ${hm(p.next.at)}` : a.st === 'FINISHED' ? ' · 완결' : ''}</p>${a.tm ? `<div class="mt-0.5">${krChips(a.tm, true)}</div>` : ''}<div class="h-1.5 rounded-full mt-1" style="background:rgba(148,163,184,.25)"><div class="h-1.5 rounded-full bg-indigo-500" style="width:${pc}%"></div></div></div>
         <div class="flex flex-col gap-1 shrink-0"><span role="button" tabindex="0" onclick="seenAni(${a.id},1)" class="cursor-pointer px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold text-center">+1화</span>${a.st === 'FINISHED' || (a.eps && (a.seen || 0) >= a.eps) ? `<span role="button" tabindex="0" onclick="finish(${a.id})" class="cursor-pointer px-2 py-1 rounded-lg bg-indigo-600 text-white text-[11px] font-extrabold text-center">🏁 완주</span>` : `<span role="button" tabindex="0" onclick="sure(this,'그만?',()=>unfollow(${a.id}))" class="cursor-pointer px-2 py-1 text-slate-300 text-[11px] text-center">그만</span>`}</div></div>`; }).join('') || '<p class="text-xs text-slate-400 py-2">🗓️ 이번 분기 탭에서 "+ 볼래요"를 눌러요</p>';
       // 웹툰
       document.getElementById('toons').innerHTML = st.toons.slice().sort((a, b) => a.days[0] - b.days[0]).map(w => `<div class="flex items-center gap-2 py-2 border-b border-slate-100 last:border-0 ${w.hiatus ? 'opacity-50' : ''}"><div role="button" tabindex="0" onclick="editToon(${w.id})" class="cursor-pointer min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800 truncate">${esc(w.t)}${w.hiatus ? ' <span class="text-[10px] text-amber-600">휴재</span>' : ''}</p><p class="text-[11px] font-bold text-slate-500">${TP(w.plat)[1]} · ${w.days.map(d => DN[d]).join('·')} · ${w.last || 0}화까지 봄</p></div><a href="${esc(toonUrl(w))}" target="_blank" rel="noopener" class="shrink-0 px-2 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-extrabold">열기</a><span role="button" tabindex="0" onclick="seenToon(${w.id})" class="cursor-pointer shrink-0 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 text-[11px] font-extrabold">+1화</span><span role="button" tabindex="0" onclick="hiatus(${w.id})" class="cursor-pointer shrink-0 text-xs px-1" title="휴재">${w.hiatus ? '▶' : '⏸'}</span><span role="button" tabindex="0" onclick="sure(this,'삭제?',()=>delToon(${w.id}))" class="cursor-pointer text-slate-300 text-xs px-1">✕</span></div>`).join('') || '<p class="text-xs text-slate-400 py-2">보는 웹툰과 연재 요일을 넣으면 그날 알려줘요</p>';
@@ -345,6 +372,7 @@
     document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
     window.addEventListener('storage', e => { if (e.key === KEY) { st = Object.assign({ anime: [], toons: [], seen: {} }, load(KEY, {})); render(); } });
     renderToonForm(); render(); if (tab === 'season') loadSeason();
+    ensureTm(st.anime.filter(a => !a.done).map(a => ({ id: a.id, en: a.en || '', ro: a.ro || a.t, jp: a.jp || '', y: a.y })));
     if (!st.upd || Date.now() - st.upd > 3 * 3600e3) refreshMine();
   </script>
 </body>
