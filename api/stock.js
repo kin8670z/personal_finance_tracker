@@ -7,6 +7,7 @@
 //   /api/stock?op=div&kr=005930&us=AAPL.O   → 최근 3년 배당 기록 (배당락일, 주당 배당금) — 야후 파이낸스
 //   /api/stock?op=rank&kind=searchTop|up|down|marketValue|quantTop|priceTop&market=KOSPI|KOSDAQ|NASDAQ|NYSE  → 실시간 순위
 //   /api/stock?op=pulse                     → 투자자별 순매수·업종 등락·상승/하락 종목 수
+//   /api/stock?op=uspulse                   → 미국 지수·VIX·10년물·섹터 ETF 3달 종가
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36';
 const NAVER = { 'User-Agent': UA, Referer: 'https://m.stock.naver.com/' };
@@ -206,6 +207,13 @@ async function pulse() {
   const breadth = groups.reduce((a, g) => ({ up: a.up + g.up, down: a.down + g.down, flat: a.flat + g.flat }), { up: 0, down: 0, flat: 0 });
   return { trend: { KOSPI: tr(tk), KOSDAQ: tr(tq) }, industry: groups, breadth, status: (ind || {}).marketStatus || '' };
 }
+// 미국 시장 흐름: 지수·공포지수·10년물 금리·섹터 ETF 3달 종가 (야후)
+const US_SET = [['^GSPC', 'S&P 500'], ['^IXIC', '나스닥'], ['^DJI', '다우'], ['^SOX', '반도체(SOX)'], ['^RUT', '러셀 2000'], ['^VIX', '공포지수(VIX)'], ['^TNX', '미국 10년물 금리'],
+  ['XLK', '기술'], ['XLC', '통신·미디어'], ['XLY', '임의소비재'], ['XLF', '금융'], ['XLV', '헬스케어'], ['XLI', '산업재'], ['XLE', '에너지'], ['XLP', '필수소비재'], ['XLB', '소재'], ['XLU', '유틸리티'], ['XLRE', '부동산']];
+async function usPulse() {
+  const out = await Promise.all(US_SET.map(async ([sym, name]) => { try { const y = await yahoo(sym, '3m'); return { sym, name, t: y.points.length ? y.points[y.points.length - 1][0] : null, v: y.points.map(p => Math.round(p[1] * 100) / 100) }; } catch (e) { return { sym, name, v: [] }; } }));
+  return { items: out.filter(x => x.v.length), at: Date.now() };
+}
 function send(res, status, body, maxAge) {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -267,6 +275,7 @@ module.exports = async (req, res) => {
       return send(res, 200, { kind, market, items: await rank(kind, market, n), at: Date.now() }, 30);
     }
     if (op === 'pulse') return send(res, 200, await pulse(), 60);
+    if (op === 'uspulse') return send(res, 200, await usPulse(), 300);
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
       if (!term) return send(res, 400, { error: '검색어가 없어요' });
