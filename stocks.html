@@ -1144,7 +1144,7 @@
         if (Math.abs(K.streak) >= 3) lines.push([K.streak > 0 ? 'up' : 'down', `${Math.abs(K.streak)}거래일 연속 ${K.streak > 0 ? '올랐어요' : '내렸어요'}.`]);
         if (K.vol20 > K.volAll * 1.35) lines.push(['flat', `요즘 하루 출렁임(±${K.vol20.toFixed(1)}%)이 평소(±${K.volAll.toFixed(1)}%)보다 커요.`]);
       }
-      if (K && Q && Math.abs(K.m1 - Q.m1) >= 4) lines.push(['flat', `코스닥은 한 달 ${sgn(Q.m1)}로 코스피와 ${Q.m1 > K.m1 ? '달리 더 강해요' : '달리 약해요'}.`]);
+      if (K && Q && Math.abs(K.m1 - Q.m1) >= 4) lines.push(['flat', `코스닥은 한 달 ${sgn(Q.m1)}로 코스피보다 ${Q.m1 > K.m1 ? (Q.m1 < 0 ? '덜 빠졌어요' : '더 올랐어요') : (Q.m1 < 0 ? '더 빠졌어요' : '덜 올랐어요')}.`]);
       if (S && N) { const [w] = mood((S.m1 + N.m1) / 2); lines.push([S.m1 >= 0 ? 'up' : 'down', `미국은 S&P 500 ${sgn(S.m1)}, 나스닥 ${sgn(N.m1)} — 한 달 <b>${w}</b>.${K && Math.sign(K.m1) !== Math.sign(S.m1) && Math.abs(K.m1 - S.m1) > 3 ? ' 한국과 반대로 움직이고 있어요.' : ''}`]); }
       if (F) lines.push([F.m1 > 0 ? 'up' : 'down', `원/달러 ${fmt(F.last, 1)}원, 한 달 ${sgn(F.m1)}. ${F.m1 >= 1.5 ? '원화가 약해지는 중이라 해외 주식 원화 평가액은 커지고, 외국인 매도 압력이 될 수 있어요.' : F.m1 <= -1.5 ? '원화가 강해지는 중이라 해외 주식 원화 평가액은 줄어요.' : '환율은 비교적 잠잠해요.'}`]);
       // 오늘: 투자자 · 종목 수 · 업종
