@@ -219,7 +219,7 @@
     async function fetchKind() {
       const k = st.kind, ck = `${k}|${st.sido}|${st.city}`; if (data[ck]) return render();
       try {
-        const r = await fetch(`/api/medical?kind=${k}&sido=${encodeURIComponent(st.sido)}&city=${encodeURIComponent(st.city)}`), j = await r.json();
+        const r = await fetch(`/api/food?svc=medical&kind=${k}&sido=${encodeURIComponent(st.sido)}&city=${encodeURIComponent(st.city)}`), j = await r.json();
         data[ck] = j; try { sessionStorage.setItem('med_' + ck, JSON.stringify({ at: Date.now(), j })); } catch (e) {}
       } catch (e) { data[ck] = { error: '인터넷 연결을 확인해 주세요' }; }
       render();
