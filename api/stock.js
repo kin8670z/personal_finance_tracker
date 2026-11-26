@@ -230,6 +230,26 @@ module.exports = async (req, res) => {
       const div = {}; jobs.forEach(([k], i) => { if (got[i]) div[k] = got[i]; });
       return send(res, 200, { div }, 43200);
     }
+    if (op === 'probe') {   // 임시: 네이버 순위 엔드포인트 확인용
+      const U = [
+        'https://m.stock.naver.com/api/stocks/up/KOSPI?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/down/KOSDAQ?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/marketValue/KOSPI?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/quantTop/KOSPI?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/priceTop/KOSPI?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/searchTop?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/stocks/popular?page=1&pageSize=3',
+        'https://api.stock.naver.com/stock/exchange/NASDAQ/marketValue?page=1&pageSize=3',
+        'https://api.stock.naver.com/stock/exchange/NASDAQ/up?page=1&pageSize=3',
+        'https://m.stock.naver.com/api/index/KOSPI/basic',
+        'https://m.stock.naver.com/api/index/KOSPI/trend',
+        'https://m.stock.naver.com/api/index/KOSPI/investor',
+        'https://m.stock.naver.com/api/stocks/industry?page=1&pageSize=3',
+        'https://m.stock.naver.com/front-api/stock/domestic/ranking?type=SEARCH&page=1&pageSize=3'
+      ];
+      const out = await Promise.all(U.map(async u => { try { const r = await fetch(u, { headers: NAVER, signal: AbortSignal.timeout(6000) }); const t = await r.text(); let j = null; try { j = JSON.parse(t); } catch (e) {} const first = j ? (Array.isArray(j) ? j[0] : (j.stocks || j.result || j.datas || j)[0] || j.stocks || j) : t.slice(0, 120); return { u: u.replace(/https:\/\/[^/]+/, ''), s: r.status, keys: j && !Array.isArray(j) ? Object.keys(j).slice(0, 20) : null, first: JSON.stringify(first).slice(0, 600) }; } catch (e) { return { u, err: e.message }; } }));
+      return send(res, 200, out, 0);
+    }
     if (op === 'search') {
       const term = String(q.get('q') || '').trim().slice(0, 30);
       if (!term) return send(res, 400, { error: '검색어가 없어요' });
