@@ -1,6 +1,8 @@
 // 식약처 식품영양성분DB (공공데이터포털) 검색 — 키는 Vercel 환경변수 MFDS_KEY
 //   GET /api/food?q=신라면 → { items: [{ name, kcal, per, weight, maker, cat }], total }
+// 활용신청한 서비스는 03 (2026.11 확인), 02는 예전 키 대비
 const EP = [
+  'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo03/getFoodNtrCpntDbInq03',
   'https://apis.data.go.kr/1471000/FoodNtrCpntDbInfo02/getFoodNtrCpntDbInq02'
 ];
 function send(res, status, body, maxAge) {
@@ -24,10 +26,10 @@ module.exports = async (req, res) => {
       const url = `${ep}?serviceKey=${k}&pageNo=1&numOfRows=40&type=json&FOOD_NM_KR=${encodeURIComponent(q)}`;
       const r = await fetch(url, { signal: AbortSignal.timeout(9000) });
       const text = await r.text();
-      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***').replace(k, '***')}`; errs.push(lastErr); continue; }
-      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***').replace(k, '***'); continue; }
+      if (!r.ok) { lastErr = `HTTP ${r.status} ${(text.match(/(errMsg|returnAuthMsg|resultMsg)[^,}]*/g) || [text.slice(0, 120)]).join(' ').replace(key, '***').replace(k, '***')}`; errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
+      let j; try { j = JSON.parse(text); } catch (e) { lastErr = text.slice(0, 160).replace(key, '***').replace(k, '***'); errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
       const body = j.body || (j.response && j.response.body) || {}, head = j.header || (j.response && j.response.header) || {};
-      if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; continue; }
+      if (head.resultCode && !/^0+$/.test(String(head.resultCode))) { lastErr = `${head.resultCode} ${head.resultMsg || ''}`; errs.push(ep.split('/').slice(-2).join('/') + ' ' + lastErr); continue; }
       let items = body.items; if (items && items.item) items = items.item; if (!Array.isArray(items)) items = items ? [items] : [];
       if (p.get('debug') === '1') return send(res, 200, { ep: ep.split('/').slice(-2).join('/'), keys: items[0] ? Object.keys(items[0]) : [], sample: items[0] || null, total: body.totalCount }, 0);
       const out = items.map(it => {
@@ -40,9 +42,12 @@ module.exports = async (req, res) => {
           maker: String(pick(it, 'MAKER_NM', 'MANUFACTURER', 'IMP_MANUFAC_NM') || '').trim(),
           cat: String(pick(it, 'FOOD_CAT1_NM', 'DB_CLASS_NM', 'FOOD_GROUP') || '').trim()
         };
-      }).filter(x => x.name && x.kcal != null);
+      }).filter(x => x.name && x.kcal != null)
+        // 같은 상품(이름·칼로리·중량) 한 번만, 검색어와 똑같은 이름 → 검색어로 시작 → 짧은 이름 순
+        .filter((x, i, a) => a.findIndex(y => y.name === x.name && y.kcal === x.kcal && y.weight === x.weight) === i)
+        .map((x, i) => [x, i]).sort(([a, i], [b, j]) => { const r = x => x.name === q ? 0 : x.name.startsWith(q) ? 1 : 2; return r(a) - r(b) || a.name.length - b.name.length || i - j; }).map(([x]) => x);
       return send(res, 200, { items: out, total: body.totalCount || out.length });
-    } catch (e) { lastErr = e.message; }
+    } catch (e) { lastErr = e.message; errs.push(ep.split('/').slice(-2).join('/') + ' ' + e.message); }
   }
   console.error('mfds', errs.join(' | '));
   if (p.get('debug') === '1') return send(res, 502, { errs }, 0);
