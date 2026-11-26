@@ -14,7 +14,10 @@ function send(res, status, body, maxAge) {
 const num = v => { const n = parseFloat(String(v ?? '').replace(/,/g, '')); return isFinite(n) ? n : null; };
 const pick = (o, ...ks) => { for (const k of ks) if (o[k] != null && o[k] !== '') return o[k]; return ''; };
 
+const medical = require('../lib/medical.js');
+
 module.exports = async (req, res) => {
+  if (String(req.url).includes('svc=medical')) return medical(req, res);   // 🏥 문 연 병원·약국
   const p = new URL(req.url, 'http://localhost').searchParams, q = String(p.get('q') || '').trim().slice(0, 40);
   const key = process.env.MFDS_KEY;
   if (!key) return send(res, 200, { needKey: true, items: [] }, 60);
