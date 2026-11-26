@@ -141,6 +141,11 @@
         </div>
         <button type="button" onclick="refreshAll()" aria-label="새로고침" id="refreshBtn" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 shrink-0">🔄</button>
       </div>
+      <form id="dictForm" onsubmit="return goDict(event)" class="mt-3 flex gap-1.5" role="search">
+        <input id="dictQ" type="search" enterkeyhint="search" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="📖 사전 찾기 (영어·국어·일본어)" class="flex-1 min-w-0 border border-slate-200 rounded-xl px-3 py-2 bg-white text-sm">
+        <button type="submit" class="shrink-0 px-3 rounded-xl bg-indigo-600 text-white text-sm font-extrabold">찾기</button>
+      </form>
+      <div id="dictRecent" class="hidden flex flex-wrap gap-1.5 mt-2"></div>
     </header>
 
     <a id="ddays" href="./dday.html" class="hidden card px-4 flex items-center gap-2" style="height:3rem" aria-live="off">
@@ -561,6 +566,18 @@
       box.innerHTML = head('💐 다가오는 경조사', './ceremony.html', '장부') + plans.map(p => { const k = dd(p.date), past = items.filter(i => i.person === p.person && i.dir !== 'plan').sort((a, b) => b.date.localeCompare(a.date))[0];
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
+
+    // ---------- 📖 사전 찾기 → 사전 화면에서 결과 ----------
+    const dictSrc = q => /[\u3040-\u30ff\u4e00-\u9faf]/.test(q) && !/[가-힣]/.test(q) ? 'ja' : /[가-힣]/.test(q) ? 'ko' : 'en';
+    function goDict(e) { if (e) e.preventDefault(); const q = document.getElementById('dictQ').value.trim(); if (!q) { document.getElementById('dictQ').focus(); return false; } location.href = `./dict.html?src=${dictSrc(q)}&q=${encodeURIComponent(q)}`; return false; }
+    function showDictRecent(on) {
+      const box = document.getElementById('dictRecent'), rs = ((load('argon_dict_v1', {}) || {}).recent || []).slice(0, 6);
+      if (!on || !rs.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = '<span class="text-[10px] font-bold text-slate-400 py-1">최근</span>' + rs.map(r => `<a href="./dict.html?src=${r.tab}&q=${encodeURIComponent(r.q)}" class="px-2 py-1 rounded-full bg-slate-100 text-[11px] font-bold text-slate-600">${esc(r.q)}</a>`).join('');
+    }
+    document.getElementById('dictQ').addEventListener('focus', () => showDictRecent(true));
+    document.getElementById('dictQ').addEventListener('blur', () => setTimeout(() => showDictRecent(false), 200));
 
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
