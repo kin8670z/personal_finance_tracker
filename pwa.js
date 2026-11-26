@@ -59,7 +59,7 @@
     foot.insertBefore(btn, foot.firstChild);
   }
   // 사이드 메뉴 맨 아래: 버전 · 업데이트 노트 (새 버전을 아직 안 봤으면 점 표시)
-  const VERSION = '9.83';
+  const VERSION = '9.85';
   window.ARGON_VERSION = VERSION;
   function addVersion() {
     const nav = document.getElementById('sideNav');
@@ -119,7 +119,7 @@
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') saveBrief(); });
   // 사이드 메뉴를 카테고리로 묶기 (오늘은 맨 위 그대로, 나머지는 접었다 펴는 그룹)
   const NAV_GROUPS = [
-    ['rec', '📝', '기록', ['weekly.html', 'goals.html', 'diary.html', 'mood.html', 'todo.html', 'habits.html', 'workout.html', 'food.html', 'timer.html', 'sleep.html', 'health.html', 'medical.html', 'dday.html']],
+    ['rec', '📝', '기록', ['weekly.html', 'recap.html', 'goals.html', 'diary.html', 'mood.html', 'todo.html', 'habits.html', 'workout.html', 'food.html', 'timer.html', 'sleep.html', 'health.html', 'medical.html', 'dday.html', 'backup.html']],
     ['kid', '👶', '아이', ['kid.html', 'fever.html', 'sticker.html', 'kidsay.html', 'firsts.html', 'voice.html', 'daycare.html', 'sizes.html']],
     ['money', '💰', '자산관리', ['', 'index.html', 'report.html', 'ceremony.html', 'subs.html', 'wish.html', 'stocks.html', 'assets.html', 'tax.html', 'lotto.html']],
     ['life', '🚇', '생활', ['weather.html', 'subway.html', 'lunch.html', 'recipes.html', 'fridge.html', 'places.html', 'gift.html', 'groupbuy.html', 'parcel.html', 'parking.html', 'stash.html', 'trash.html', 'supplies.html', 'warranty.html', 'renew.html', 'car.html', 'leave.html']],
@@ -138,7 +138,7 @@
     'health.html': '아플때 통증 병원 약 허리 증상 몸', 'dday.html': '디데이 기념일 생일 카운트', 'weekly.html': '주간 리포트 이번주 정리 요약', 'wish.html': '위시리스트 사고싶은 충동구매 고민 30일 갖고싶은', 'workout.html': '운동 헬스 러닝 걷기 스트레칭 허리 홈트 만보', 'goals.html': '목표 버킷리스트 다짐 신년 회고 올해 계획', 'kid.html': '아이 성장 키 몸무게 예방접종',
     'fever.html': '열 체온 해열제 열나요', 'sticker.html': '칭찬 스티커 보상', 'kidsay.html': '어록 아이 말 대화', 'firsts.html': '처음 첫 걸음마 순간', 'daycare.html': '어린이집 유치원 준비물 알림장',
     'sizes.html': '사이즈 옷 신발 기저귀 치수', 'games.html': '게임 출시 발매 캘린더', 'tomica.html': '토미카 장난감 미니카 신차', 'media.html': '책 영화 드라마 애니 공연 콘텐츠 독서',
-    'trip.html': '여행 숙소 일정 체크인', 'fx.html': '환율 달러 엔 유로 환전', 'english.html': '영어 회화 문장', 'japanese.html': '일본어 회화', 'dict.html': '사전 단어 뜻 국어', 'fridge.html': '냉장고 유통기한 소비기한 식재료 우유 상함 버림', 'renew.html': '만료 갱신 여권 운전면허 적성검사 자동차보험 자동차검사 약정 휴대폰 인터넷', 'parcel.html': '택배 배송 운송장 도착 쿠팡 주문 조회', 'medical.html': '병원 약국 소아과 소아청소년과 진료시간 야간 휴일 달빛 이비인후과 응급', 'voice.html': '목소리 녹음 아이 타임캡슐 음성', 'til.html': 'TIL 오늘배운것 공부 개발 메모 잔디 기술', 'visited.html': '가본곳 지도 여행 시도 전국 지역 다녀온', 'mygames.html': '내게임 백로그 플레이 엔딩 게임기록 쌓아둔'
+    'trip.html': '여행 숙소 일정 체크인', 'fx.html': '환율 달러 엔 유로 환전', 'english.html': '영어 회화 문장', 'japanese.html': '일본어 회화', 'dict.html': '사전 단어 뜻 국어', 'recap.html': '연말 결산 올해 1년 정리 회고 랩 wrapped 돌아보기', 'backup.html': '백업 복원 내보내기 폰 교체 기기 변경 저장 파일', 'fridge.html': '냉장고 유통기한 소비기한 식재료 우유 상함 버림', 'renew.html': '만료 갱신 여권 운전면허 적성검사 자동차보험 자동차검사 약정 휴대폰 인터넷', 'parcel.html': '택배 배송 운송장 도착 쿠팡 주문 조회', 'medical.html': '병원 약국 소아과 소아청소년과 진료시간 야간 휴일 달빛 이비인후과 응급', 'voice.html': '목소리 녹음 아이 타임캡슐 음성', 'til.html': 'TIL 오늘배운것 공부 개발 메모 잔디 기술', 'visited.html': '가본곳 지도 여행 시도 전국 지역 다녀온', 'mygames.html': '내게임 백로그 플레이 엔딩 게임기록 쌓아둔'
   };
   const CHO = 'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ';
   const cho = s => [...s].map(c => { const n = c.charCodeAt(0) - 0xAC00; return n >= 0 && n < 11172 ? CHO[Math.floor(n / 588)] : c; }).join('');
