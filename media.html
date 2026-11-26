@@ -132,7 +132,7 @@
     <a href="./mygames.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕹️ <span>내 게임</span></a>
     <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
     <a href="./media.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🍿 <span>콘텐츠 기록</span></a>
-    <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니·웹툰</span></a>
+    <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니 방영표</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
@@ -188,13 +188,22 @@
     function shrink(file, max = 900) { return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.75)); }; img.src = URL.createObjectURL(file); }); }
     function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
     const KEY = 'argon_media_v1';
-    const TYPES = [['book', '📚 책'], ['movie', '🎬 영화'], ['drama', '📺 드라마'], ['anime', '🧸 애니'], ['show', '🎭 공연·전시'], ['game', '🎮 게임']];
-    // 종류마다 동사: 책은 읽다, 게임은 하다, 나머지는 보다
-    const VERB = { book: ['다 읽었어요', '읽는 중', '읽고 싶어요'], game: ['다 했어요', '하는 중', '하고 싶어요'] }, SEE = ['다 봤어요', '보는 중', '보고 싶어요'];
+    const TYPES = [['book', '📚 책'], ['movie', '🎬 영화'], ['drama', '📺 드라마'], ['anime', '🧸 애니'], ['show', '🎭 공연·전시']];   // 🎮 게임은 '내 게임'(mygames.html)으로 옮김
+    // 종류마다 동사: 책은 읽다, 나머지는 보다
+    const VERB = { book: ['다 읽었어요', '읽는 중', '읽고 싶어요'] }, SEE = ['다 봤어요', '보는 중', '보고 싶어요'];
     const stLabel = (t, k) => (VERB[t] || SEE)[['done', 'doing', 'want'].indexOf(k)];
     const STAT = [['done'], ['doing'], ['want']];
     let st = Object.assign({ items: [] }, load(KEY, {})), type = 'book', status = 'done', star = 4, filt = 'all';
     const persist = () => save(KEY, st);
+    // 🎮 예전에 여기 적은 게임 → 내 게임으로 한 번 옮기기
+    (function moveGames() {
+      const gs = st.items.filter(i => i.type === 'game'); if (!gs.length) return;
+      let my; try { my = Object.assign({ items: [] }, JSON.parse(localStorage.getItem('argon_mygames_v1')) || {}); } catch (e) { my = { items: [] }; }
+      gs.forEach((g, k) => { if (my.items.some(x => x.title.toLowerCase() === String(g.title).toLowerCase())) return;
+        const s = g.status === 'done' ? 'done' : g.status === 'doing' ? 'playing' : 'backlog';
+        my.items.push({ id: Date.now() + k, title: g.title, plat: '', status: s, added: g.date || '', started: s !== 'backlog' ? g.date || '' : '', finished: s === 'done' ? g.date || '' : '', price: 0, hours: 0, rate: g.star || 0, memo: g.review || '' }); });
+      try { localStorage.setItem('argon_mygames_v1', JSON.stringify(my)); st.items = st.items.filter(i => i.type !== 'game'); persist(); } catch (e) {}
+    })();
     const tLabel = k => (TYPES.find(t => t[0] === k) || [, ''])[1];
     function renderForm() {
       document.getElementById('types').innerHTML = TYPES.map(([k, l]) => `<span role="button" tabindex="0" onclick="type='${k}';renderForm()" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-extrabold ${type === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
@@ -210,7 +219,7 @@
     function render() {
       renderForm();
       const y = String(new Date().getFullYear()), done = st.items.filter(i => i.status === 'done' && i.date.startsWith(y)), cnt = {}; done.forEach(i => cnt[i.type] = (cnt[i.type] || 0) + 1);
-      document.getElementById('sub').textContent = done.length ? `올해 ${done.length}개 · ` + TYPES.filter(([k]) => cnt[k]).map(([k, l]) => `${l.split(' ')[0]}${cnt[k]}`).join(' ') : '책·영화·드라마·게임 기록';
+      document.getElementById('sub').textContent = done.length ? `올해 ${done.length}개 · ` + TYPES.filter(([k]) => cnt[k]).map(([k, l]) => `${l.split(' ')[0]}${cnt[k]}`).join(' ') : '책·영화·드라마·애니 기록';
       document.getElementById('filters').innerHTML = [['all', '전체'], ['doing', '⏳ 진행 중'], ['want', '💭 찜'], ...TYPES].map(([k, l]) => `<span role="button" tabindex="0" onclick="filt='${k}';render()" class="cursor-pointer px-2 py-0.5 rounded-full text-[11px] font-bold ${filt === k ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${l}</span>`).join('');
       const q = document.getElementById('q').value.trim();
       const xs = st.items.filter(i => (filt === 'all' || i.status === filt || i.type === filt) && (!q || (i.title + (i.review || '')).includes(q))).sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
