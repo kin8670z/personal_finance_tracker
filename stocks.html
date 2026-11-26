@@ -11,6 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="market-events.js"></script>
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
   <title>주식 현황 · 든든</title>
@@ -165,6 +166,12 @@
             <ul id="suggest" role="listbox" class="hidden absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-30 max-h-64 overflow-auto text-sm"></ul>
           </form>
           <p id="addMsg" class="text-xs text-rose-600 mt-1.5 hidden"></p>
+        </section>
+
+        <!-- 다가오는 이벤트 -->
+        <section id="evSection" class="card p-4">
+          <div class="flex justify-between items-center gap-2 mb-2"><h2 class="text-sm md:text-base font-extrabold text-slate-900">📅 다가오는 이벤트</h2><div id="evTabs" class="seg flex bg-slate-100 rounded-xl p-0.5 text-xs font-bold"></div></div>
+          <div id="evBox"><div class="skel" style="height:140px"></div></div>
         </section>
 
         <!-- 내 포트폴리오 (보유 종목이 있을 때만) -->
@@ -1048,7 +1055,7 @@
       watch = watch.filter(x => x.id !== id); save(WATCH_KEY, watch);
       if (target === w.symbol) { target = watch[0] ? watch[0].symbol : 'IDX:KOSPI'; save('argon_watch_detail_v1', target); loadChart(); }
       if (!watch.length) editing = false;
-      renderSummary(); renderWatch(); renderDetailHead();
+      renderSummary(); renderWatch(); renderDetailHead(); renderEvents();
     }
     function addWatch(code, name, nation) {
       const msg = document.getElementById('addMsg'), symbol = (nation === 'USA' ? 'US:' : 'KRX:') + code;
@@ -1056,7 +1063,7 @@
       watch.push({ id: Date.now(), name: name || code, symbol }); save(WATCH_KEY, watch);
       msg.classList.add('hidden'); document.getElementById('addInput').value = ''; hideSuggest();
       target = symbol; save('argon_watch_detail_v1', target);
-      renderWatch(); renderDetailHead(); refreshAll(true);
+      renderWatch(); renderDetailHead(); refreshAll(true); loadEvents(true);
     }
 
     // 종목 검색 (이름 또는 코드)
@@ -1218,6 +1225,65 @@
     }
     const US_SECT = [['XLK', '기술'], ['XLC', '통신·미디어'], ['XLY', '임의소비재'], ['XLF', '금융'], ['XLV', '헬스케어'], ['XLI', '산업재'], ['XLE', '에너지'], ['XLP', '필수소비재'], ['XLB', '소재'], ['XLU', '유틸리티'], ['XLRE', '부동산']];
 
+    // ===================== 📅 다가오는 이벤트 (내 종목 + 경제 일정) =====================
+    let evData = (() => { try { return JSON.parse(localStorage.getItem('stock_events_v1')); } catch (e) { return null; } })(), evTab = 'all', evLoading = false;
+    const ME = window.MarketEvents;
+    const W7 = '일월화수목금토', dOf = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }, tdy = () => ME ? ME.ymd(new Date()) : '';
+    const dLabel = s => { const k = Math.round((dOf(s) - dOf(tdy())) / 864e5), d = dOf(s); return k === 0 ? '오늘' : k === 1 ? '내일' : `${d.getMonth() + 1}/${d.getDate()}(${W7[d.getDay()]})`; };
+    // 국내 실적 발표 시기 (분기말 기준 대략)
+    const krSeason = key => { const y = +key.slice(0, 4), m = +key.slice(4); return { 3: [`${y}년 1분기`, '보통 4월 말~5월 중순'], 6: [`${y}년 2분기`, '보통 7월 말~8월 중순'], 9: [`${y}년 3분기`, '보통 10월 말~11월 중순'], 12: [`${y}년 4분기`, `보통 ${y + 1}년 1월 말~2월 (대형주는 1월 초 잠정실적)`] }[m] || [key, '']; };
+    async function loadEvents(force) {
+      const syms = watch.map(w => w.symbol), kr = syms.filter(isKrStock).map(codeOf), us = syms.filter(isUsStock).map(codeOf), key = kr.join() + '|' + us.join();
+      if (!force && evData && evData.key === key && Date.now() - evData.at < 3600e3) return renderEvents();
+      evLoading = true; renderEvents();
+      try {
+        const r = await fetch(`${API}?op=events&kr=${kr.join(',')}&us=${us.join(',')}`); const j = await r.json(); if (!r.ok) throw 0;
+        // 미국 실적은 한국 시간으로 바꿔서 저장 (오늘 화면·아침 알림도 씀)
+        (j.us || []).forEach(e => { if (!e.date || !ME) return; const t = e.when === 'amc' ? ME.kst(e.date, 16, 5) : e.when === 'bmo' ? ME.kst(e.date, 8, 0) : { date: e.date, time: '' }; e.kdate = t.date; e.ktime = t.time; e.name = nameOf(e.sym); });
+        (j.kr || []).forEach(e => { e.name = nameOf(e.sym); });
+        evData = { key, at: Date.now(), kr: j.kr || [], us: j.us || [] }; localStorage.setItem('stock_events_v1', JSON.stringify(evData));
+      } catch (e) { console.warn(e); }
+      evLoading = false; renderEvents();
+    }
+    function setEvTab(t) { evTab = t; renderEvents(); }
+    function evRow(o) {
+      const k = Math.round((dOf(o.date) - dOf(tdy())) / 864e5), ex = o.ex;
+      return `<details class="border-b border-slate-100 py-1.5"><summary class="cursor-pointer list-none flex items-center gap-2"><span class="w-16 shrink-0"><span class="block text-xs font-extrabold ${k <= 1 ? 'text-rose-500' : 'text-slate-700'}">${dLabel(o.date)}</span><span class="block text-[10px] font-bold text-slate-400 num">${o.time || ''}</span></span><span class="text-lg">${o.ico}</span><span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${esc(o.title)}</span>${o.sub ? `<span class="block text-[10px] font-bold text-slate-400 truncate">${o.sub}</span>` : ''}</span><span class="text-[10px] font-bold text-slate-400 shrink-0">${k > 1 ? `D-${k}` : ''}</span></summary>${ex ? `<p class="text-xs text-slate-600 leading-snug bg-slate-50 rounded-lg px-2.5 py-2 mt-1.5">💡 ${ex}</p>` : ''}</details>`;
+    }
+    function renderEvents() {
+      const box = document.getElementById('evBox'); if (!box) return;
+      document.getElementById('evTabs').innerHTML = [['all', '전체'], ['mine', '내 종목'], ['macro', '경제']].map(([k, l]) => `<button type="button" onclick="setEvTab('${k}')" aria-pressed="${evTab === k}" class="px-2.5 py-1 rounded-lg">${l}</button>`).join('');
+      if (!ME) { box.innerHTML = '<p class="text-xs text-slate-400">일정 정보를 불러오지 못했어요</p>'; return; }
+      const T = tdy(), rows = [], wset = new Set(watch.map(w => w.symbol));
+      if (evTab !== 'mine') ME.macro(T, 35).forEach(e => rows.push({ date: e.date, time: e.time ? `${e.time}` : '', ico: e.ico, title: e.name + (e.big ? (e.k === 'kopex' ? ' · 네 마녀의 날' : ' · 쿼드러플 위칭') : ''), sub: e.k === 'cpi' || e.k === 'jobs' || e.k.startsWith('fomc') || e.k === 'usopex' ? '한국 시간' : '', ex: ME.EXPLAIN[e.k][2] }));
+      const d = evData && evData.key ? evData : null;
+      if (evTab !== 'macro' && d) {
+        (d.us || []).filter(e => e.kdate && wset.has(e.sym) && e.kdate >= T).forEach(e => rows.push({ date: e.kdate, time: e.ktime, ico: '📣', title: `${nameOf(e.sym)} 실적 발표`, sub: `${e.when === 'amc' ? '미국 장 마감 후' : e.when === 'bmo' ? '미국 장 시작 전' : '시간 미정'}${e.est ? ' · 예상일' : ''}`, ex: ME.EXPLAIN.earnUS[2] }));
+      }
+      rows.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+      // 이번 주 / 다음 주 / 그 후
+      const mon = dOf(T); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7)); const nextMon = new Date(mon); nextMon.setDate(mon.getDate() + 7); const after = new Date(mon); after.setDate(mon.getDate() + 14);
+      const grp = r => dOf(r.date) < nextMon ? '이번 주' : dOf(r.date) < after ? '다음 주' : '그 후';
+      let html = '', last = '';
+      rows.forEach(r => { const g = grp(r); if (g !== last) { html += `<p class="text-[10px] font-extrabold text-slate-400 pt-2">${g}</p>`; last = g; } html += evRow(r); });
+      // 내 국내 종목: 다음 실적 시즌 + 시장 예상, 최근 공시
+      if (evTab !== 'macro' && d) {
+        const krs = (d.kr || []).filter(e => wset.has(e.sym)), fmtEok = n => n == null ? '-' : n >= 10000 ? `${(n / 10000).toFixed(n >= 100000 ? 0 : 1)}조` : `${fmt(n)}억`;
+        const nx = krs.filter(e => e.next && (e.next.op != null || e.next.sales != null));
+        if (nx.length) html += `<p class="text-[10px] font-extrabold text-slate-400 pt-3">📣 국내 종목 다음 실적</p>` + nx.map(e => { const [q, when] = krSeason(e.next.q), yoy = e.next.op != null && e.next.opLY ? (e.next.op / e.next.opLY - 1) * 100 : null;
+          return `<details class="border-b border-slate-100 py-1.5"><summary class="cursor-pointer list-none flex items-center gap-2"><span class="text-lg">📣</span><span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${esc(nameOf(e.sym))} · ${q}</span><span class="block text-[10px] font-bold text-slate-400">${when}</span></span><span class="text-right shrink-0"><span class="block text-[10px] font-bold text-slate-400">예상 영업이익</span><span class="block text-xs font-extrabold num text-slate-800">${fmtEok(e.next.op)}${yoy != null ? ` <span class="${yoy >= 0 ? 'up' : 'down'}">${yoy >= 0 ? '+' : ''}${yoy.toFixed(0)}%</span>` : ''}</span></span></summary><p class="text-xs text-slate-600 leading-snug bg-slate-50 rounded-lg px-2.5 py-2 mt-1.5">💡 ${ME.EXPLAIN.earnKR[2]} 여기 숫자는 증권사 예상치 평균(컨센서스)이고, 옆 %는 작년 같은 분기 대비예요.</p></details>`; }).join('');
+        const disc = []; krs.forEach(e => { const seen = new Set(); (e.disc || []).slice().sort((a, b) => b.at.localeCompare(a.at)).forEach(x => { const c = ME.classify(x.t); if (c && !seen.has(c.type)) { seen.add(c.type); disc.push({ ...x, c, name: nameOf(e.sym) }); } }); });   // 종목마다 종류별 최신 1건
+        disc.sort((a, b) => b.at.localeCompare(a.at));
+        if (disc.length) html += `<p class="text-[10px] font-extrabold text-slate-400 pt-3">📰 최근 공시 (45일)</p>` + disc.slice(0, 8).map(x => `<details class="border-b border-slate-100 py-1.5"><summary class="cursor-pointer list-none flex items-center gap-2"><span class="w-16 shrink-0 text-[11px] font-bold text-slate-500 num">${x.at.slice(5, 10).replace('-', '/')}</span><span class="text-lg">${x.c.ico}</span><span class="flex-1 min-w-0"><span class="block text-sm font-bold text-slate-800 truncate">${esc(x.name)} <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${x.c.type}</span></span><span class="block text-[10px] text-slate-400 truncate">${esc(x.t)}</span></span></summary><p class="text-xs text-slate-600 leading-snug bg-slate-50 rounded-lg px-2.5 py-2 mt-1.5">💡 ${x.c.txt}</p></details>`).join('');
+        const usNo = (d.us || []).filter(e => wset.has(e.sym) && !e.date);
+        if (usNo.length && evTab === 'mine') html += `<p class="text-[10px] text-slate-400 pt-2">${usNo.map(e => esc(nameOf(e.sym))).join(', ')}: 다음 실적 발표일이 아직 안 나왔어요</p>`;
+      }
+      if (evLoading && !d) html += '<div class="skel mt-2" style="height:60px"></div>';
+      if (!html) html = `<p class="text-xs text-slate-400 py-2">${evTab === 'mine' ? (watch.length ? '내 종목 이벤트가 없어요' : '관심 종목을 넣으면 실적 발표·공시가 여기 떠요') : '다가오는 일정이 없어요'}</p>`;
+      box.innerHTML = html + `<details class="mt-3"><summary class="cursor-pointer text-[11px] font-extrabold text-indigo-600">📚 이벤트가 보통 주가에 주는 영향</summary><div class="mt-1">${['cpi', 'fomc', 'jobs', 'bok', 'earnUS', 'earnKR', 'exdiv', 'kopex'].map(k => { const [i, n, t] = ME.EXPLAIN[k]; return `<div class="flex gap-2 py-1.5 border-t border-slate-100"><span class="text-lg">${i}</span><span><span class="block text-xs font-extrabold text-slate-800">${n}</span><span class="block text-[11px] text-slate-600 leading-snug">${t}</span></span></div>`; }).join('')}</div></details>
+        <p class="text-[10px] text-slate-400 mt-2">일반적인 경향이고, 실제로는 그때 시장 분위기에 따라 다르게 움직일 수 있어요. 미국 일정은 한국 시간으로 바꿔 보여줘요. 경제 일정 출처: 연준·미 노동통계국·한국은행 발표.</p>`;
+    }
+
     // ===================== 🏆 실시간 랭킹 =====================
     const RANKS = [['searchTop', '🔥 인기 검색'], ['up', '📈 상승'], ['down', '📉 하락'], ['priceTop', '💰 거래대금'], ['quantTop', '📊 거래량'], ['marketValue', '🏢 시가총액']];
     const RMK = [['KOSPI', '코스피'], ['KOSDAQ', '코스닥'], ['NASDAQ', '나스닥'], ['NYSE', '뉴욕']];
@@ -1284,7 +1350,7 @@
     watch.forEach(w => { if (w.trades) recalc(w); });
     renderAll();
     refreshAll(true);
-    renderPulseMk(); renderTips(); loadPulse(true); loadRank(true); if (pulseMk === 'us') loadUs();
+    renderPulseMk(); renderTips(); loadPulse(true); loadRank(true); if (pulseMk === 'us') loadUs(); loadEvents();
     setInterval(() => { if (document.visibilityState === 'visible') { loadPulse(); loadRank(); if (pulseMk === 'us') loadUs(); } }, 60000);
   </script>
 </body>

@@ -185,6 +185,7 @@
     <section id="todo" class="card p-4"></section>
     <section id="diary" class="card p-4"></section>
     <section id="money" class="card p-4"></section>
+    <section id="mkev" class="hidden card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
     <section id="lotto" class="hidden card p-4"></section>
 
@@ -207,6 +208,7 @@
   </div>
 
   <script src="tax-calc.js"></script>
+  <script src="market-events.js"></script>
   <script src="tt.js"></script>
   <script src="commute.js"></script>
   <script src="english-deck.js"></script>
@@ -560,6 +562,21 @@
         return `<a href="./ceremony.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-extrabold text-slate-800">${esc(p.person)} ${esc(String(p.kind).split(' ').pop())}</span><span class="text-sm font-extrabold ${k ? 'text-indigo-600' : 'text-amber-600'}">${k === 0 ? '오늘' : k === 1 ? '내일' : `D-${k}`}</span></span>${past ? `<span class="block text-[11px] font-bold text-slate-500">지난번: ${past.date.slice(2).replace(/-/g, '.')} ${past.dir === 'get' ? '받음' : '냄'} ${Number(past.amount || 0).toLocaleString('ko-KR')}원</span>` : ''}</a>`; }).join('');
     }
 
+    // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
+    function renderMkEvents() {
+      const box = document.getElementById('mkev'), ME = window.MarketEvents; if (!ME) { box.classList.add('hidden'); return; }
+      const now = new Date(), T = ymd(now), tm = new Date(now); tm.setDate(tm.getDate() + 1); const N = ymd(tm), eve = now.getHours() >= 17;
+      const ok = e => e.date === T || (eve && e.date === N && e.time < '07:00');
+      const xs = ME.macro(T, 2).filter(ok).map(e => [e.date, e.time, e.ico, e.name + (e.big ? (e.k === 'kopex' ? ' (네 마녀의 날)' : ' (쿼드러플 위칭)') : '')]);
+      let ev = null; try { ev = JSON.parse(localStorage.getItem('stock_events_v1')); } catch (e) {}
+      ((ev || {}).us || []).filter(e => e.kdate && ok({ date: e.kdate, time: e.ktime || '' })).forEach(e => xs.push([e.kdate, e.ktime || '', '📣', `${e.name || e.sym} 실적 발표`]));
+      if (!xs.length) { box.classList.add('hidden'); return; }
+      xs.sort((a, b) => (a[0] + a[1]).localeCompare(b[0] + b[1]));
+      const when = (d, t) => { const h = +String(t).slice(0, 2); return d === T ? (t ? (h < 7 ? `오늘 새벽 ${t}` : h >= 18 ? `오늘 밤 ${t}` : `오늘 ${t}`) : '오늘') : `내일 새벽 ${t}`; };
+      box.classList.remove('hidden');
+      box.innerHTML = head('📅 시장 이벤트', './stocks.html', '자세히') + xs.map(([d, t, i, n]) => `<a href="./stocks.html" class="flex items-center gap-2 py-1"><span class="text-lg">${i}</span><span class="flex-1 text-sm font-bold text-slate-800">${esc(n)}</span><span class="text-[11px] font-extrabold text-indigo-600 shrink-0">${when(d, t)}</span></a>`).join('');
+    }
+
     // ---------- 🎒 어린이집: 오전엔 오늘, 15시 이후엔 내일 챙길 것 (다 챙기면 숨김) ----------
     function renderDaycare() {
       const box = document.getElementById('daycare'), st = load('argon_daycare_v1', null), h = new Date().getHours();
@@ -878,7 +895,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
