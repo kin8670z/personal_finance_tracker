@@ -118,6 +118,7 @@
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./insight.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔮 <span>소비 인사이트</span></a>
     <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
     <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
     <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
@@ -170,7 +171,7 @@
       <div id="plans" class="flex gap-1.5 overflow-x-auto mt-3 pb-0.5"></div>
     </header>
 
-    <section class="card p-4" style="background:#fffbeb">
+    <section class="rounded-2xl p-4 shadow-sm border border-amber-200/60" style="background:#fffbeb">   <!-- 다크 모드에서도 종이 느낌 그대로 -->
       <div class="flex items-center gap-2"><p id="pTitle" role="button" tabindex="0" onclick="renamePlan()" class="cursor-pointer flex-1 text-center text-lg font-extrabold" style="color:#92400e;font-family:'Gaegu','Nanum Pen Script',cursive,sans-serif"></p></div>
       <div class="relative mx-auto mt-1" style="max-width:440px"><svg id="clock" viewBox="0 0 400 400" class="w-full h-auto select-none"></svg></div>
       <div id="nowBox" class="mt-2 text-center"></div>
@@ -322,7 +323,7 @@
       document.getElementById('check').innerHTML = p.acts.map((x, i) => { const on = d[st.cur + ':' + i]; return `<span role="button" tabindex="0" onclick="check(${i})" class="cursor-pointer px-2.5 py-1.5 rounded-xl text-sm font-bold" style="background:${on ? x.c : 'rgba(148,163,184,.12)'};color:${on ? '#451a03' : '#64748b'}">${on ? '💮' : x.emo} ${esc(x.t)}</span>`; }).join('') || '<span class="text-xs text-slate-400">칸을 채우면 여기 생겨요</span>';
       const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(); x.setDate(x.getDate() - 6 + i); return ymd(x); });
       document.getElementById('week').innerHTML = days.map(k => { const n = Object.keys(st.done[k] || {}).length; return `<div class="text-center rounded-lg py-1.5 ${k === today() ? 'ring-2 ring-amber-400' : ''}" style="background:rgba(251,191,36,${n ? Math.min(0.6, 0.15 + n * 0.08) : 0.06})"><p class="text-[10px] font-bold text-slate-500">${DN[D(k).getDay()]}</p><p class="text-sm">${n ? '💮' : '·'}</p><p class="text-[10px] font-extrabold text-amber-700">${n || ''}</p></div>`; }).join('');
-      document.getElementById('days').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(x => `<span role="button" tabindex="0" onclick="togDay(${x})" class="cursor-pointer flex-1 text-center py-1.5 rounded-lg text-xs font-extrabold ${(p.days || []).includes(x) ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'}">${DN[x]}</span>`).join('');
+      document.getElementById('days').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(x => `<span role="button" tabindex="0" onclick="togDay(${x})" class="cursor-pointer flex-1 text-center py-1.5 rounded-lg text-xs font-extrabold ${(p.days || []).includes(x) ? 'text-white' : 'bg-slate-100 text-slate-500'}" style="${(p.days || []).includes(x) ? 'background:#b45309' : ''}">${DN[x]}</span>`).join('');
       document.getElementById('showToday').checked = st.showToday !== false;
       renderForm();
     }
