@@ -182,7 +182,9 @@
       <div class="flex gap-2 mt-2"><input id="fT" maxlength="10" placeholder="할 일 (예: 공부)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm font-bold"><input id="fEmo" maxlength="4" placeholder="😀" class="w-14 text-center border border-slate-200 rounded-lg px-1 py-2 bg-white text-lg"></div>
       <div id="acts" class="flex flex-wrap gap-1.5 mt-2"></div>
       <div id="colors" class="flex flex-wrap gap-1.5 mt-2"></div>
-      <div class="flex gap-2 mt-3"><button type="button" onclick="clearRange()" class="px-3 py-2.5 bg-slate-100 text-slate-500 text-sm font-extrabold rounded-xl">비우기</button><button type="button" onclick="fillRange()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">🖍️ 칠하기</button></div>
+      <div id="editing" class="hidden mt-2"></div>
+      <div class="flex gap-2 mt-3"><button type="button" onclick="clearRange()" class="px-3 py-2.5 bg-slate-100 text-slate-500 text-sm font-extrabold rounded-xl">비우기</button><button type="button" id="fillBtn" onclick="fillRange()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">🖍️ 칠하기</button></div>
+      <p id="fillMsg" class="text-[11px] font-bold text-emerald-600 mt-1 h-4"></p>
     </section>
 
     <section class="card p-4">
@@ -252,17 +254,32 @@
     function pickAct(i) { const a = ACTS[i]; document.getElementById('fT').value = a[0]; document.getElementById('fEmo').value = a[1]; fColor = a[2]; renderForm(); }
     function setColor(c) { fColor = c; renderForm(); }
     function range() { const s = Number(document.getElementById('fS').value), e = Number(document.getElementById('fE').value); return [s, e > s ? e : e + N]; }
+    // 원에서 칸을 눌러 고치는 중이면: 원래 칸을 비우고 새 시간에 칠해요 (시간을 줄이거나 옮길 때)
+    let editing = null;
+    const span = (a, b) => `${tm(a)}~${tm(b)}`;
     function fillRange() {
       const p = cur(), t = document.getElementById('fT').value.trim(); if (!t) return document.getElementById('fT').focus();
-      const emo = document.getElementById('fEmo').value.trim() || '⭐'; let i = p.acts.findIndex(a => a.t === t);
+      const emo = document.getElementById('fEmo').value.trim() || '⭐', [s, e] = range();
+      if (editing) for (let k = editing.s; k < editing.e; k++) if (p.slots[k % N] === editing.a) p.slots[k % N] = -1;
+      let i = p.acts.findIndex(a => a.t === t);
       if (i < 0) { p.acts.push({ t, emo, c: fColor }); i = p.acts.length - 1; } else Object.assign(p.acts[i], { emo, c: fColor });
-      const [s, e] = range(); for (let k = s; k < e; k++) p.slots[k % N] = i; tidy(p); persist(); render();
+      for (let k = s; k < e; k++) p.slots[k % N] = i;
+      const msg = editing ? `✅ ${span(editing.s, editing.e)} → ${span(s, e)} ${t}(으)로 바꿨어요` : `✅ ${span(s, e)} ${t} 칠했어요`;
+      editing = null; tidy(p); persist(); render(); flash(msg);
     }
-    function clearRange() { const p = cur(), [s, e] = range(); for (let k = s; k < e; k++) p.slots[k % N] = -1; tidy(p); persist(); render(); }
+    function clearRange() {
+      const p = cur(); let [s, e] = range();
+      if (editing) { s = editing.s; e = editing.e; for (let k = s; k < e; k++) if (p.slots[k % N] === editing.a) p.slots[k % N] = -1; }
+      else for (let k = s; k < e; k++) p.slots[k % N] = -1;
+      editing = null; tidy(p); persist(); render(); flash(`🧽 ${span(s, e)} 비웠어요`);
+    }
     function tidy(p) { const used = new Set(p.slots.filter(x => x >= 0)), map = {}, acts = []; p.acts.forEach((a, i) => { if (used.has(i)) { map[i] = acts.length; acts.push(a); } }); p.acts = acts; p.slots = p.slots.map(x => x >= 0 ? map[x] : -1); }
+    function cancelEdit() { editing = null; render(); }
+    function flash(m) { const el = document.getElementById('fillMsg'); el.textContent = m; clearTimeout(flash.t); flash.t = setTimeout(() => el.textContent = '', 3500); }
     function editRun(s, e) {
       const p = cur(), a = p.slots[s % N]; document.getElementById('fS').value = s % N; document.getElementById('fE').value = e % N;
-      if (a >= 0) { document.getElementById('fT').value = p.acts[a].t; document.getElementById('fEmo').value = p.acts[a].emo; fColor = p.acts[a].c; } else { document.getElementById('fT').value = ''; document.getElementById('fEmo').value = ''; }
+      if (a >= 0) { editing = { s, e, a }; document.getElementById('fT').value = p.acts[a].t; document.getElementById('fEmo').value = p.acts[a].emo; fColor = p.acts[a].c; }
+      else { editing = null; document.getElementById('fT').value = ''; document.getElementById('fEmo').value = ''; }
       renderForm(); document.getElementById('fT').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
     // 실천 확인
@@ -285,6 +302,9 @@
       return s + (forImg ? '</g>' : '');
     }
     function renderForm() {
+      const ed = document.getElementById('editing'), fb = document.getElementById('fillBtn');
+      if (editing && cur().acts[editing.a]) { const a = cur().acts[editing.a]; ed.classList.remove('hidden'); ed.innerHTML = `<div class="flex items-center gap-2 rounded-xl px-3 py-2" style="background:${a.c}"><span class="flex-1 text-xs font-extrabold" style="color:#451a03">✏️ ${a.emo} ${esc(a.t)} (${span(editing.s, editing.e)}) 고치는 중 — 시간을 바꾸고 아래를 눌러요</span><span role="button" tabindex="0" onclick="cancelEdit()" class="cursor-pointer text-[11px] font-extrabold" style="color:#78350f">새로 칠하기</span></div>`; fb.textContent = '🖍️ 이 칸 바꾸기'; }
+      else { ed.classList.add('hidden'); fb.textContent = '🖍️ 칠하기'; }
       const opt = i => `<option value="${i}">${tm(i)}</option>`, fs = document.getElementById('fS'), fe = document.getElementById('fE'), sv = fs.value, ev = fe.value;
       if (!fs.options.length) { fs.innerHTML = Array.from({ length: N }, (_, i) => opt(i)).join(''); fe.innerHTML = Array.from({ length: N }, (_, i) => opt((i + 1) % N).replace('>00:00<', '>24:00<')).join(''); fs.value = 18; fe.value = 20; }
       document.getElementById('acts').innerHTML = ACTS.map(([t, e], i) => `<span role="button" tabindex="0" onclick="pickAct(${i})" class="cursor-pointer px-2 py-1 rounded-full bg-slate-100 text-xs font-bold text-slate-700">${e} ${t}</span>`).join('');
