@@ -244,6 +244,65 @@
       persist(); render();
     }
     function toggleEdit() { editing = !editing; render(); }
+    // ---------- 🧘 동작 설명: 직접 그린 그림(두 장면을 번갈아) + 순서 + 주의 ----------
+    let openPose = null, poseTimer = null;
+    const G = 104;   // 바닥 높이
+    // 몸: 머리·어깨·엉덩이 + 척추 휨(ctrl) + 팔(팔꿈치·손) + 다리(무릎·발) 2개씩
+    const Q = (sh, hip, bend) => ({ sh, hip, bend });
+    const POSES = {
+      '고양이-소 자세': { f: [
+        { ...Q([62, 70], [132, 70], [97, 48]), head: [48, 84], arms: [[[62, 88], [62, G]]], legs: [[[132, G], [168, G]]], cap: '🐈 등을 둥글게 (숨 내쉬기)' },
+        { ...Q([62, 70], [132, 70], [97, 84]), head: [46, 54], arms: [[[62, 88], [62, G]]], legs: [[[132, G], [168, G]]], cap: '🐄 배를 내리고 가슴 펴기 (숨 들이쉬기)' }],
+        steps: ['네발 기기 자세 — 손은 어깨 아래, 무릎은 골반 아래', '숨을 내쉬며 등을 천장 쪽으로 둥글게 말고 턱을 당겨요', '숨을 들이쉬며 배를 내리고 가슴을 펴며 시선은 앞으로', '천천히 번갈아 10회'], tip: '허리를 억지로 꺾지 말고 편한 범위에서만 움직여요' },
+      '무릎 가슴으로 당기기': { f: [
+        { ...Q([48, 98], [112, 99], [80, 99]), head: [30, 94], arms: [[[66, 84], [86, 74]]], legs: [[[90, 68], [116, 80]], [[146, 100], [180, 101]]], cap: '한쪽 무릎을 가슴 쪽으로' },
+        { ...Q([48, 98], [112, 99], [80, 99]), head: [30, 94], arms: [[[66, 84], [92, 66]]], legs: [[[96, 60], [122, 70]], [[146, 100], [180, 101]]], cap: '두 손으로 감싸 30초 유지' }],
+        steps: ['등을 대고 누워 무릎을 세워요', '한쪽 무릎을 두 손으로 감싸 가슴 쪽으로 천천히 당겨요', '숨을 편하게 쉬며 30초 유지', '반대쪽도 똑같이'], tip: '반대쪽 엉덩이가 바닥에서 뜨지 않게, 당길 때 반동 없이 천천히' },
+      '누워서 골반 기울이기': { f: [
+        { ...Q([48, 98], [112, 99], [82, 93]), head: [30, 94], arms: [[[76, 102], [98, 103]]], legs: [[[140, 74], [164, G]]], cap: '힘 빼고 편하게 (허리 아래 살짝 틈)' },
+        { ...Q([48, 98], [112, 98], [82, 102]), head: [30, 94], arms: [[[76, 102], [98, 103]]], legs: [[[140, 74], [164, G]]], cap: '배에 힘 주고 허리를 바닥에 꾹' }],
+        steps: ['누워서 무릎을 세우고 발은 골반 너비로', '배에 힘을 주며 허리를 바닥에 꾹 눌러요 (골반이 살짝 뒤로 말려요)', '3~5초 버티고 힘을 빼요', '10회 반복'], tip: '엉덩이를 드는 게 아니라 허리 뒤 틈을 없애는 작은 움직임이에요' },
+      '브릿지': { f: [
+        { ...Q([48, 98], [112, 99], [80, 99]), head: [30, 94], arms: [[[76, 102], [100, 103]]], legs: [[[140, 74], [164, G]]], cap: '누워서 무릎 세우기' },
+        { ...Q([48, 98], [116, 70], [82, 86]), head: [30, 94], arms: [[[76, 102], [100, 103]]], legs: [[[148, 64], [164, G]]], cap: '엉덩이 힘으로 어깨~무릎 일직선' }],
+        steps: ['누워서 무릎을 세우고 팔은 몸 옆에', '엉덩이에 힘을 주며 어깨부터 무릎까지 일직선이 되게 들어 올려요', '2~3초 멈췄다가 천천히 내려요', '10회 반복'], tip: '허리를 꺾어서 들지 말고 엉덩이(둔근)로 밀어 올려요' },
+      '버드독': { f: [
+        { ...Q([62, 72], [132, 72], [97, 72]), head: [46, 60], arms: [[[62, 88], [62, G]]], legs: [[[132, G], [168, G]]], cap: '네발 기기, 등은 평평하게' },
+        { ...Q([62, 72], [132, 72], [97, 72]), head: [46, 60], arms: [[[62, 88], [62, G]], [[38, 78], [12, 78]]], legs: [[[132, G], [168, G]], [[158, 72], [186, 72]]], cap: '팔 하나·반대 다리를 뻗어 2~3초' }],
+        steps: ['네발 기기 자세, 등은 탁자처럼 평평하게', '오른팔은 앞으로, 왼다리는 뒤로 바닥과 나란히 뻗어요', '2~3초 버티고 돌아와요', '반대쪽(왼팔·오른다리)도 번갈아 10회'], tip: '골반이 한쪽으로 기울지 않게 배에 살짝 힘을 줘요' },
+      '아기 자세': { f: [
+        { ...Q([82, 92], [140, 86], [110, 82]), head: [62, 98], arms: [[[50, 100], [22, G - 1]]], legs: [[[112, G], [154, G]]], cap: '엉덩이를 뒤꿈치 쪽으로' },
+        { ...Q([80, 94], [142, 88], [110, 85]), head: [60, 100], arms: [[[48, 101], [18, G - 1]]], legs: [[[112, G], [154, G]]], cap: '팔을 길게 뻗고 천천히 숨쉬기' }],
+        steps: ['무릎을 꿇고 앉아 엉덩이를 발뒤꿈치 쪽으로 내려요', '상체를 앞으로 숙이며 팔을 앞으로 길게 뻗어요', '이마를 바닥에 대고 30초 동안 천천히 숨쉬어요'], tip: '무릎이 불편하면 무릎을 벌리거나 엉덩이 밑에 쿠션을 받쳐요' }
+    };
+    const poseOf = r => POSES[r.n] || POSES[Object.keys(POSES).find(k => r.n.replace(/\s/g, '').includes(k.replace(/\s|자세/g, '')))];
+    function figure(f, dark) {
+      const ink = dark ? '#e2e8f0' : '#334155', limb = (pts, w) => `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="${ink}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+      let s = `<rect x="4" y="${G + 1}" width="192" height="6" rx="3" fill="${dark ? '#475569' : '#c7d2fe'}"/>`;
+      s += `<path d="M ${f.sh} Q ${f.bend} ${f.hip}" fill="none" stroke="${ink}" stroke-width="9" stroke-linecap="round"/>`;
+      (f.legs || []).forEach(([k, ft]) => s += limb([f.hip, k, ft], 7));
+      (f.arms || []).forEach(([e, h]) => s += limb([f.sh, e, h], 6));
+      s += limb([f.sh, f.head], 6);   // 목
+      s += `<circle cx="${f.head[0]}" cy="${f.head[1]}" r="9" fill="${dark ? '#1e293b' : '#fff'}" stroke="${ink}" stroke-width="4"/>`;
+      return s;
+    }
+    function poseCard(r) {
+      const P = poseOf(r), dark = document.documentElement.classList.contains('dark'), ph = localStorage.getItem('workout_pose_' + r.id);
+      const yt = `https://www.youtube.com/results?search_query=${encodeURIComponent(r.n + ' 스트레칭 방법')}`;
+      return `<div class="my-2 rounded-xl p-3" style="background:rgba(99,102,241,.07)">
+        ${P ? `<svg viewBox="0 0 200 112" class="w-full max-w-sm mx-auto block" id="pose_${r.id}">${figure(P.f[0], dark)}</svg><p id="poseCap_${r.id}" class="text-center text-xs font-extrabold text-indigo-700 mt-1">${esc(P.f[0].cap)}</p>
+          <ol class="mt-2 space-y-1">${P.steps.map((t, i) => `<li class="flex gap-2 text-sm text-slate-700"><span class="shrink-0 w-5 h-5 rounded-full bg-indigo-600 text-white text-[11px] font-extrabold flex items-center justify-center">${i + 1}</span><span>${esc(t)}</span></li>`).join('')}</ol>
+          <p class="text-xs font-bold text-amber-700 mt-2">💡 ${esc(P.tip)}</p>` : `<p class="text-xs font-bold text-slate-500">직접 추가한 동작이라 그림이 없어요 — 아래에서 영상을 보거나 내 사진을 붙여 두세요</p>`}
+        ${ph ? `<img src="${ph}" alt="" class="mt-2 w-full max-w-sm mx-auto rounded-xl">` : ''}
+        <div class="flex flex-wrap gap-1.5 mt-2.5"><a href="${yt}" target="_blank" rel="noopener" class="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-600 text-[11px] font-extrabold">▶ 영상으로 보기</a><label class="cursor-pointer px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] font-extrabold">📷 ${ph ? '사진 바꾸기' : '내 사진 붙이기'}<input type="file" accept="image/*" class="hidden" onchange="posePhoto(event, ${r.id})"></label>${ph ? `<span role="button" tabindex="0" onclick="localStorage.removeItem('workout_pose_${r.id}');render()" class="cursor-pointer px-2 py-1 text-[11px] font-bold text-slate-400">사진 빼기</span>` : ''}</div>
+        <p class="text-[10px] text-slate-400 mt-2">아프거나 다리가 저리면 바로 멈추고, 계속되면 병원에서 상담받아요.</p></div>`;
+    }
+    function togPose(id) {
+      openPose = openPose === id ? null : id; clearInterval(poseTimer); render();
+      const r = st.routine.find(x => x.id === id), P = r && poseOf(r); if (!openPose || !P) return;
+      let k = 0; poseTimer = setInterval(() => { const sv = document.getElementById('pose_' + id), cp = document.getElementById('poseCap_' + id); if (!sv) return clearInterval(poseTimer); k = (k + 1) % P.f.length; sv.innerHTML = figure(P.f[k], document.documentElement.classList.contains('dark')); cp.textContent = P.f[k].cap; }, 1600);
+    }
+    async function posePhoto(e, id) { const f = e.target.files[0]; e.target.value = ''; if (!f) return; try { localStorage.setItem('workout_pose_' + id, await shrink(f, 700)); } catch (er) { alert('저장 공간이 부족해요'); } render(); }
     function addMove() { const n = document.getElementById('rName').value.trim(); if (!n) return; st.routine.push({ id: Date.now(), e: '🤸', n, a: document.getElementById('rAmt').value.trim() }); document.getElementById('rName').value = ''; document.getElementById('rAmt').value = ''; persist(); render(); }
     function delMove(id) { st.routine = st.routine.filter(r => r.id !== id); persist(); render(); }
     function setGoal() { const v = prompt('일주일 운동 목표 (분)', st.goal); if (v == null) return; const n = Math.max(10, Math.min(2000, Math.round(+v))); if (n) { st.goal = n; persist(); render(); } }
@@ -261,7 +320,7 @@
       // 루틴
       const k = today(), done = st.rdone[k] || [], n = st.routine.filter(r => done.includes(r.id)).length;
       document.getElementById('rSub').textContent = st.routine.length ? (n === st.routine.length ? '✅ 오늘 루틴 끝! 스트레칭으로 기록했어요' : `오늘 ${n}/${st.routine.length}`) : '동작을 추가해 보세요';
-      document.getElementById('routine').innerHTML = st.routine.map(r => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span role="button" tabindex="0" onclick="togMove(${r.id})" class="cursor-pointer flex items-center gap-2 flex-1 min-w-0"><span class="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center text-[11px] font-extrabold ${done.includes(r.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">${done.includes(r.id) ? '✓' : ''}</span><span class="text-lg">${r.e}</span><span class="flex-1 min-w-0 text-sm font-bold truncate ${done.includes(r.id) ? 'text-slate-400 line-through' : 'text-slate-800'}">${esc(r.n)}</span><span class="text-[11px] font-bold text-slate-400">${esc(r.a || '')}</span></span>${editing ? `<span role="button" tabindex="0" onclick="delMove(${r.id})" class="cursor-pointer text-slate-300 text-xs px-1">✕</span>` : ''}</div>`).join('');
+      document.getElementById('routine').innerHTML = st.routine.map(r => `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100"><span role="button" tabindex="0" onclick="togMove(${r.id})" class="cursor-pointer flex items-center gap-2 flex-1 min-w-0"><span class="w-5 h-5 shrink-0 rounded-md border-2 flex items-center justify-center text-[11px] font-extrabold ${done.includes(r.id) ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300'}">${done.includes(r.id) ? '✓' : ''}</span><span class="text-lg">${r.e}</span><span class="flex-1 min-w-0 text-sm font-bold truncate ${done.includes(r.id) ? 'text-slate-400 line-through' : 'text-slate-800'}">${esc(r.n)}</span><span class="text-[11px] font-bold text-slate-400">${esc(r.a || '')}</span></span><span role="button" tabindex="0" onclick="togPose(${r.id})" class="cursor-pointer shrink-0 px-2 py-1 rounded-lg text-[11px] font-extrabold ${openPose === r.id ? 'bg-indigo-600 text-white' : 'bg-indigo-50 text-indigo-700'}">${openPose === r.id ? '닫기' : '🧘 자세'}</span>${editing ? `<span role="button" tabindex="0" onclick="delMove(${r.id})" class="cursor-pointer text-slate-300 text-xs px-1">✕</span>` : ''}</div>${openPose === r.id ? poseCard(r) : ''}`).join('');
       document.getElementById('rEdit').classList.toggle('hidden', !editing); document.getElementById('editBtn').textContent = editing ? '완료' : '고치기';
       // 아플 때 연결
       const hurt = (((load('argon_health_v1', {}) || {}).eps) || []).filter(e => !e.end && (!e.who || e.who === 'me')), hb = document.getElementById('hurt');
