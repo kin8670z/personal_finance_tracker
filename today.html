@@ -139,6 +139,7 @@
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
     <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./kidbooks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📚 <span>아이 책</span></a>
     <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
     <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
     <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
@@ -225,6 +226,7 @@
     <section id="worklogCard" class="hidden card p-4"></section>
     <section id="otakuCard" class="hidden card p-4"></section>
     <section id="ticketCard" class="hidden card p-4"></section>
+    <section id="loanCard" class="hidden card p-4"></section>
     <section id="workoutCard" class="hidden card p-4"></section>
     <section id="mkev" class="hidden card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
@@ -749,6 +751,15 @@
       box.classList.remove('hidden');
       box.innerHTML = head('🎫 공연·전시', './tickets.html', '예매') + rows.sort((a, b) => a[0] - b[0]).map(([, a, b, c]) => `<a href="./tickets.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-bold text-slate-800 truncate">${a}</span><span class="text-xs font-extrabold text-indigo-600 shrink-0">${b}</span></span>${c ? `<span class="block text-[11px] font-bold text-slate-400 truncate">${c}</span>` : ''}</a>`).join('');
     }
+    // ---------- 🏛️ 도서관 반납: 내일·오늘·연체 ----------
+    function renderLoanCard() {
+      const box = document.getElementById('loanCard'), ls = ((((load('argon_kidbooks_v1', {}) || {}).loans) || [])).filter(l => !l.ret), T = new Date(new Date().toDateString()), dd = s => { const [y, m, d] = s.split('-').map(Number); return Math.round((new Date(y, m - 1, d) - T) / 864e5); };
+      const due = ls.filter(l => dd(l.due) <= 1).sort((a, b) => a.due.localeCompare(b.due));
+      if (!due.length) { box.classList.add('hidden'); return; }
+      const n = dd(due[0].due);
+      box.classList.remove('hidden');
+      box.innerHTML = head(`🏛️ 도서관 ${n < 0 ? `${-n}일 연체!` : n === 0 ? '오늘 반납' : '내일 반납'}`, './kidbooks.html', '아이 책') + `<a href="./kidbooks.html" class="block text-sm font-bold ${n < 0 ? 'text-rose-500' : 'text-slate-700'}">${due.slice(0, 4).map(l => '📕 ' + esc(l.t)).join(' · ')}${due.length > 4 ? ` 외 ${due.length - 4}권` : ''}</a>`;
+    }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
       const box = document.getElementById('mkev'), ME = window.MarketEvents; if (!ME) { box.classList.add('hidden'); return; }
@@ -1082,7 +1093,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderBillsCard(); renderSantaCard(); renderWorklogCard(); renderOtakuCard(); renderTicketCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderBillsCard(); renderSantaCard(); renderWorklogCard(); renderOtakuCard(); renderTicketCard(); renderLoanCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
