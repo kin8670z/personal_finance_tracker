@@ -137,7 +137,7 @@
     <a href="./brain.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧠 <span>두뇌 게임</span></a>
     <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
     <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
-    <a href="./tickets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎫 <span>공연·전시</span></a>
+    <a href="./tickets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎫 <span>공연·전시·팝업</span></a>
     <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니 방영표</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
@@ -757,11 +757,13 @@
         if (i.status === 'booked' && i.date && [0, 1].includes(dd(i.date))) rows.push([dd(i.date), `🎫 ${esc(i.title)}`, `${dd(i.date) ? '내일' : '오늘'} ${(i.time || '').slice(0, 5)}`, i.venue ? '📍 ' + esc(i.venue) + (i.seat ? ' · 💺 ' + esc(i.seat) : '') : '']);
         if (i.status === 'want' && i.open && dd(i.open) === 0) rows.push([0, `🔔 ${esc(i.title)}`, `${i.open.slice(11, 16)} 티켓 오픈`, i.site ? esc(i.site) : '']);
         if (i.status === 'booked' && i.cancel && [0, 1].includes(dd(i.cancel)) && (!i.date || dd(i.date) > 1)) rows.push([1, `⚠️ ${esc(i.title)}`, `무료 취소 ${dd(i.cancel) ? '내일' : '오늘'}까지`, '']);
-        if ((i.status === 'booked' || i.status === 'want') && i.kind === 'exhibit' && !i.date && i.until && dd(i.until) >= 0 && dd(i.until) <= 3) rows.push([2, `🖼️ ${esc(i.title)}`, dd(i.until) ? `전시 D-${dd(i.until)}` : '전시 오늘 끝', '']);
+        const per = ['exhibit', 'popup', 'fest'].includes(i.kind), ico = i.kind === 'popup' ? '🛍️' : i.kind === 'fest' ? '🎪' : '🖼️';
+        if ((i.status === 'booked' || i.status === 'want') && per && !i.date && i.from && dd(i.from) === 0) rows.push([1, `${ico} ${esc(i.title)}`, '오늘 오픈!', i.venue ? '📍 ' + esc(i.venue) : '']);
+        else if ((i.status === 'booked' || i.status === 'want') && per && !i.date && i.until && (!i.from || dd(i.from) < 0) && dd(i.until) >= 0 && dd(i.until) <= 3) rows.push([2, `${ico} ${esc(i.title)}`, dd(i.until) ? `D-${dd(i.until)} 종료` : '오늘 끝', i.venue ? '📍 ' + esc(i.venue) : '']);
       });
       if (!rows.length) { box.classList.add('hidden'); return; }
       box.classList.remove('hidden');
-      box.innerHTML = head('🎫 공연·전시', './tickets.html', '예매') + rows.sort((a, b) => a[0] - b[0]).map(([, a, b, c]) => `<a href="./tickets.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-bold text-slate-800 truncate">${a}</span><span class="text-xs font-extrabold text-indigo-600 shrink-0">${b}</span></span>${c ? `<span class="block text-[11px] font-bold text-slate-400 truncate">${c}</span>` : ''}</a>`).join('');
+      box.innerHTML = head('🎫 공연·전시·팝업', './tickets.html', '예매') + rows.sort((a, b) => a[0] - b[0]).map(([, a, b, c]) => `<a href="./tickets.html" class="block py-1"><span class="flex justify-between"><span class="text-sm font-bold text-slate-800 truncate">${a}</span><span class="text-xs font-extrabold text-indigo-600 shrink-0">${b}</span></span>${c ? `<span class="block text-[11px] font-bold text-slate-400 truncate">${c}</span>` : ''}</a>`).join('');
     }
     // ---------- 🏛️ 도서관 반납: 내일·오늘·연체 ----------
     function renderLoanCard() {
