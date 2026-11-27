@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="든든">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
-  <title>생활계획표 · 든든</title>
+  <title>하루 일과 · 든든</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
     try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
@@ -96,7 +96,7 @@
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
     <a href="./worklog.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💼 <span>업무일지</span></a>
-    <a href="./routine.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🕐 <span>생활계획표</span></a>
+    <a href="./routine.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🗓️ <span>하루 일과</span></a>
     <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
     <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
     <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
@@ -118,6 +118,7 @@
     <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
     <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
     <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./insight.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔮 <span>소비 인사이트</span></a>
     <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
     <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
     <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
@@ -165,38 +166,40 @@
     <header class="card p-4">
       <div class="flex items-center gap-2 min-w-0">
         <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🕐 생활계획표</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🗓️ 하루 일과</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
       </div>
       <div id="plans" class="flex gap-1.5 overflow-x-auto mt-3 pb-0.5"></div>
+      <div id="views" class="grid grid-cols-2 gap-1 mt-2 bg-slate-100 rounded-xl p-1"></div>
     </header>
 
-    <section class="card p-4" style="background:#fffbeb">
+    <section id="tlV" class="card p-4">
+      <div class="flex items-center gap-2"><p id="tlTitle" role="button" tabindex="0" onclick="renamePlan()" class="cursor-pointer flex-1 min-w-0 truncate text-sm md:text-base font-extrabold text-slate-900"></p><button type="button" onclick="openAdd()" class="shrink-0 px-3 py-1.5 bg-indigo-600 text-white text-xs font-extrabold rounded-xl">+ 일과 추가</button></div>
+      <div id="tl" class="mt-2"></div>
+      <p class="text-[10px] font-bold text-slate-400 mt-2">줄을 누르면 고쳐요 · 💮를 누르면 오늘 지킨 걸로 도장</p>
+      <div id="week" class="grid grid-cols-7 gap-1 mt-2"></div>
+    </section>
+
+    <section id="circleV" class="rounded-2xl p-4 shadow-sm border border-amber-200/60" style="background:#fffbeb">   <!-- 다크 모드에서도 종이 느낌 그대로 -->
       <div class="flex items-center gap-2"><p id="pTitle" role="button" tabindex="0" onclick="renamePlan()" class="cursor-pointer flex-1 text-center text-lg font-extrabold" style="color:#92400e;font-family:'Gaegu','Nanum Pen Script',cursive,sans-serif"></p></div>
       <div class="relative mx-auto mt-1" style="max-width:440px"><svg id="clock" viewBox="0 0 400 400" class="w-full h-auto select-none"></svg></div>
       <div id="nowBox" class="mt-2 text-center"></div>
     </section>
 
-    <section class="card p-4">
-      <div class="flex items-center justify-between"><h2 class="text-sm md:text-base font-extrabold text-slate-900">✏️ 칸 채우기</h2><span class="text-[11px] font-bold text-slate-400">원을 눌러도 돼요</span></div>
+    <div id="sheet" class="hidden fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" onclick="if(event.target===this)closeSheet()"><section class="card p-4 w-full max-w-md bg-white max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between"><h2 id="sheetT" class="text-sm md:text-base font-extrabold text-slate-900">✏️ 일과</h2><span role="button" tabindex="0" onclick="closeSheet()" class="cursor-pointer text-slate-400 px-1">✕</span></div>
       <div class="flex flex-wrap items-center gap-2 mt-2"><input id="fS" type="time" step="300" value="18:00" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"><span class="text-sm font-bold text-slate-500">~</span><input id="fE" type="time" step="300" value="20:00" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"><span class="text-[10px] font-bold text-slate-400">5분 단위</span></div>
       <div class="flex gap-2 mt-2"><input id="fT" maxlength="10" placeholder="할 일 (예: 공부)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm font-bold"><input id="fEmo" maxlength="4" placeholder="😀" class="w-14 text-center border border-slate-200 rounded-lg px-1 py-2 bg-white text-lg"></div>
       <div id="acts" class="flex flex-wrap gap-1.5 mt-2"></div>
       <div id="colors" class="flex flex-wrap gap-1.5 mt-2"></div>
       <div id="editing" class="hidden mt-2"></div>
-      <div class="flex gap-2 mt-3"><button type="button" onclick="clearRange()" class="px-3 py-2.5 bg-slate-100 text-slate-500 text-sm font-extrabold rounded-xl">비우기</button><button type="button" id="fillBtn" onclick="fillRange()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">🖍️ 칠하기</button></div>
-      <p id="fillMsg" class="text-[11px] font-bold text-emerald-600 mt-1 h-4"></p>
-    </section>
+      <div class="flex gap-2 mt-3"><button type="button" id="delBtn" onclick="clearRange()" class="px-3 py-2.5 bg-slate-100 text-rose-500 text-sm font-extrabold rounded-xl">삭제</button><button type="button" id="fillBtn" onclick="fillRange()" class="flex-1 py-2.5 bg-indigo-600 text-white font-extrabold rounded-xl">저장</button></div>
+    </section></div>
+    <p id="fillMsg" class="text-center text-[11px] font-bold text-emerald-600 h-4"></p>
 
-    <section class="card p-4">
-      <h2 class="text-sm md:text-base font-extrabold text-slate-900">✅ 오늘 실천 확인</h2>
-      <p class="text-[11px] font-bold text-slate-500 mt-0.5">지킨 칸을 누르면 도장이 찍혀요 — 그 시절 '실천 확인표'처럼</p>
-      <div id="check" class="flex flex-wrap gap-1.5 mt-2"></div>
-      <div id="week" class="grid grid-cols-7 gap-1 mt-3"></div>
-    </section>
 
     <section class="card p-4 space-y-3">
-      <div><p class="text-xs font-extrabold text-slate-500 mb-1.5">📅 이 계획표 쓰는 요일</p><div id="days" class="flex gap-1"></div><label class="flex items-center gap-2 mt-2 text-xs font-bold text-slate-600"><input id="showToday" type="checkbox" onchange="st.showToday=this.checked;persist()" class="w-4 h-4"> ☀️ 오늘 화면에 '지금은 ○○ 시간' 보이기</label></div>
-      <div class="flex flex-wrap gap-2"><span role="button" tabindex="0" onclick="saveImg()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🖼️ 이미지로 저장 (냉장고에 붙이기)</span><span role="button" tabindex="0" onclick="dupPlan()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">📄 복사해서 새로</span><span role="button" tabindex="0" onclick="sure(this,'이 계획표를 지울까요?',delPlan)" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-rose-500 text-xs font-extrabold">🗑️ 지우기</span></div>
+      <div><p class="text-xs font-extrabold text-slate-500 mb-1.5">📅 이 일과를 쓰는 요일</p><div id="days" class="flex gap-1"></div><label class="flex items-center gap-2 mt-2 text-xs font-bold text-slate-600"><input id="showToday" type="checkbox" onchange="st.showToday=this.checked;persist()" class="w-4 h-4"> ☀️ 오늘 화면에 '지금은 ○○' 보이기</label></div>
+      <div class="flex flex-wrap gap-2"><span role="button" tabindex="0" onclick="saveImg()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🖼️ 이미지로 저장 (냉장고에 붙이기)</span><span role="button" tabindex="0" onclick="dupPlan()" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">📄 복사해서 새로</span><span role="button" tabindex="0" onclick="sure(this,'이 일과를 지울까요?',delPlan)" class="cursor-pointer px-3 py-1.5 rounded-lg bg-slate-100 text-rose-500 text-xs font-extrabold">🗑️ 지우기</span></div>
     </section>
   </div>
   <script>
@@ -266,14 +269,14 @@
       let i = p.acts.findIndex(a => a.t === t);
       if (i < 0) { p.acts.push({ t, emo, c: fColor }); i = p.acts.length - 1; } else Object.assign(p.acts[i], { emo, c: fColor });
       for (let k = s; k < e; k++) p.slots[k % N] = i;
-      const msg = editing ? `✅ ${span(editing.s, editing.e)} → ${span(s, e)} ${t}(으)로 바꿨어요` : `✅ ${span(s, e)} ${t} 칠했어요`;
-      editing = null; tidy(p); persist(); render(); flash(msg);
+      const msg = editing ? `✅ ${span(editing.s, editing.e)} → ${span(s, e)} ${t}(으)로 바꿨어요` : `✅ ${span(s, e)} ${t} 넣었어요`;
+      editing = null; tidy(p); persist(); closeSheet(); render(); flash(msg);
     }
     function clearRange() {
       const p = cur(); let [s, e] = range();
       if (editing) { s = editing.s; e = editing.e; for (let k = s; k < e; k++) if (p.slots[k % N] === editing.a) p.slots[k % N] = -1; }
       else for (let k = s; k < e; k++) p.slots[k % N] = -1;
-      editing = null; tidy(p); persist(); render(); flash(`🧽 ${span(s, e)} 비웠어요`);
+      editing = null; tidy(p); persist(); closeSheet(); render(); flash(`🧽 ${span(s, e)} 지웠어요`);
     }
     function tidy(p) { const used = new Set(p.slots.filter(x => x >= 0)), map = {}, acts = []; p.acts.forEach((a, i) => { if (used.has(i)) { map[i] = acts.length; acts.push(a); } }); p.acts = acts; p.slots = p.slots.map(x => x >= 0 ? map[x] : -1); }
     function cancelEdit() { editing = null; render(); }
@@ -282,7 +285,7 @@
       const p = cur(), a = p.slots[s % N]; document.getElementById('fS').value = tm(s); document.getElementById('fE').value = tm(e);
       if (a >= 0) { editing = { s, e, a }; document.getElementById('fT').value = p.acts[a].t; document.getElementById('fEmo').value = p.acts[a].emo; fColor = p.acts[a].c; }
       else { editing = null; document.getElementById('fT').value = ''; document.getElementById('fEmo').value = ''; }
-      renderForm(); document.getElementById('fT').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      renderForm(); openSheet(a >= 0 ? `✏️ ${cur().acts[a].emo} ${cur().acts[a].t} 고치기` : '+ 빈 시간 채우기');
     }
     // 실천 확인
     function check(a) { const t = today(), d = (st.done[t] = st.done[t] || {}), k = st.cur + ':' + a; d[k] = !d[k]; if (!d[k]) delete d[k]; const ks = Object.keys(st.done).sort(); if (ks.length > 120) ks.slice(0, ks.length - 120).forEach(x => delete st.done[x]); persist(); render(); }
@@ -305,30 +308,55 @@
     }
     function renderForm() {
       const ed = document.getElementById('editing'), fb = document.getElementById('fillBtn');
-      if (editing && cur().acts[editing.a]) { const a = cur().acts[editing.a]; ed.classList.remove('hidden'); ed.innerHTML = `<div class="flex items-center gap-2 rounded-xl px-3 py-2" style="background:${a.c}"><span class="flex-1 text-xs font-extrabold" style="color:#451a03">✏️ ${a.emo} ${esc(a.t)} (${span(editing.s, editing.e)}) 고치는 중 — 시간을 바꾸고 아래를 눌러요</span><span role="button" tabindex="0" onclick="cancelEdit()" class="cursor-pointer text-[11px] font-extrabold" style="color:#78350f">새로 칠하기</span></div>`; fb.textContent = '🖍️ 이 칸 바꾸기'; }
-      else { ed.classList.add('hidden'); fb.textContent = '🖍️ 칠하기'; }
+      if (editing && cur().acts[editing.a]) { const a = cur().acts[editing.a]; ed.classList.remove('hidden'); ed.innerHTML = `<div class="flex items-center gap-2 rounded-xl px-3 py-2" style="background:${a.c}"><span class="flex-1 text-xs font-extrabold" style="color:#451a03">✏️ ${a.emo} ${esc(a.t)} (${span(editing.s, editing.e)}) — 시간·이름을 바꾸고 저장해요</span></div>`; fb.textContent = '저장'; document.getElementById('delBtn').classList.remove('hidden'); }
+      else { ed.classList.add('hidden'); fb.textContent = '저장'; document.getElementById('delBtn').classList.add('hidden'); }
       document.getElementById('acts').innerHTML = ACTS.map(([t, e], i) => `<span role="button" tabindex="0" onclick="pickAct(${i})" class="cursor-pointer px-2 py-1 rounded-full bg-slate-100 text-xs font-bold text-slate-700">${e} ${t}</span>`).join('');
       document.getElementById('colors').innerHTML = COLORS.map(c => `<span role="button" tabindex="0" onclick="setColor('${c}')" class="cursor-pointer w-7 h-7 rounded-full ${fColor === c ? 'ring-2 ring-offset-1 ring-slate-700' : ''}" style="background:${c};border:1px solid rgba(0,0,0,.1)"></span>`).join('');
     }
+    let view = load('routine_view', 'tl') || 'tl';
+    function setView(v) { view = v; save('routine_view', v); render(); }
+    function openSheet(title) { document.getElementById('sheetT').textContent = title; document.getElementById('sheet').classList.remove('hidden'); }
+    function closeSheet() { document.getElementById('sheet').classList.add('hidden'); editing = null; }
+    function openAdd() {
+      editing = null; const ns = nowSlot(), p = cur(), r0 = runs(p).find(r => r.a < 0 && ((ns >= r.s && ns < r.e) || (ns + N >= r.s && ns + N < r.e)));
+      document.getElementById('fS').value = tm(r0 ? r0.s : ns - ns % 6); document.getElementById('fE').value = tm(r0 ? Math.min(r0.e, r0.s + 12) : ns - ns % 6 + 12);
+      ['fT', 'fEmo'].forEach(i => document.getElementById(i).value = ''); renderForm(); openSheet('+ 일과 추가'); setTimeout(() => document.getElementById('fT').focus(), 50);
+    }
+    function stamp(s) { const t = today(), d = (st.done[t] = st.done[t] || {}), k = st.cur + '@' + (s % N); d[k] = !d[k]; if (!d[k]) delete d[k]; const ks = Object.keys(st.done).sort(); if (ks.length > 120) ks.slice(0, ks.length - 120).forEach(x => delete st.done[x]); persist(); render(); }
+    function timeline(p) {
+      const ns = nowSlot(), d = st.done[today()] || {}, isToday = p.id === (todayPlan() || {}).id;
+      const rs = runs(p).map(r => Object.assign({}, r, { s0: r.s >= N ? r.s - N : r.s })).sort((a, b) => a.s - b.s);
+      return rs.map(r => {
+        const act = r.a >= 0 ? p.acts[r.a] : null, now = isToday && ((ns >= r.s && ns < r.e) || (ns + N >= r.s && ns + N < r.e)), past = isToday && !now && r.e <= ns && r.s <= ns, mins = (r.e - r.s) * 5;
+        const left = now ? ((r.e - (ns >= r.s ? ns : ns + N)) * 5 - new Date().getMinutes() % 5) : 0, prog = now ? Math.min(100, ((ns >= r.s ? ns : ns + N) - r.s) / (r.e - r.s) * 100) : 0, on = d[st.cur + '@' + (r.s % N)];
+        if (!act) return `<div role="button" tabindex="0" onclick="editRun(${r.s},${r.e})" class="cursor-pointer flex items-center gap-3 py-1.5 ${past ? 'opacity-40' : ''}"><span class="w-12 shrink-0 text-xs font-bold num text-slate-400">${tm(r.s)}</span><span class="flex-1 text-xs font-bold text-slate-300 border border-dashed border-slate-200 rounded-lg px-2 py-1.5">빈 시간 ${mins >= 60 ? Math.floor(mins / 60) + '시간 ' : ''}${mins % 60 ? mins % 60 + '분' : ''} · + 채우기</span></div>`;
+        return `<div class="flex items-stretch gap-3 ${past && !on ? 'opacity-50' : ''}"><div class="w-12 shrink-0 pt-2.5 text-right"><p class="text-xs font-extrabold num ${now ? 'text-indigo-600' : 'text-slate-500'}">${tm(r.s)}</p></div>
+          <div class="relative flex-1 min-w-0 my-1 rounded-xl px-3 py-2 ${now ? 'ring-2 ring-indigo-500 shadow-sm' : ''}" style="background:${act.c}"><div role="button" tabindex="0" onclick="editRun(${r.s},${r.e})" class="cursor-pointer flex items-center gap-2"><span class="text-xl">${act.emo}</span><div class="min-w-0 flex-1"><p class="text-sm font-extrabold truncate" style="color:#1e293b">${esc(act.t)}</p><p class="text-[11px] font-bold" style="color:#475569">${tm(r.s)} ~ ${tm(r.e)} · ${mins >= 60 ? Math.floor(mins / 60) + '시간' : ''}${mins % 60 ? ' ' + mins % 60 + '분' : ''}${now ? ` · <b style="color:#4338ca">지금 · ${left >= 60 ? Math.floor(left / 60) + '시간 ' : ''}${left % 60}분 남음</b>` : ''}</p></div></div>
+            ${now ? `<div class="h-1 rounded-full mt-1.5" style="background:rgba(255,255,255,.6)"><div class="h-1 rounded-full" style="width:${prog}%;background:#4f46e5"></div></div>` : ''}
+            <span role="button" tabindex="0" onclick="stamp(${r.s})" title="오늘 지켰어요" class="cursor-pointer absolute top-1.5 right-2 text-lg ${on ? '' : 'opacity-25 grayscale'}">💮</span></div></div>`;
+      }).join('') || '<p class="text-xs text-slate-400 py-2">+ 일과 추가로 하루를 채워 보세요</p>';
+    }
     function render() {
       const p = cur(), tp = todayPlan();
-      document.getElementById('plans').innerHTML = st.plans.map(x => chip(x.id === st.cur, `${esc(x.name)}${(x.days || []).includes(new Date().getDay()) ? ' · 오늘' : ''}`, `selPlan(${x.id})`)).join('') + chip(false, '+ 새 계획표', 'newPlan()');
-      document.getElementById('pTitle').textContent = `${p.name} 생활계획표 ✏️`;
+      document.getElementById('views').innerHTML = [['tl', '📋 타임라인'], ['circle', '🕐 원으로 보기']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setView('${k}')" class="cursor-pointer text-center py-1.5 rounded-lg text-xs font-extrabold ${view === k ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}">${l}</span>`).join('');
+      document.getElementById('tlV').classList.toggle('hidden', view !== 'tl'); document.getElementById('circleV').classList.toggle('hidden', view !== 'circle');
+      document.getElementById('tlTitle').textContent = `${p.name} ✏️`;
+      document.getElementById('tl').innerHTML = timeline(p);
+      document.getElementById('plans').innerHTML = st.plans.map(x => chip(x.id === st.cur, `${esc(x.name)}${(x.days || []).includes(new Date().getDay()) ? ' · 오늘' : ''}`, `selPlan(${x.id})`)).join('') + chip(false, '+ 새 일과', 'newPlan()');
+      document.getElementById('pTitle').textContent = `${p.name} 생활계획표 ✏️`;   // 원 보기는 그 시절 이름 그대로
       document.getElementById('clock').innerHTML = clockSvg(p);
       const ns = nowSlot(), a = p.slots[ns], rr = runs(p).find(r => (ns >= r.s && ns < r.e) || (ns + N >= r.s && ns + N < r.e)), act = a >= 0 ? p.acts[a] : null;
-      document.getElementById('nowBox').innerHTML = act ? `<p class="text-sm font-bold" style="color:#92400e">지금은</p><p class="text-2xl font-extrabold" style="color:#78350f">${act.emo} ${esc(act.t)} 시간</p><p class="text-xs font-bold" style="color:#a16207">${tm(rr.s)} ~ ${tm(rr.e)}${p.id !== (tp || {}).id ? ' · (오늘 쓰는 계획표가 아니에요)' : ''}</p>` : '<p class="text-sm font-bold" style="color:#a16207">지금은 빈 칸이에요 — 원을 눌러 채워 보세요</p>';
+      document.getElementById('nowBox').innerHTML = act ? `<p class="text-sm font-bold" style="color:#92400e">지금은</p><p class="text-2xl font-extrabold" style="color:#78350f">${act.emo} ${esc(act.t)} 시간</p><p class="text-xs font-bold" style="color:#a16207">${tm(rr.s)} ~ ${tm(rr.e)}${p.id !== (tp || {}).id ? ' · (오늘 쓰는 일과가 아니에요)' : ''}</p>` : '<p class="text-sm font-bold" style="color:#a16207">지금은 빈 시간이에요 — 원을 눌러 채워 보세요</p>';
       document.getElementById('sub').textContent = tp ? `오늘(${DN[new Date().getDay()]})은 ${tp.name}` : '요일을 정하면 오늘 화면에 지금 할 일이 떠요';
-      const d = st.done[today()] || {};
-      document.getElementById('check').innerHTML = p.acts.map((x, i) => { const on = d[st.cur + ':' + i]; return `<span role="button" tabindex="0" onclick="check(${i})" class="cursor-pointer px-2.5 py-1.5 rounded-xl text-sm font-bold" style="background:${on ? x.c : 'rgba(148,163,184,.12)'};color:${on ? '#451a03' : '#64748b'}">${on ? '💮' : x.emo} ${esc(x.t)}</span>`; }).join('') || '<span class="text-xs text-slate-400">칸을 채우면 여기 생겨요</span>';
       const days = Array.from({ length: 7 }, (_, i) => { const x = new Date(); x.setDate(x.getDate() - 6 + i); return ymd(x); });
       document.getElementById('week').innerHTML = days.map(k => { const n = Object.keys(st.done[k] || {}).length; return `<div class="text-center rounded-lg py-1.5 ${k === today() ? 'ring-2 ring-amber-400' : ''}" style="background:rgba(251,191,36,${n ? Math.min(0.6, 0.15 + n * 0.08) : 0.06})"><p class="text-[10px] font-bold text-slate-500">${DN[D(k).getDay()]}</p><p class="text-sm">${n ? '💮' : '·'}</p><p class="text-[10px] font-extrabold text-amber-700">${n || ''}</p></div>`; }).join('');
-      document.getElementById('days').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(x => `<span role="button" tabindex="0" onclick="togDay(${x})" class="cursor-pointer flex-1 text-center py-1.5 rounded-lg text-xs font-extrabold ${(p.days || []).includes(x) ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-500'}">${DN[x]}</span>`).join('');
+      document.getElementById('days').innerHTML = [1, 2, 3, 4, 5, 6, 0].map(x => `<span role="button" tabindex="0" onclick="togDay(${x})" class="cursor-pointer flex-1 text-center py-1.5 rounded-lg text-xs font-extrabold ${(p.days || []).includes(x) ? 'text-white' : 'bg-slate-100 text-slate-500'}" style="${(p.days || []).includes(x) ? 'background:#b45309' : ''}">${DN[x]}</span>`).join('');
       document.getElementById('showToday').checked = st.showToday !== false;
       renderForm();
     }
     function saveImg() {
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 430" width="1200" height="1290">${clockSvg(cur(), true)}</svg>`, img = new Image();
-      img.onload = () => { const c = document.createElement('canvas'); c.width = 1200; c.height = 1290; c.getContext('2d').drawImage(img, 0, 0, 1200, 1290); const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = `생활계획표_${cur().name.replace(/[^\w가-힣]/g, '')}.png`; a.click(); };
+      img.onload = () => { const c = document.createElement('canvas'); c.width = 1200; c.height = 1290; c.getContext('2d').drawImage(img, 0, 0, 1200, 1290); const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = `하루일과_${cur().name.replace(/[^\w가-힣]/g, '')}.png`; a.click(); };
       img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     }
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
