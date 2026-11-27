@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-title" content="든든">
   <script src="pwa.js" defer></script>
   <script src="sync.js" defer></script>
-  <title>공연·전시 · 든든</title>
+  <title>공연·전시·팝업 · 든든</title>
   <script>
     // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
     try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
@@ -138,7 +138,7 @@
     <a href="./brain.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧠 <span>두뇌 게임</span></a>
     <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
     <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
-    <a href="./tickets.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🎫 <span>공연·전시</span></a>
+    <a href="./tickets.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🎫 <span>공연·전시·팝업</span></a>
     <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니 방영표</span></a>
     <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
     <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
@@ -166,7 +166,7 @@
     <header class="card p-4">
       <div class="flex items-center gap-2 min-w-0">
         <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
-        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🎫 공연·전시</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🎫 공연·전시·팝업</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
         <button type="button" onclick="openForm()" class="shrink-0 px-3 py-2 bg-indigo-600 text-white text-sm font-extrabold rounded-xl">+ 추가</button>
       </div>
       <div id="tabs" class="grid grid-cols-3 gap-1 mt-3 bg-slate-100 rounded-xl p-1"></div>
@@ -179,8 +179,9 @@
       <input id="fTitle" maxlength="60" placeholder="제목 (예: 뮤지컬 위키드)" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm font-bold">
       <input id="fVenue" maxlength="40" placeholder="장소 (예: 블루스퀘어 신한카드홀)" class="w-full mt-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm">
       <div id="openRow" class="mt-2"><p class="text-[10px] font-bold text-slate-500">🔔 티켓 오픈</p><input id="fOpen" type="datetime-local" class="mt-0.5 border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></div>
+      <div id="periodRow" class="mt-2"><p class="text-[10px] font-bold text-slate-500">🗓️ 기간 (시작 ~ 끝)</p><div class="flex flex-wrap items-center gap-1.5 mt-0.5"><input id="fFrom" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><span class="text-xs font-bold text-slate-500">~</span><input id="fUntil" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></div></div>
       <p id="dateLab" class="text-[10px] font-bold text-slate-500 mt-2"></p>
-      <div class="flex flex-wrap items-center gap-2 mt-0.5"><input id="fDate" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><input id="fTime" type="time" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><span id="untilWrap" class="flex items-center gap-1 text-xs font-bold text-slate-500">~ <input id="fUntil" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></span></div>
+      <div class="flex flex-wrap items-center gap-2 mt-0.5"><input id="fDate" type="date" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"><input id="fTime" type="time" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm"></div>
       <div id="bookRows" class="mt-2 space-y-2">
         <div id="fSite" class="flex flex-wrap gap-1.5"></div>
         <div class="grid grid-cols-3 gap-2"><input id="fSeat" maxlength="30" placeholder="좌석 (예: 1층 B열 12)" class="col-span-2 border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"><input id="fQty" inputmode="numeric" placeholder="매수" class="num border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm"></div>
@@ -215,21 +216,24 @@
     const kids = () => (load('argon_kid_v1', {}).kids || []);
     const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
     const KEY = 'argon_tickets_v1';
-    const KINDS = [['concert', '🎤 콘서트'], ['musical', '🎭 뮤지컬'], ['play', '🎬 연극'], ['exhibit', '🖼️ 전시'], ['classic', '🎻 클래식'], ['kids', '🧸 아이랑'], ['sports', '⚾ 스포츠'], ['etc', '✨ 기타']];
+    const KINDS = [['concert', '🎤 콘서트'], ['musical', '🎭 뮤지컬'], ['play', '🎬 연극'], ['exhibit', '🖼️ 전시'], ['classic', '🎻 클래식'], ['popup', '🛍️ 팝업스토어'], ['fest', '🎪 행사·축제'], ['kids', '🧸 아이랑'], ['sports', '⚾ 스포츠'], ['etc', '✨ 기타']];
     const SITES = [['인터파크', 'https://tickets.interpark.com/search?keyword='], ['예스24', 'https://ticket.yes24.com/New/Search.aspx?query='], ['멜론티켓', 'https://ticket.melon.com/search/index.htm?q='], ['티켓링크', 'https://www.ticketlink.co.kr/search?query='], ['네이버', 'https://search.naver.com/search.naver?query='], ['현장·기타', '']];
     let st = Object.assign({ items: [] }, load(KEY, {})), tab = 'up', editId = null, fst = 'booked', fkind = 'musical', fsite = '인터파크', sheetId = null;
     const persist = () => save(KEY, st);
     const K = k => KINDS.find(x => x[0] === k) || KINDS[KINDS.length - 1];
     const dLab = n => n < 0 ? `${-n}일 전` : n === 0 ? '오늘' : n === 1 ? '내일' : `D-${n}`;
     const hm = t => t ? t.slice(0, 5) : '';
-    const isEx = i => i.kind === 'exhibit';
+    const PERIOD = ['exhibit', 'popup', 'fest'], isEx = i => PERIOD.includes(i.kind);   // 기간이 있는 것 (전시·팝업·행사)
     // 전시는 기간 중 아무 날이나 — 가기로 한 날이 없으면 기간 끝(until) 기준
-    const keyDate = i => i.date || i.until || '';
+    const keyDate = i => i.date || (i.from && i.from > today() ? i.from : i.until) || '';
+    // 기간 상태: 곧 오픈 / 진행 중 / 끝
+    const phase = i => { const t = today(); if (i.from && i.from > t) return ['soon', dday(i.from)]; if (i.until && i.until < t) return ['end', 0]; return ['on', i.until ? dday(i.until) : null]; };
+    const phaseBadge = i => { const [p, n] = phase(i); if (i.from === today()) return ['🎉 오늘 오픈', 'background:#fee2e2;color:#b91c1c']; return p === 'soon' ? [n === 0 ? '오늘 오픈!' : n === 1 ? '내일 오픈' : `D-${n} 오픈`, n <= 1 ? 'background:#fee2e2;color:#b91c1c' : 'background:#e0e7ff;color:#4338ca'] : p === 'end' ? ['끝났어요', 'background:#f1f5f9;color:#94a3b8'] : [n == null ? '🟢 진행 중' : n === 0 ? '🟢 오늘까지' : `🟢 진행 중 · D-${n} 종료`, n != null && n <= 3 ? 'background:#ffedd5;color:#c2410c' : 'background:#dcfce7;color:#15803d']; };
     function openForm(id, pre) {
       const e = id ? st.items.find(x => x.id === id) : null; editId = e ? e.id : null; if (!e || bookingFrom !== e.id) bookingFrom = null;
       fst = e ? e.status : (pre || (tab === 'want' ? 'want' : 'booked')); fkind = e ? e.kind : (st.lastKind || 'musical'); fsite = e ? e.site || '인터파크' : (st.lastSite || '인터파크');
       const v = (i, x) => document.getElementById(i).value = x ?? '';
-      v('fTitle', e && e.title); v('fVenue', e && e.venue); v('fOpen', e && e.open); v('fDate', e && e.date); v('fTime', e && e.time); v('fUntil', e && e.until);
+      v('fTitle', e && e.title); v('fVenue', e && e.venue); v('fOpen', e && e.open); v('fDate', e && e.date); v('fTime', e && e.time); v('fUntil', e && e.until); v('fFrom', e && e.from);
       v('fSeat', e && e.seat); v('fQty', e && e.qty); v('fPrice', e && e.price ? e.price.toLocaleString() : ''); v('fWho', e && e.who); v('fCancel', e && e.cancel); v('fMemo', e && e.memo);
       document.getElementById('fLedger').checked = !e && st.ledger !== false;
       document.getElementById('formTitle').textContent = e ? `✏️ ${e.title}` : '🎫 공연·전시'; document.getElementById('delBtn').classList.toggle('hidden', !e);
@@ -240,18 +244,19 @@
     function setKind(k) { fkind = k; renderForm(); }
     function setSite(s) { fsite = s; renderForm(); }
     function renderForm() {
-      document.getElementById('fStat').innerHTML = [['want', '🔔 예매 예정 (티켓 오픈 기다림)'], ['booked', '🎟️ 예매 완료']].map(([k, l]) => chip(fst === k, l, `setFst('${k}')`)).join('');
+      document.getElementById('fStat').innerHTML = [['want', isEx({ kind: fkind }) ? '📌 가 볼 곳 · 예약 기다림' : '🔔 예매 예정 (티켓 오픈 기다림)'], ['booked', isEx({ kind: fkind }) ? '🎟️ 예약 완료' : '🎟️ 예매 완료']].map(([k, l]) => chip(fst === k, l, `setFst('${k}')`)).join('');
       document.getElementById('fKind').innerHTML = KINDS.map(([k, l]) => chip(fkind === k, l, `setKind('${k}')`)).join('');
       document.getElementById('fSite').innerHTML = '<span class="text-[11px] font-bold text-slate-500 self-center">🎫</span>' + SITES.map(([s]) => chip(fsite === s, s, `setSite('${s}')`)).join('');
       document.getElementById('openRow').classList.toggle('hidden', fst !== 'want');
       document.getElementById('bookRows').classList.toggle('hidden', fst !== 'booked');
       document.getElementById('ledgerRow').classList.toggle('hidden', !!editId && bookingFrom !== editId);
-      document.getElementById('untilWrap').classList.toggle('hidden', fkind !== 'exhibit');
-      document.getElementById('dateLab').textContent = fkind === 'exhibit' ? '📅 가는 날 (선택) ~ 전시 끝나는 날' : '📅 공연 날짜·시간';
+      document.getElementById('periodRow').classList.toggle('hidden', !isEx({ kind: fkind }));
+      document.getElementById('dateLab').textContent = isEx({ kind: fkind }) ? '📅 가는 날·예약 시간 (선택)' : '📅 공연 날짜·시간';
+      document.querySelector('#openRow p').textContent = isEx({ kind: fkind }) ? '🔔 사전예약 오픈 (선택)' : '🔔 티켓 오픈';
     }
     function saveItem() {
       const g = i => document.getElementById(i).value.trim(), title = g('fTitle'); if (!title) return document.getElementById('fTitle').focus();
-      const v = { title, kind: fkind, venue: g('fVenue'), status: editId ? st.items.find(x => x.id === editId).status === 'done' ? 'done' : fst : fst, date: g('fDate'), time: g('fTime'), until: fkind === 'exhibit' ? g('fUntil') : '', open: fst === 'want' ? g('fOpen') : '', site: fsite, seat: g('fSeat'), qty: num(g('fQty')) || 0, price: num(g('fPrice')), who: g('fWho'), cancel: g('fCancel'), memo: g('fMemo') };
+      const v = { title, kind: fkind, venue: g('fVenue'), status: editId ? st.items.find(x => x.id === editId).status === 'done' ? 'done' : fst : fst, date: g('fDate'), time: g('fTime'), until: isEx({ kind: fkind }) ? g('fUntil') : '', from: isEx({ kind: fkind }) ? g('fFrom') : '', open: fst === 'want' ? g('fOpen') : '', site: fsite, seat: g('fSeat'), qty: num(g('fQty')) || 0, price: num(g('fPrice')), who: g('fWho'), cancel: g('fCancel'), memo: g('fMemo') };
       if (!v.date && !v.until && v.status === 'booked') return document.getElementById('fDate').focus();
       if (editId) {
         const it = st.items.find(x => x.id === editId), was = it.status; Object.assign(it, v);
@@ -290,21 +295,21 @@
       let badge = '', bs = 'background:#f1f5f9;color:#475569';
       if (i.status === 'want') {
         if (i.open) { const od = new Date(i.open), diff = od - now, dd = Math.round((new Date(od.toDateString()) - new Date(now.toDateString())) / 864e5); badge = diff <= 0 ? '🔔 티켓 오픈됨!' : dd === 0 ? `🔔 오늘 ${pad(od.getHours())}:${pad(od.getMinutes())} 오픈` : `🔔 오픈 D-${dd}`; bs = diff <= 0 || dd === 0 ? 'background:#fee2e2;color:#b91c1c' : dd <= 3 ? 'background:#ffedd5;color:#c2410c' : 'background:#e0e7ff;color:#4338ca'; }
-        else if (isEx(i) && i.until) { badge = n < 0 ? '끝났어요' : `~${md(i.until)} (D-${n})`; bs = n >= 0 && n <= 7 ? 'background:#ffedd5;color:#c2410c' : bs; }
+        else if (isEx(i) && (i.until || i.from)) [badge, bs] = phaseBadge(i);
         else badge = '오픈일 미정';
       } else if (i.status === 'booked') {
-        if (isEx(i) && !i.date) { badge = n < 0 ? '기간 끝남' : `~${md(i.until)} (D-${n})`; bs = n >= 0 && n <= 7 ? 'background:#ffedd5;color:#c2410c' : 'background:#e0f2fe;color:#0369a1'; }
+        if (isEx(i) && !i.date) [badge, bs] = phaseBadge(i);
         else { badge = n === 0 ? `오늘 ${hm(i.time)}` : dLab(n); bs = n === 0 ? 'background:#dcfce7;color:#15803d' : n > 0 && n <= 7 ? 'background:#ffedd5;color:#c2410c' : n < 0 ? 'background:#f1f5f9;color:#64748b' : 'background:#e0f2fe;color:#0369a1'; }
       }
       const cancelWarn = i.status === 'booked' && i.cancel && i.cancel >= tdy && dday(i.cancel) <= 3 ? `<p class="text-[11px] font-extrabold text-rose-500 mt-1">⚠️ 무료 취소 ${dday(i.cancel) === 0 ? '오늘까지' : `${md(i.cancel)}까지 (D-${dday(i.cancel)})`}</p>` : '';
       const past = i.status === 'booked' && keyDate(i) && keyDate(i) < tdy;
-      const acts = i.status === 'want' ? `${siteUrl(i) ? `<a href="${esc(siteUrl(i))}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🔗 ${esc(i.site)}</a>` : ''}<span role="button" tabindex="0" onclick="booked(${i.id})" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">🎟️ 예매했어요</span>`
-        : i.status === 'booked' ? `${i.venue ? `<a href="https://map.naver.com/p/search/${encodeURIComponent(i.venue)}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🗺️ 길찾기</a>` : ''}${siteUrl(i) ? `<a href="${esc(siteUrl(i))}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🎫 ${esc(i.site)}</a>` : ''}${past || n === 0 || (isEx(i) && !i.date) ? `<span role="button" tabindex="0" onclick="doneSheet(${i.id})" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">🎉 다녀왔어요</span>` : ''}${!past ? `<span role="button" tabindex="0" onclick="sure(this,'취소했어요?',()=>cancelIt(${i.id}))" class="cursor-pointer px-2 py-1.5 text-slate-400 text-xs font-bold">취소함</span>` : ''}`
+      const per = isEx(i) && !i.date, ph = per ? phase(i)[0] : '', acts = i.status === 'want' ? `${per && i.venue ? `<a href="https://map.naver.com/p/search/${encodeURIComponent(i.venue)}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🗺️ 길찾기</a>` : ''}${siteUrl(i) && (!per || i.open) ? `<a href="${esc(siteUrl(i))}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🔗 ${esc(i.site)}</a>` : ''}${!per || i.open ? `<span role="button" tabindex="0" onclick="booked(${i.id})" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-extrabold">🎟️ ${per ? '예약했어요' : '예매했어요'}</span>` : ''}${per && ph !== 'soon' ? `<span role="button" tabindex="0" onclick="doneSheet(${i.id})" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">🎉 다녀왔어요</span>` : ''}${per && ph === 'end' ? `<span role="button" tabindex="0" onclick="sure(this,'못 갔어요?',()=>cancelIt(${i.id}))" class="cursor-pointer px-2 py-1.5 text-slate-400 text-xs font-bold">못 갔어요</span>` : ''}`
+        : i.status === 'booked' ? `${i.venue ? `<a href="https://map.naver.com/p/search/${encodeURIComponent(i.venue)}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🗺️ 길찾기</a>` : ''}${siteUrl(i) ? `<a href="${esc(siteUrl(i))}" target="_blank" rel="noopener" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs font-extrabold">🎫 ${esc(i.site)}</a>` : ''}${past || n === 0 || (isEx(i) && !i.date && phase(i)[0] !== 'soon') ? `<span role="button" tabindex="0" onclick="doneSheet(${i.id})" class="cursor-pointer px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-extrabold">🎉 다녀왔어요</span>` : ''}${!past ? `<span role="button" tabindex="0" onclick="sure(this,'취소했어요?',()=>cancelIt(${i.id}))" class="cursor-pointer px-2 py-1.5 text-slate-400 text-xs font-bold">취소함</span>` : ''}`
         : '';
       return `<div class="card p-4 ${i.status === 'canceled' ? 'opacity-50' : ''}"><div class="flex items-start gap-2"><div role="button" tabindex="0" onclick="openForm(${i.id})" class="cursor-pointer min-w-0 flex-1">
         <p class="text-[11px] font-extrabold text-slate-500">${k[1]}${i.who ? ` · 👥 ${esc(i.who)}` : ''}</p>
         <p class="text-base font-extrabold text-slate-900 leading-snug">${esc(i.title)}</p>
-        <p class="text-xs font-bold text-slate-500 mt-0.5">${i.date ? `📅 ${md(i.date)}${i.time ? ' ' + hm(i.time) : ''}` : ''}${isEx(i) && i.until && !i.date ? `📅 ~${md(i.until)}` : ''}${i.venue ? ` · 📍 ${esc(i.venue)}` : ''}</p>
+        <p class="text-xs font-bold text-slate-500 mt-0.5">${i.date ? `📅 ${md(i.date)}${i.time ? ' ' + hm(i.time) : ''}` : ''}${isEx(i) && !i.date && (i.from || i.until) ? `🗓️ ${i.from ? md(i.from).slice(3) : ''}~${i.until ? md(i.until).slice(3) : ''}` : ''}${i.venue ? ` · 📍 ${esc(i.venue)}` : ''}</p>
         ${i.status === 'booked' && (i.seat || i.qty || i.price) ? `<p class="text-xs font-bold text-slate-600 mt-0.5">💺 ${esc(i.seat || '좌석 미정')}${i.qty ? ` · ${i.qty}매` : ''}${i.price ? ` · ${won(i.price)}` : ''}</p>` : ''}
         ${i.status === 'done' ? `<p class="text-xs mt-0.5">${'⭐'.repeat(i.star || 0)} <span class="font-bold text-slate-600">${esc(i.review || '')}</span></p>` : ''}
         ${i.memo ? `<p class="text-[11px] text-slate-400 mt-0.5">📝 ${esc(i.memo)}</p>` : ''}${cancelWarn}</div>
@@ -312,14 +317,14 @@
         ${acts ? `<div class="flex flex-wrap gap-1.5 mt-2.5">${acts}</div>` : ''}</div>`;
     }
     function render() {
-      const up = st.items.filter(i => i.status === 'booked').sort((a, b) => keyDate(a).localeCompare(keyDate(b))), want = st.items.filter(i => i.status === 'want').sort((a, b) => (a.open || '9').localeCompare(b.open || '9') || keyDate(a).localeCompare(keyDate(b)));
+      const up = st.items.filter(i => i.status === 'booked').sort((a, b) => keyDate(a).localeCompare(keyDate(b))), want = st.items.filter(i => i.status === 'want').sort((a, b) => ((isEx(a) && !a.date && phase(a)[0] === 'end') - (isEx(b) && !b.date && phase(b)[0] === 'end')) || (a.open || '9').localeCompare(b.open || '9') || keyDate(a).localeCompare(keyDate(b)));   // 끝난 팝업은 맨 아래
       const done = st.items.filter(i => i.status === 'done' || i.status === 'canceled').sort((a, b) => (b.wentAt || b.canceledAt || keyDate(b)).localeCompare(a.wentAt || a.canceledAt || keyDate(a)));
       const yr = today().slice(0, 4), yDone = st.items.filter(i => i.status === 'done' && (i.wentAt || '').startsWith(yr)), ySpent = st.items.filter(i => i.status !== 'canceled' && (i.added || '').startsWith(yr)).reduce((a, i) => a + (i.price || 0), 0);
       document.getElementById('sub').textContent = `예매 ${up.length} · 기다림 ${want.length}${yDone.length ? ` · 올해 ${yDone.length}번 다녀옴` : ''}`;
-      document.getElementById('tabs').innerHTML = [['up', `🎟️ 예매 ${up.length}`], ['want', `🔔 예매 예정 ${want.length}`], ['done', '📜 다녀온 것']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setTab('${k}')" class="cursor-pointer text-center py-1.5 rounded-lg text-xs font-extrabold ${tab === k ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}">${l}</span>`).join('');
+      document.getElementById('tabs').innerHTML = [['up', `🎟️ 예매 ${up.length}`], ['want', `🔔 예정·가 볼 곳 ${want.length}`], ['done', '📜 다녀온 것']].map(([k, l]) => `<span role="button" tabindex="0" onclick="setTab('${k}')" class="cursor-pointer text-center py-1.5 rounded-lg text-xs font-extrabold ${tab === k ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500'}">${l}</span>`).join('');
       const xs = tab === 'up' ? up : tab === 'want' ? want : done;
       document.getElementById('list').innerHTML = (tab === 'done' && (yDone.length || ySpent) ? `<section class="card p-4 text-xs font-bold text-slate-600">${yr}년 · 다녀온 공연·전시 <b class="text-slate-900">${yDone.length}번</b>${ySpent ? ` · 예매에 쓴 돈 <b class="text-slate-900">${won(ySpent)}</b>` : ''}</section>` : '')
-        + (xs.map(card).join('') || `<section class="card p-4 text-xs text-slate-400">${tab === 'up' ? '예매한 공연·전시를 적어 두면 날짜·좌석·취소 마감까지 챙겨 줘요' : tab === 'want' ? '가고 싶은 공연의 티켓 오픈 시간을 적어 두면 그날 알려줘요 🔔' : '다녀온 공연·전시가 여기 쌓여요'}</section>`);
+        + (xs.map(card).join('') || `<section class="card p-4 text-xs text-slate-400">${tab === 'up' ? '예매한 공연·전시·팝업을 적어 두면 날짜·좌석·취소 마감까지 챙겨 줘요' : tab === 'want' ? '가고 싶은 공연의 티켓 오픈 시간이나 팝업스토어 기간을 적어 두면 그때 알려줘요 🔔' : '다녀온 공연·전시가 여기 쌓여요'}</section>`);
     }
     function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
     function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
