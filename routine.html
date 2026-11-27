@@ -178,7 +178,7 @@
 
     <section class="card p-4">
       <div class="flex items-center justify-between"><h2 class="text-sm md:text-base font-extrabold text-slate-900">✏️ 칸 채우기</h2><span class="text-[11px] font-bold text-slate-400">원을 눌러도 돼요</span></div>
-      <div class="flex flex-wrap items-center gap-2 mt-2"><select id="fS" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"></select><span class="text-sm font-bold text-slate-500">~</span><select id="fE" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"></select></div>
+      <div class="flex flex-wrap items-center gap-2 mt-2"><input id="fS" type="time" step="300" value="18:00" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"><span class="text-sm font-bold text-slate-500">~</span><input id="fE" type="time" step="300" value="20:00" class="border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-sm num"><span class="text-[10px] font-bold text-slate-400">5분 단위</span></div>
       <div class="flex gap-2 mt-2"><input id="fT" maxlength="10" placeholder="할 일 (예: 공부)" class="flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-2 bg-white text-sm font-bold"><input id="fEmo" maxlength="4" placeholder="😀" class="w-14 text-center border border-slate-200 rounded-lg px-1 py-2 bg-white text-lg"></div>
       <div id="acts" class="flex flex-wrap gap-1.5 mt-2"></div>
       <div id="colors" class="flex flex-wrap gap-1.5 mt-2"></div>
@@ -217,10 +217,10 @@
     const chip = (on, label, fn) => `<span role="button" tabindex="0" onclick="${fn}" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${label}</span>`;
     const kids = () => (load('argon_kid_v1', {}).kids || []);
     const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
-    const KEY = 'argon_routine_v1', N = 48, DN = '일월화수목금토';
+    const KEY = 'argon_routine_v1', N = 288, DN = '일월화수목금토';
     const COLORS = ['#c7d2fe', '#bfdbfe', '#a5f3fc', '#bbf7d0', '#d9f99d', '#fef08a', '#fed7aa', '#fecaca', '#fbcfe8', '#e9d5ff', '#e2e8f0', '#d6d3d1'];
     const ACTS = [['잠', '😴', '#c7d2fe'], ['아침', '🍳', '#fed7aa'], ['점심', '🍱', '#fed7aa'], ['저녁', '🍚', '#fed7aa'], ['출근', '🚇', '#e2e8f0'], ['일', '💼', '#bfdbfe'], ['공부', '📚', '#a5f3fc'], ['독서', '📖', '#bbf7d0'], ['운동', '🏃', '#d9f99d'], ['놀기', '🧸', '#fef08a'], ['가족 시간', '👨‍👩‍👧', '#fbcfe8'], ['재우기', '🌙', '#e9d5ff'], ['쉬기', '🛋️', '#d6d3d1'], ['TV', '📺', '#fecaca'], ['게임', '🎮', '#fecaca'], ['숙제', '✏️', '#a5f3fc'], ['일기', '📔', '#bbf7d0'], ['씻기', '🛁', '#bfdbfe'], ['나들이', '🌳', '#d9f99d'], ['자유', '🎈', '#fef08a']];
-    const P = (rows) => { const sl = Array(N).fill(-1), acts = []; rows.forEach(([s, e, t]) => { const a = ACTS.find(x => x[0] === t) || [t, '⭐', '#e2e8f0']; let i = acts.findIndex(x => x.t === t); if (i < 0) { acts.push({ t, emo: a[1], c: a[2] }); i = acts.length - 1; } for (let k = s * 2; k < e * 2; k++) sl[k % N] = i; }); return { acts, slots: sl }; };
+    const P = (rows) => { const sl = Array(N).fill(-1), acts = []; rows.forEach(([s, e, t]) => { const a = ACTS.find(x => x[0] === t) || [t, '⭐', '#e2e8f0']; let i = acts.findIndex(x => x.t === t); if (i < 0) { acts.push({ t, emo: a[1], c: a[2] }); i = acts.length - 1; } for (let k = Math.round(s * 12); k < Math.round(e * 12); k++) sl[k % N] = i; }); return { acts, slots: sl }; };
     const PRESETS = {
       '💼 평일': [[0, 6.5, '잠'], [6.5, 7.5, '아침'], [7.5, 9, '출근'], [9, 12, '일'], [12, 13, '점심'], [13, 18, '일'], [18, 19.5, '출근'], [19.5, 21, '가족 시간'], [21, 22, '재우기'], [22, 23, '자유'], [23, 24, '잠']],
       '🌳 주말': [[0, 8, '잠'], [8, 9, '아침'], [9, 12, '놀기'], [12, 13, '점심'], [13, 15, '쉬기'], [15, 18, '나들이'], [18, 19, '저녁'], [19, 21, '가족 시간'], [21, 22, '재우기'], [22, 24, '자유']],
@@ -228,12 +228,14 @@
     };
     let st = Object.assign({ plans: [], cur: null, done: {} }, load(KEY, {})), fColor = COLORS[0];
     if (!st.plans.length) { st.plans = [Object.assign({ id: 1, name: '💼 평일', days: [1, 2, 3, 4, 5] }, P(PRESETS['💼 평일'])), Object.assign({ id: 2, name: '🌳 주말', days: [0, 6] }, P(PRESETS['🌳 주말']))]; }
+    st.plans.forEach(p => { if (p.slots && p.slots.length === 48) { p.slots = p.slots.flatMap(x => Array(6).fill(x)); } });
     const persist = () => save(KEY, st);
     const todayPlan = () => st.plans.find(p => (p.days || []).includes(new Date().getDay()));
     if (!st.cur || !st.plans.some(p => p.id === st.cur)) st.cur = (todayPlan() || st.plans[0]).id;
     const cur = () => st.plans.find(p => p.id === st.cur);
-    const tm = i => `${pad(Math.floor(i / 2) % 24)}:${i % 2 ? '30' : '00'}`;
-    const nowSlot = () => { const n = new Date(); return n.getHours() * 2 + (n.getMinutes() >= 30 ? 1 : 0); };
+    const tm = i => { const m = ((i % N) + N) % N * 5; return `${pad(Math.floor(m / 60))}:${pad(m % 60)}`; };
+    const nowSlot = () => { const n = new Date(); return Math.floor((n.getHours() * 60 + n.getMinutes()) / 5); };
+    const toSlot = v => { const [h, m] = String(v || '0:0').split(':').map(Number); return Math.round(((h || 0) * 60 + (m || 0)) / 5) % N; };
     // 연속된 같은 칸 → 덩어리 (자정을 넘는 것도 하나로)
     function runs(p) {
       const sl = p.slots, out = []; let i = 0;
@@ -253,7 +255,7 @@
     // 칠하기
     function pickAct(i) { const a = ACTS[i]; document.getElementById('fT').value = a[0]; document.getElementById('fEmo').value = a[1]; fColor = a[2]; renderForm(); }
     function setColor(c) { fColor = c; renderForm(); }
-    function range() { const s = Number(document.getElementById('fS').value), e = Number(document.getElementById('fE').value); return [s, e > s ? e : e + N]; }
+    function range() { const s = toSlot(document.getElementById('fS').value), e = toSlot(document.getElementById('fE').value); return [s, e > s ? e : e + N]; }
     // 원에서 칸을 눌러 고치는 중이면: 원래 칸을 비우고 새 시간에 칠해요 (시간을 줄이거나 옮길 때)
     let editing = null;
     const span = (a, b) => `${tm(a)}~${tm(b)}`;
@@ -277,7 +279,7 @@
     function cancelEdit() { editing = null; render(); }
     function flash(m) { const el = document.getElementById('fillMsg'); el.textContent = m; clearTimeout(flash.t); flash.t = setTimeout(() => el.textContent = '', 3500); }
     function editRun(s, e) {
-      const p = cur(), a = p.slots[s % N]; document.getElementById('fS').value = s % N; document.getElementById('fE').value = e % N;
+      const p = cur(), a = p.slots[s % N]; document.getElementById('fS').value = tm(s); document.getElementById('fE').value = tm(e);
       if (a >= 0) { editing = { s, e, a }; document.getElementById('fT').value = p.acts[a].t; document.getElementById('fEmo').value = p.acts[a].emo; fColor = p.acts[a].c; }
       else { editing = null; document.getElementById('fT').value = ''; document.getElementById('fEmo').value = ''; }
       renderForm(); document.getElementById('fT').scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -294,7 +296,7 @@
         const a0 = r.s / N * 360, a1 = r.e / N * 360, big = a1 - a0 > 180 ? 1 : 0, [x0, y0] = pt(R, a0), [x1, y1] = pt(R, a1), act = r.a >= 0 ? p.acts[r.a] : null;
         const path = r.e - r.s >= N ? `M ${C} ${C - R} A ${R} ${R} 0 1 1 ${C - 0.01} ${C - R} Z` : `M ${C} ${C} L ${x0} ${y0} A ${R} ${R} 0 ${big} 1 ${x1} ${y1} Z`;
         s += `<path d="${path}" fill="${act ? act.c : '#fff'}" stroke="#78350f" stroke-width="1.5" ${forImg ? '' : `onclick="editRun(${r.s},${r.e})" style="cursor:pointer"`}/>`;
-        if (act) { const span = r.e - r.s, mid = (a0 + a1) / 2, [lx, ly] = pt(R * (span >= 6 ? 0.6 : 0.7), mid); s += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="${span >= 3 ? 18 : 14}" pointer-events="none">${act.emo}</text>`; if (span >= 3) s += `<text x="${lx}" y="${ly + 16}" text-anchor="middle" font-size="${span >= 6 ? 13 : 11}" font-weight="800" fill="#451a03" pointer-events="none">${esc(act.t)}</text>`; }
+        if (act) { const span = (r.e - r.s) / 6, mid = (a0 + a1) / 2, [lx, ly] = pt(R * (span >= 6 ? 0.6 : 0.7), mid); if (span < 0.7) return; s += `<text x="${lx}" y="${ly}" text-anchor="middle" font-size="${span >= 3 ? 18 : 14}" pointer-events="none">${act.emo}</text>`; if (span >= 3) s += `<text x="${lx}" y="${ly + 16}" text-anchor="middle" font-size="${span >= 6 ? 13 : 11}" font-weight="800" fill="#451a03" pointer-events="none">${esc(act.t)}</text>`; }
       });
       for (let h = 0; h < 24; h++) { const [x, y] = pt(R + 14, h * 15), [a, b] = pt(R + 2, h * 15), [c, d] = pt(R - 6, h * 15); s += `<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="#78350f" stroke-width="${h % 6 ? 1 : 2.5}"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="${h % 6 ? 10 : 13}" font-weight="${h % 6 ? 600 : 800}" fill="#92400e">${h}</text>`; }
       if (!forImg) { const [hx, hy] = pt(R - 4, nowAng); s += `<line x1="${C}" y1="${C}" x2="${hx}" y2="${hy}" stroke="#e11d48" stroke-width="3" stroke-linecap="round"/>`; }
@@ -305,8 +307,6 @@
       const ed = document.getElementById('editing'), fb = document.getElementById('fillBtn');
       if (editing && cur().acts[editing.a]) { const a = cur().acts[editing.a]; ed.classList.remove('hidden'); ed.innerHTML = `<div class="flex items-center gap-2 rounded-xl px-3 py-2" style="background:${a.c}"><span class="flex-1 text-xs font-extrabold" style="color:#451a03">✏️ ${a.emo} ${esc(a.t)} (${span(editing.s, editing.e)}) 고치는 중 — 시간을 바꾸고 아래를 눌러요</span><span role="button" tabindex="0" onclick="cancelEdit()" class="cursor-pointer text-[11px] font-extrabold" style="color:#78350f">새로 칠하기</span></div>`; fb.textContent = '🖍️ 이 칸 바꾸기'; }
       else { ed.classList.add('hidden'); fb.textContent = '🖍️ 칠하기'; }
-      const opt = i => `<option value="${i}">${tm(i)}</option>`, fs = document.getElementById('fS'), fe = document.getElementById('fE'), sv = fs.value, ev = fe.value;
-      if (!fs.options.length) { fs.innerHTML = Array.from({ length: N }, (_, i) => opt(i)).join(''); fe.innerHTML = Array.from({ length: N }, (_, i) => opt((i + 1) % N).replace('>00:00<', '>24:00<')).join(''); fs.value = 18; fe.value = 20; }
       document.getElementById('acts').innerHTML = ACTS.map(([t, e], i) => `<span role="button" tabindex="0" onclick="pickAct(${i})" class="cursor-pointer px-2 py-1 rounded-full bg-slate-100 text-xs font-bold text-slate-700">${e} ${t}</span>`).join('');
       document.getElementById('colors').innerHTML = COLORS.map(c => `<span role="button" tabindex="0" onclick="setColor('${c}')" class="cursor-pointer w-7 h-7 rounded-full ${fColor === c ? 'ring-2 ring-offset-1 ring-slate-700' : ''}" style="background:${c};border:1px solid rgba(0,0,0,.1)"></span>`).join('');
     }
