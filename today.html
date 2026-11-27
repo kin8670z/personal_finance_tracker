@@ -152,6 +152,7 @@
     <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./sky.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌌 <span>오늘 밤 하늘</span></a>
     <a href="./visited.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗺️ <span>가 본 곳</span></a>
     <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
     <a href="./til.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧑‍💻 <span>오늘 배운 것</span></a>
@@ -234,6 +235,7 @@
     <section id="mealCard" class="hidden card p-4"></section>
     <section id="photodayCard" class="hidden card p-4"></section>
     <section id="allowCard" class="hidden card p-4"></section>
+    <section id="skyCard" class="hidden card p-4"></section>
     <section id="workoutCard" class="hidden card p-4"></section>
     <section id="mkev" class="hidden card p-4"></section>
     <section id="market" class="card p-4"><div class="skel" style="height:70px"></div></section>
@@ -791,6 +793,16 @@
       box.classList.remove('hidden');
       box.innerHTML = head('🐷 오늘 용돈 날', './allowance.html', '저금통') + due.map(([k, p]) => `<a href="./allowance.html" class="flex justify-between py-1"><span class="text-sm font-bold text-slate-800">${esc((ks.find(x => String(x.id) === k) || {}).name || '아이')}</span><span class="text-sm font-extrabold text-emerald-600">${Number(p.amt).toLocaleString()}원</span></a>`).join('');
     }
+    // ---------- 🌌 밤하늘: 오늘 밤 보름달·유성우 극대·월식 (밤하늘 화면에서 계산해 둔 것 + 유성우 표) ----------
+    function renderSkyCard() {
+      const box = document.getElementById('skyCard'), t = ymd(new Date()), md0 = t.slice(5);
+      let ev = []; try { ev = JSON.parse(localStorage.getItem('sky_events_v1') || '[]').filter(x => x.d === t).map(x => x.t); } catch (e) {}
+      const MET = { '01-04': '🌠 사분의자리 유성우 극대', '08-12': '🌠 페르세우스자리 유성우 극대', '12-14': '🌠 쌍둥이자리 유성우 극대' };
+      if (MET[md0] && !ev.some(x => x.includes('유성우'))) ev.push(MET[md0]);
+      if (!ev.length) { box.classList.add('hidden'); return; }
+      box.classList.remove('hidden');
+      box.innerHTML = head('🌌 오늘 밤 하늘', './sky.html', '밤하늘') + ev.map(x => `<a href="./sky.html" class="block py-0.5 text-sm font-bold text-slate-800">${esc(x)}</a>`).join('');
+    }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
       const box = document.getElementById('mkev'), ME = window.MarketEvents; if (!ME) { box.classList.add('hidden'); return; }
@@ -1124,7 +1136,7 @@
     let busy = false;
     async function refreshAll() {
       if (busy) return; busy = true; document.getElementById('refreshBtn').style.opacity = '.5';
-      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderBillsCard(); renderSantaCard(); renderWorklogCard(); renderOtakuCard(); renderTicketCard(); renderLoanCard(); renderMealCard(); renderPhotodayCard(); renderAllowCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
+      renderHello(); renderDdays(); if (quoteIdx == null) renderQuote(); renderLunch(); renderGifts(); renderTrip(); renderParking(); renderGames(); renderFever(); renderSticker(); renderKidsay(); renderDaycare(); renderGoalsCard(); renderWishCard(); renderFridgeCard(); renderRenewCard(); renderParcelCard(); renderVoiceCard(); renderRecapCard(); renderBackupCard(); renderBillsCard(); renderSantaCard(); renderWorklogCard(); renderOtakuCard(); renderTicketCard(); renderLoanCard(); renderMealCard(); renderPhotodayCard(); renderAllowCard(); renderSkyCard(); renderWorkoutCard(); renderMkEvents(); renderSubs(); renderSupplies(); renderWarranty(); renderLeave(); renderTrash(); renderWeekly(); renderTimer(); renderHealth(); renderSleep(); renderMood(); renderCeremony(); renderGroupbuy(); renderFood(); renderHabits(); renderTodo(); if (!document.activeElement || document.activeElement.id !== 'diaryText') renderDiary(); renderPhrase(); renderMoney();
       await Promise.all([loadWeather(), loadSubway(), loadMarket(), loadLotto()]);
       busy = false; document.getElementById('refreshBtn').style.opacity = '';
     }
