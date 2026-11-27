@@ -140,6 +140,7 @@
     <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
     <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
     <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./kidbooks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📚 <span>아이 책</span></a>
     <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
     <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
     <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
@@ -253,10 +254,10 @@
       }
       // 👶 아이
       const fs = ((L('argon_firsts_v1', {})).items || []).filter(i => inY(i.date)).sort((a, b) => a.date.localeCompare(b.date)), ks = ((L('argon_kidsay_v1', {})).items || []).filter(i => inY(i.date));
-      const vc = (load('voice_index_v1', []) || []).filter(i => inY(i.date)), gp = (load('growth_index_v1', []) || []).filter(i => inY(i.ym)), sg = ((L('argon_santa_v1', {})).items || []).filter(i => i.status === 'given' && inY(i.givenAt));
-      if (fs.length || ks.length || vc.length || gp.length || sg.length) {
+      const vc = (load('voice_index_v1', []) || []).filter(i => inY(i.date)), gp = (load('growth_index_v1', []) || []).filter(i => inY(i.ym)), kb = ((L('argon_kidbooks_v1', {})).books || []).filter(b => (b.reads || []).some(inY)), kbN = kb.reduce((a, b) => a + b.reads.filter(inY).length, 0), sg = ((L('argon_santa_v1', {})).items || []).filter(i => i.status === 'given' && inY(i.givenAt));
+      if (fs.length || ks.length || vc.length || gp.length || sg.length || kb.length) {
         const pickSay = ks.length ? ks[Math.floor(Math.random() * ks.length)] : null;
-        S.push(slide('kid', '👶', `<p class="lab">${Y}년 우리 아이</p><p class="big num mt-1">${fs.length ? `처음 ${fs.length}번` : ks.length ? `어록 ${ks.length}개` : gp.length ? `사진 ${gp.length}장` : `선물 ${sg.length}개`}</p><p class="text-sm font-bold mt-1 opacity-90">${[fs.length && ks.length ? `어록 ${ks.length}개` : '', vc.length ? `목소리 ${vc.length}개` : '', gp.length ? `성장 사진 ${gp.length}장` : '', sg.length ? `받은 선물 ${sg.length}개` : ''].filter(Boolean).join(' · ')}</p>
+        S.push(slide('kid', '👶', `<p class="lab">${Y}년 우리 아이</p><p class="big num mt-1">${fs.length ? `처음 ${fs.length}번` : ks.length ? `어록 ${ks.length}개` : gp.length ? `사진 ${gp.length}장` : `선물 ${sg.length}개`}</p><p class="text-sm font-bold mt-1 opacity-90">${[fs.length && ks.length ? `어록 ${ks.length}개` : '', vc.length ? `목소리 ${vc.length}개` : '', gp.length ? `성장 사진 ${gp.length}장` : '', kb.length ? `그림책 ${kb.length}권(${kbN}번)` : '', sg.length ? `받은 선물 ${sg.length}개` : ''].filter(Boolean).join(' · ')}</p>
           <div class="mt-3">${fs.slice(-6).map(i => `<div class="row"><span class="truncate">🌟 ${esc(i.title)}</span><span class="text-xs opacity-80">${Number(i.date.slice(5, 7))}.${Number(i.date.slice(8))}</span></div>`).join('')}</div>
           ${pickSay ? `<div class="mt-auto pt-4"><p class="lab">💬 올해의 한마디</p><p class="text-lg font-extrabold leading-snug mt-1">“${esc(pickSay.text)}”</p></div>` : ''}`));
       }
