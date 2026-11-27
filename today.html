@@ -95,7 +95,7 @@
     <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
     <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
     <a href="./worklog.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💼 <span>업무일지</span></a>
-    <a href="./routine.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕐 <span>생활계획표</span></a>
+    <a href="./routine.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗓️ <span>하루 일과</span></a>
     <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
     <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
     <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
@@ -814,7 +814,7 @@
       let s = i, e = i; while (p.slots[(s - 1 + N) % N] === a && s > i - N + 1) s--; while (p.slots[(e + 1) % N] === a && e < i + N - 1) e++;
       const tm = k => { const m = ((k % N) + N) % N * st; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }, act = p.acts[a], nx = p.acts[p.slots[(e + 1) % N]];
       box.classList.remove('hidden');
-      box.innerHTML = `<a href="./routine.html" class="flex items-center gap-3"><span class="text-3xl">${act.emo}</span><span class="min-w-0 flex-1"><span class="block text-[11px] font-extrabold text-amber-700">🕐 ${esc(p.name)} · 지금은</span><span class="block text-base font-extrabold text-slate-900">${esc(act.t)} 시간 <span class="text-xs font-bold text-slate-400">~${tm(e + 1)}</span></span>${nx && nx !== act ? `<span class="block text-[11px] font-bold text-slate-400">다음: ${nx.emo} ${esc(nx.t)}</span>` : ''}</span></a>`;
+      box.innerHTML = `<a href="./routine.html" class="flex items-center gap-3"><span class="text-3xl">${act.emo}</span><span class="min-w-0 flex-1"><span class="block text-[11px] font-extrabold text-amber-700">🗓️ ${esc(p.name)} · 지금은</span><span class="block text-base font-extrabold text-slate-900">${esc(act.t)} 시간 <span class="text-xs font-bold text-slate-400">~${tm(e + 1)}</span></span>${nx && nx !== act ? `<span class="block text-[11px] font-bold text-slate-400">다음: ${nx.emo} ${esc(nx.t)}</span>` : ''}</span></a>`;
     }
     // ---------- 📅 시장 이벤트: 오늘(한국 시간) 있는 경제 일정·내 종목 실적, 저녁엔 내일 새벽 것도 ----------
     function renderMkEvents() {
