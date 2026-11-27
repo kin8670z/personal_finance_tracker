@@ -808,10 +808,10 @@
     // ---------- 🕐 생활계획표: 오늘 요일 계획표가 있고 지금 칸이 채워져 있을 때 (설정으로 끌 수 있음) ----------
     function renderRoutineCard() {
       const box = document.getElementById('routineCard'), r = load('argon_routine_v1', null), n = new Date(), p = r && r.showToday !== false && (r.plans || []).find(x => (x.days || []).includes(n.getDay()));
-      const i = n.getHours() * 2 + (n.getMinutes() >= 30 ? 1 : 0), a = p ? p.slots[i] : -1;
+      const N = p ? p.slots.length : 288, st = 1440 / N, i = Math.floor((n.getHours() * 60 + n.getMinutes()) / st), a = p ? p.slots[i] : -1;
       if (!p || a < 0) { box.classList.add('hidden'); return; }
-      let s = i, e = i; while (p.slots[(s + 47) % 48] === a && s > i - 47) s--; while (p.slots[(e + 1) % 48] === a && e < i + 47) e++;
-      const tm = k => `${String(Math.floor(((k % 48) + 48) % 48 / 2)).padStart(2, '0')}:${(((k % 48) + 48) % 48) % 2 ? '30' : '00'}`, act = p.acts[a], nx = p.acts[p.slots[(e + 1) % 48]];
+      let s = i, e = i; while (p.slots[(s - 1 + N) % N] === a && s > i - N + 1) s--; while (p.slots[(e + 1) % N] === a && e < i + N - 1) e++;
+      const tm = k => { const m = ((k % N) + N) % N * st; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; }, act = p.acts[a], nx = p.acts[p.slots[(e + 1) % N]];
       box.classList.remove('hidden');
       box.innerHTML = `<a href="./routine.html" class="flex items-center gap-3"><span class="text-3xl">${act.emo}</span><span class="min-w-0 flex-1"><span class="block text-[11px] font-extrabold text-amber-700">🕐 ${esc(p.name)} · 지금은</span><span class="block text-base font-extrabold text-slate-900">${esc(act.t)} 시간 <span class="text-xs font-bold text-slate-400">~${tm(e + 1)}</span></span>${nx && nx !== act ? `<span class="block text-[11px] font-bold text-slate-400">다음: ${nx.emo} ${esc(nx.t)}</span>` : ''}</span></a>`;
     }
