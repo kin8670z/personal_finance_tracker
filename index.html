@@ -22,7 +22,7 @@
     } catch (e) {}
   </script>
   <script src="sync.js" defer></script>
-  <title>든든 · 가계부 v10.4</title>
+  <title>든든 · 가계부 v10.5</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
@@ -140,6 +140,7 @@
     <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
     <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
     <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./sky.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌌 <span>오늘 밤 하늘</span></a>
     <a href="./visited.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗺️ <span>가 본 곳</span></a>
     <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
     <a href="./til.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧑‍💻 <span>오늘 배운 것</span></a>
@@ -179,7 +180,7 @@
               <p class="px-2.5 py-1 text-[10px] font-extrabold text-slate-400 uppercase">테마 및 가이드</p>
               <button type="button" onclick="toggleDarkMode()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-indigo-50 dark:hover:bg-slate-700 flex items-center justify-between"><span id="darkModeMenuText">🌙 다크 모드 켜기</span><span class="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded font-extrabold">Theme</span></button>
               <button type="button" onclick="openGalaxyAutoModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🤖 갤럭시 문자 자동화 가이드</span><span class="text-[10px] text-blue-600 font-bold">TIP</span></button>
-              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v10.4</span></button>
+              <button type="button" onclick="openReleaseModal()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center justify-between"><span>🆕 버전별 업데이트 노트</span><span class="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full font-bold">v10.5</span></button>
             </div>
             <div class="px-2 pt-1.5 pb-0.5">
               <button type="button" onclick="resetData()" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center justify-between"><span>🗑️ 전체 가계부 초기화</span><span class="text-[10px] text-rose-400">주의</span></button>
@@ -513,7 +514,7 @@
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-xl space-y-4 max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center border-b border-slate-100 pb-3"><h3 class="text-base font-extrabold">🚀 버전별 주요 업데이트 노트</h3><button onclick="closeReleaseModal()" class="text-slate-400 text-lg font-bold px-2">✕</button></div>
       <div id="releaseNotesContainer" class="space-y-4 overflow-y-auto pr-1 flex-1"></div>
-      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v10.4</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
+      <div class="pt-3 border-t border-slate-100 flex justify-between items-center"><span class="text-xs text-slate-400">현재 버전: <b class="text-indigo-600">든든 v10.5</b></span><button onclick="closeReleaseModal()" class="px-5 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold">확인했어요!</button></div>
     </div>
   </div>
 
@@ -555,9 +556,14 @@
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs md:text-sm font-bold px-5 py-3 rounded-full shadow-lg opacity-0 pointer-events-none transition-all duration-300 z-50 whitespace-nowrap">알림</div>
 
   <script>
-    const APP_VERSION = '10.4';
+    const APP_VERSION = '10.5';
     const releaseNotesData = [
-      { version: 'v10.4', date: '2026.11.26 (최신)', badge: '🐷 용돈 저금통', isLatest: true, items: [
+      { version: 'v10.5', date: '2026.11.26 (최신)', badge: '🌌 밤하늘', isLatest: true, items: [
+        '🌌 오늘 밤 하늘: 하남 기준 달 모양·뜨고 지는 시각, 보이는 행성·별자리 (기기에서 계산)',
+        '🗺️ 시간대별 하늘 지도 + 별자리 선, 📱 폰을 하늘에 비추면 방향대로 돌아가요',
+        '📅 보름·그믐·유성우·월식 일정, ☁️ 오늘 밤 구름 예보, 👶 아이에게 들려줄 한마디'
+      ] },
+      { version: 'v10.4', date: '2026.11.26', badge: '🐷 용돈 저금통', isLatest: false, items: [
         '🐷 아이 용돈 저금통: 받은 돈·쓴 돈, 이번 달 합계',
         '🎯 갖고 싶은 것 목표(🎅 산타 리스트에서 가져오기) — 얼마 남았는지, 다 모으면 🪙 축하',
         '💰 매주 용돈 날을 정하면 그날 오늘 화면에'

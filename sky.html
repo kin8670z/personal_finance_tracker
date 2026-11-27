@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5f9">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="든든">
+  <script src="pwa.js" defer></script>
+  <script src="sync.js" defer></script>
+  <title>오늘 밤 하늘 · 든든</title>
+  <script>
+    // 가계부와 같은 다크 모드 설정을 첫 화면부터 적용
+    try { if (localStorage.getItem('argon_dark_mode') === 'true') document.documentElement.classList.add('dark'); } catch (e) {}
+  </script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css">
+  <link rel="stylesheet" href="theme.css">
+  <style>
+    html, body { width: 100%; max-width: 100vw; min-height: 100dvh; overflow-x: hidden; font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; -webkit-tap-highlight-color: transparent; }
+    body { padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right)) max(2rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left)); }
+    @media (min-width: 768px) { body { padding: 1.25rem 2rem 2rem 2rem; } }
+    .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05); max-width: 100%; overflow: hidden; }
+    input, select, button { font-size: 16px !important; }
+    @media (min-width: 768px) { input, select, button { font-size: 0.875rem !important; } }
+    .num { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+    /* 한국식 색: 상승 빨강, 하락 파랑 */
+    .up { color: #e11d48; } .down { color: #2563eb; } .flat { color: #64748b; }
+    .pill-up { background: #fff1f2; color: #e11d48; } .pill-down { background: #eff6ff; color: #2563eb; } .pill-flat { background: #f1f5f9; color: #64748b; }
+    .hero-up { background: linear-gradient(135deg, #fff1f2 0%, #ffffff 70%); } .hero-down { background: linear-gradient(135deg, #eff6ff 0%, #ffffff 70%); } .hero-flat { background: #fff; }
+    .dark .hero-up { background: linear-gradient(135deg, #4c0519 0%, #1e293b 70%) !important; } .dark .hero-down { background: linear-gradient(135deg, #172554 0%, #1e293b 70%) !important; }
+    .dark .up { color: #fb7185; } .dark .down { color: #60a5fa; }
+    .dark .pill-up { background: #4c0519; color: #fda4af; } .dark .pill-down { background: #172554; color: #93c5fd; } .dark .pill-flat { background: #334155; color: #cbd5e1; }
+    .tile { transition: transform .12s ease, box-shadow .12s ease; }
+    .tile:active { transform: scale(.98); }
+    .tile.sel { box-shadow: 0 0 0 2px #6366f1 inset; }
+    .row:active { background: #f8fafc; }
+    .dark .row:active { background: #0f172a; }
+    .skel { background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: .375rem; }
+    .dark .skel { background: linear-gradient(90deg, #334155 25%, #1e293b 50%, #334155 75%); background-size: 200% 100%; }
+    @keyframes sk { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .live-dot { width: 7px; height: 7px; border-radius: 9999px; background: #10b981; box-shadow: 0 0 0 0 rgba(16,185,129,.6); animation: pulse 1.8s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,.55); } 70% { box-shadow: 0 0 0 7px rgba(16,185,129,0); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+    .flash-up { animation: fu 1s ease; } .flash-down { animation: fd 1s ease; }
+    @keyframes fu { 0% { background: rgba(225,29,72,.18); } 100% { background: transparent; } }
+    @keyframes fd { 0% { background: rgba(37,99,235,.18); } 100% { background: transparent; } }
+    .chart-img { display: block; width: 100%; height: auto; background: #fff; border-radius: .5rem; }
+    .dark .chart-img { filter: invert(.88) hue-rotate(180deg); }
+    .chart-fail { font-size: 12px; color: #94a3b8; text-align: center; padding: 2rem .5rem; }
+    .seg button[aria-pressed="true"] { background: #4f46e5; color: white; }
+    .dark body { background-color: #0f172a !important; color: #f1f5f9 !important; }
+    .dark .card { background-color: #1e293b !important; color: #f8fafc !important; border-color: #334155 !important; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3) !important; }
+    .dark input, .dark select { background-color: #0f172a !important; color: #f8fafc !important; border-color: #334155 !important; }
+    .dark .bg-white { background-color: #1e293b !important; }
+.dark .bg-indigo-50\/60 { background-color: rgba(49,46,129,.35) !important; } .dark .border-indigo-100, .dark .border-indigo-300 { border-color: #3730a3 !important; } .dark .text-indigo-700 { color: #c7d2fe !important; }
+    .dark .bg-white\/70 { background-color: rgba(51,65,85,.7) !important; color: #e2e8f0 !important; border-color: #475569 !important; }
+    .dark .bg-slate-50 { background-color: #0f172a !important; border-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .bg-slate-100 { background-color: #334155 !important; color: #cbd5e1 !important; }
+    .dark .text-slate-800, .dark .text-slate-900 { color: #f8fafc !important; }
+    .dark .text-slate-500, .dark .text-slate-600, .dark .text-slate-700 { color: #94a3b8 !important; }
+    .dark .border-slate-200, .dark .border-slate-100 { border-color: #334155 !important; }
+    .dark .divide-slate-100 > * + * { border-color: #334155 !important; }
+    /* 사이드 메뉴 */
+    #sideNav { transform: translateX(-100%); transition: transform .22s ease; }
+    #sideNav.open { transform: translateX(0); }
+    #sideNavBackdrop { opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    #sideNavBackdrop.open { opacity: 1; pointer-events: auto; }
+    .dark #sideNav { background-color: #1e293b !important; border-color: #334155 !important; }
+    .nav-item.active { background-color: #eef2ff; color: #4338ca; }
+    .dark .nav-item.active { background-color: #312e81; color: #e0e7ff; }
+    .dark .nav-item:not(.active) { color: #cbd5e1; }
+    @media (prefers-reduced-motion: reduce) { #sideNav, #sideNavBackdrop, .tile, .skel, .live-dot, .flash-up, .flash-down { transition: none; animation: none; } }
+      .line-dot { width: .6rem; height: .6rem; border-radius: 9999px; display: inline-block; flex-shrink: 0; }
+    .tick { font-variant-numeric: tabular-nums; }
+  </style>
+</head>
+<body class="text-slate-800">
+  <!-- 사이드 메뉴 (가계부와 동일) -->
+  <div id="sideNavBackdrop" onclick="closeSideNav()" class="fixed inset-0 bg-slate-900/40 z-40"></div>
+  <nav id="sideNav" aria-label="페이지 이동" class="fixed top-0 left-0 bottom-0 w-64 max-w-[80vw] bg-white border-r border-slate-200 z-50 p-4 flex flex-col gap-1 shadow-xl" style="padding-top: max(1rem, env(safe-area-inset-top));">
+    <div class="flex items-center justify-between mb-3"><p class="text-sm font-extrabold text-slate-900">💛 든든</p><button type="button" onclick="closeSideNav()" class="text-slate-400 text-lg font-bold px-2" aria-label="메뉴 닫기">✕</button></div>
+    <a href="./today.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">☀️ <span>오늘</span></a>
+    <a href="./weather.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌤️ <span>날씨</span></a>
+    <a href="./diary.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📔 <span>한줄 일기</span></a>
+    <a href="./photoday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📷 <span>하루 한 장</span></a>
+    <a href="./weekly.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📰 <span>이번 주 나</span></a>
+    <a href="./recap.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎆 <span>연말 결산</span></a>
+    <a href="./search.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔎 <span>기록 검색</span></a>
+    <a href="./backup.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💾 <span>백업·복원</span></a>
+    <a href="./goals.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎯 <span>목표</span></a>
+    <a href="./mood.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🙂 <span>기분</span></a>
+    <a href="./todo.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">✅ <span>할 일·장보기</span></a>
+    <a href="./worklog.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💼 <span>업무일지</span></a>
+    <a href="./gift.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>기프티콘</span></a>
+    <a href="./groupbuy.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🛒 <span>공동구매</span></a>
+    <a href="./parcel.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>택배</span></a>
+    <a href="./parking.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🅿️ <span>주차 위치</span></a>
+    <a href="./stash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>물건 둔 곳</span></a>
+    <a href="./trash.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗑️ <span>분리수거</span></a>
+    <a href="./supplies.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🔧 <span>교체 주기</span></a>
+    <a href="./warranty.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📦 <span>보증서</span></a>
+    <a href="./renew.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📅 <span>만료·갱신</span></a>
+    <a href="./car.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>차계부</span></a>
+    <a href="./leave.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏖️ <span>연차</span></a>
+    <a href="./habits.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💧 <span>습관 체크</span></a>
+    <a href="./workout.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏃 <span>운동</span></a>
+    <a href="./timer.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⏱️ <span>타이머</span></a>
+    <a href="./food.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>칼로리</span></a>
+    <a href="./sleep.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">😴 <span>수면 기록</span></a>
+    <a href="./health.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🩹 <span>아플 때</span></a>
+    <a href="./medical.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏥 <span>문 연 병원·약국</span></a>
+    <a href="./" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📒 <span>가계부</span></a>
+    <a href="./tax.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>연말정산</span></a>
+    <a href="./report.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📊 <span>소비 리포트</span></a>
+    <a href="./ceremony.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💐 <span>경조사 장부</span></a>
+    <a href="./subs.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧾 <span>구독</span></a>
+    <a href="./bills.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🏢 <span>관리비</span></a>
+    <a href="./wish.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎁 <span>위시리스트</span></a>
+    <a href="./stocks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📈 <span>주식 현황</span></a>
+    <a href="./assets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💎 <span>내 자산</span></a>
+    <a href="./lotto.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍀 <span>로또 번호</span></a>
+    <a href="./subway.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚇 <span>지하철</span></a>
+    <a href="./lunch.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍱 <span>점심 룰렛</span></a>
+    <a href="./recipes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍳 <span>레시피</span></a>
+    <a href="./meal.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍽️ <span>식단표</span></a>
+    <a href="./fridge.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🥛 <span>냉장고 유통기한</span></a>
+    <a href="./places.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍜 <span>맛집·장소</span></a>
+    <a href="./games.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎮 <span>게임 출시</span></a>
+    <a href="./mygames.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🕹️ <span>내 게임</span></a>
+    <a href="./jigsaw.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧩 <span>직소 퍼즐</span></a>
+    <a href="./brain.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧠 <span>두뇌 게임</span></a>
+    <a href="./tomica.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🚗 <span>토미카</span></a>
+    <a href="./media.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🍿 <span>콘텐츠 기록</span></a>
+    <a href="./tickets.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎫 <span>공연·전시</span></a>
+    <a href="./anime.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📺 <span>애니 방영표</span></a>
+    <a href="./dday.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎄 <span>D-Day</span></a>
+    <a href="./kid.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">👶 <span>성장 기록</span></a>
+    <a href="./fever.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌡️ <span>체온 기록</span></a>
+    <a href="./sticker.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">⭐ <span>칭찬 스티커</span></a>
+    <a href="./kidsay.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>아이 어록</span></a>
+    <a href="./kidbooks.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📚 <span>아이 책</span></a>
+    <a href="./firsts.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🌟 <span>아이 처음</span></a>
+    <a href="./voice.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎙️ <span>목소리 타임캡슐</span></a>
+    <a href="./growth.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📸 <span>성장 사진</span></a>
+    <a href="./santa.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎅 <span>산타 리스트</span></a>
+    <a href="./allowance.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🐷 <span>용돈 저금통</span></a>
+    <a href="./daycare.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🎒 <span>어린이집</span></a>
+    <a href="./sizes.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📏 <span>아이 사이즈</span></a>
+    <a href="./english.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗣️ <span>여행 외국어</span></a>
+    <a href="./trip.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧳 <span>여행·숙소</span></a>
+    <a href="./sky.html" class="nav-item active flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold">🌌 <span>오늘 밤 하늘</span></a>
+    <a href="./visited.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🗺️ <span>가 본 곳</span></a>
+    <a href="./dict.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">📖 <span>사전</span></a>
+    <a href="./til.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">🧑‍💻 <span>오늘 배운 것</span></a>
+    <a href="./fx.html" class="nav-item flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-100">💱 <span>환율 계산기</span></a>
+    <div class="mt-auto pt-3 border-t border-slate-100"><button type="button" onclick="toggleDark()" id="darkBtn" class="w-full text-left px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100">🌙 다크 모드</button></div>
+  </nav>
+  <div class="w-full max-w-3xl mx-auto space-y-3 md:space-y-4">
+    <header class="card p-4">
+      <div class="flex items-center gap-2 min-w-0">
+        <button type="button" onclick="openSideNav()" aria-label="메뉴 열기" class="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 border border-slate-200 text-slate-700 font-bold shrink-0">☰</button>
+        <div class="min-w-0 flex-1"><h1 class="text-base sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate"><a href="./today.html" title="☀️ 오늘 화면으로" class="hover:opacity-80">🌌 오늘 밤 하늘</a></h1><p id="sub" class="text-[11px] font-bold text-slate-500"></p></div>
+        <span role="button" tabindex="0" onclick="locate()" id="locBtn" class="cursor-pointer shrink-0 px-2.5 py-1.5 rounded-xl bg-slate-100 text-slate-600 text-xs font-extrabold"></span>
+      </div>
+    </header>
+
+    <section id="tonight" class="card p-4"></section>
+
+    <section class="rounded-2xl p-3 md:p-4" style="background:linear-gradient(180deg,#0b1026,#1e1b4b)">
+      <div class="flex items-center gap-2 text-white">
+        <p id="chartT" class="flex-1 text-sm font-extrabold"></p>
+        <span role="button" tabindex="0" onclick="toggleLines()" id="lineBtn" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-extrabold" style="background:rgba(255,255,255,.12)">✨ 별자리 선</span>
+        <span role="button" tabindex="0" onclick="toggleCompass()" id="compBtn" class="cursor-pointer px-2 py-1 rounded-lg text-[11px] font-extrabold" style="background:rgba(255,255,255,.12)">📱 하늘에 비추기</span>
+      </div>
+      <div class="relative mx-auto mt-2" style="max-width:460px"><svg id="chart" viewBox="0 0 400 400" class="w-full h-auto select-none"></svg></div>
+      <div class="flex items-center gap-2 mt-2 text-white"><span class="text-[11px] font-bold opacity-70">🕖</span><input id="slider" type="range" min="0" max="660" step="15" class="flex-1" oninput="setT(this.value)"><span id="tLab" class="num text-xs font-extrabold w-12 text-right"></span><span role="button" tabindex="0" onclick="setNow()" class="cursor-pointer px-2 py-0.5 rounded-lg text-[11px] font-extrabold" style="background:rgba(255,255,255,.15)">지금</span></div>
+      <p class="text-[10px] text-white/50 text-center mt-1">하늘을 올려다본 그림이에요 — 위가 북쪽, 왼쪽이 동쪽 · 가운데가 머리 위 · 점을 누르면 설명이 나와요</p>
+      <div id="tip" class="hidden mt-2 rounded-xl p-3 text-white text-sm" style="background:rgba(255,255,255,.1)"></div>
+    </section>
+
+    <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">🪐 이 시간에 보이는 행성</h2><div id="planets"></div></section>
+    <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">⭐ 찾아보기 좋은 별자리</h2><div id="consts"></div></section>
+    <section class="card p-4"><h2 class="text-sm md:text-base font-extrabold text-slate-900 mb-1">📅 다가오는 하늘 이벤트</h2><div id="events"></div></section>
+    <p class="text-[10px] text-slate-400 text-center">천체 계산: <a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener" class="underline">Astronomy Engine</a> (기기에서 계산) · 구름: Open-Meteo · 도시 불빛 때문에 어두운 별은 안 보일 수 있어요</p>
+  </div>
+  <script src="./vendor/astronomy.min.js"></script>
+  <script>
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const isDark = () => document.documentElement.classList.contains('dark');
+    const load = (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+    const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } };
+    const pad = n => String(n).padStart(2, '0');
+    const ymd = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    const D = s => { const [y, m, d] = String(s).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, d); };
+    const W = '일월화수목금토', md = s => { const d = D(s); return `${String(d.getFullYear()).slice(2)}.${d.getMonth() + 1}.${d.getDate()}(${W[d.getDay()]})`; };
+    const dday = s => Math.round((D(s) - new Date(new Date().toDateString())) / 864e5);
+    const won = n => Math.round(n || 0).toLocaleString('ko-KR') + '원';
+    const num = v => Number(String(v || '').replace(/[^\d.]/g, '')) || 0;
+    const today = () => ymd(new Date());
+    function sure(el, label, fn) { if (el.dataset.sure !== '1') { const o = el.textContent; el.dataset.sure = '1'; el.textContent = label || '삭제?'; el.classList.add('text-rose-500'); setTimeout(() => { if (el.isConnected) { el.dataset.sure = ''; el.textContent = o; el.classList.remove('text-rose-500'); } }, 2500); return; } fn(); }
+    function shrink(file, max = 1200) { return new Promise(res => { const img = new Image(); img.onload = () => { const s = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = img.width * s; c.height = img.height * s; c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); URL.revokeObjectURL(img.src); res(c.toDataURL('image/jpeg', 0.72)); }; img.src = URL.createObjectURL(file); }); }
+    const chip = (on, label, fn) => `<span role="button" tabindex="0" onclick="${fn}" class="cursor-pointer px-2.5 py-1 rounded-full text-xs font-bold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'}">${label}</span>`;
+    const kids = () => (load('argon_kid_v1', {}).kids || []);
+    const inp = 'border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-sm';
+    const KEY = 'argon_sky_v1', A = window.Astronomy;
+    let st = Object.assign({ lat: 37.539, lon: 127.214, name: '하남' }, load(KEY, {})), mins = null, lines = true, heading = null, cloud = null;
+    const persist = () => save(KEY, st);
+    const obs = () => new A.Observer(st.lat, st.lon, 30);
+    const hm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    const hmD = d => (ymd(d) > ymd(base()) && d.getHours() >= 6 ? '내일 ' : '') + hm(d);   // 오늘 밤 기준, 다음 날 낮이면 '내일'
+    const DIR = ['북', '북북동', '북동', '동북동', '동', '동남동', '남동', '남남동', '남', '남남서', '남서', '서남서', '서', '서북서', '북서', '북북서'];
+    const dirKo = az => DIR[Math.round(az / 22.5) % 16];
+    const altKo = a => a > 60 ? '거의 머리 위' : a > 35 ? '꽤 높이' : a > 15 ? '중간 높이' : a > 0 ? '낮게 (지평선 가까이)' : '지평선 아래';
+    const magKo = m => m < -3 ? '엄청 밝아요 ✨' : m < -1 ? '아주 밝아요' : m < 0.5 ? '밝아요' : m < 2 ? '잘 보여요' : '조금 어두워요';
+    // 행성 + 아이에게 들려줄 한마디
+    const PL = [['Mercury', '수성', '☿️', '#cbd5e1', '태양에 제일 가까운 행성. 1년이 88일밖에 안 돼요'], ['Venus', '금성', '🌟', '#fef3c7', '샛별·개밥바라기라고 불러요. 달 다음으로 밤하늘에서 제일 밝아요'], ['Mars', '화성', '🔴', '#fb923c', '빨간 행성. 흙에 녹슨 쇠가 많아서 빨개요'], ['Jupiter', '목성', '🟠', '#fde68a', '제일 큰 행성. 지구가 1,300개 넘게 들어가요'], ['Saturn', '토성', '🪐', '#fde047', '예쁜 고리가 있는 행성. 망원경으로 보면 고리가 보여요']];
+    // 밝은 별 (J2000 적경 h, 적위 °)
+    const ST = { Sirius: ['시리우스', 6.7525, -16.716, -1.46], Canopus: ['카노푸스', 6.3992, -52.696, -0.7], Arcturus: ['아르크투루스', 14.261, 19.182, -0.05], Vega: ['베가 (직녀성)', 18.6156, 38.784, 0.03], Capella: ['카펠라', 5.2782, 45.998, 0.08], Rigel: ['리겔', 5.2423, -8.202, 0.13], Procyon: ['프로키온', 7.655, 5.225, 0.34], Betelgeuse: ['베텔게우스', 5.9195, 7.407, 0.5], Altair: ['알타이르 (견우성)', 19.8464, 8.868, 0.77], Aldebaran: ['알데바란', 4.5987, 16.509, 0.85], Antares: ['안타레스', 16.4901, -26.432, 1.0], Spica: ['스피카', 13.4199, -11.161, 1.04], Pollux: ['폴룩스', 7.7553, 28.026, 1.14], Fomalhaut: ['포말하우트', 22.9608, -29.622, 1.16], Deneb: ['데네브', 20.6905, 45.28, 1.25], Regulus: ['레굴루스', 10.1395, 11.967, 1.35], Castor: ['카스토르', 7.5767, 31.888, 1.58], Bellatrix: ['벨라트릭스', 5.4189, 6.35, 1.64], Alnilam: ['알닐람', 5.6036, -1.202, 1.69], Alnitak: ['알니탁', 5.6793, -1.943, 1.74], Mintaka: ['민타카', 5.5334, -0.299, 2.23], Saiph: ['사이프', 5.7959, -9.67, 2.06], Polaris: ['북극성', 2.5303, 89.264, 1.98], Dubhe: ['두베', 11.0621, 61.751, 1.79], Merak: ['메라크', 11.0307, 56.382, 2.37], Phecda: ['페크다', 11.8972, 53.695, 2.44], Megrez: ['메그레즈', 12.257, 57.033, 3.3], Alioth: ['알리오스', 12.9005, 55.96, 1.77], Mizar: ['미자르', 13.3988, 54.925, 2.27], Alkaid: ['알카이드', 13.7923, 49.313, 1.86], Schedar: ['쉐다르', 0.6751, 56.537, 2.24], Caph: ['카프', 0.1529, 59.15, 2.28], Navi: ['나비', 0.9451, 60.717, 2.15], Ruchbah: ['루크바', 1.4303, 60.235, 2.66], Segin: ['세긴', 1.9066, 63.67, 3.35], Alcyone: ['플레이아데스 (좀생이별)', 3.7914, 24.105, 1.6] };
+    const CONST = [
+      ['오리온자리', '🏹', [['Betelgeuse', 'Bellatrix'], ['Betelgeuse', 'Alnitak'], ['Bellatrix', 'Mintaka'], ['Mintaka', 'Alnilam'], ['Alnilam', 'Alnitak'], ['Alnitak', 'Saiph'], ['Mintaka', 'Rigel']], '겨울 하늘의 주인공. 가운데 나란히 선 별 세 개(삼태성)를 찾으면 돼요'],
+      ['북두칠성 (큰곰자리)', '🥄', [['Alkaid', 'Mizar'], ['Mizar', 'Alioth'], ['Alioth', 'Megrez'], ['Megrez', 'Dubhe'], ['Dubhe', 'Merak'], ['Merak', 'Phecda'], ['Phecda', 'Megrez']], '국자 모양 일곱 별. 국자 끝 두 별을 5배 이으면 북극성이에요'],
+      ['카시오페이아자리', 'Ⓦ', [['Segin', 'Ruchbah'], ['Ruchbah', 'Navi'], ['Navi', 'Schedar'], ['Schedar', 'Caph']], 'W 모양 다섯 별. 북극성을 사이에 두고 북두칠성 반대편에 있어요'],
+      ['여름철 대삼각형', '🔺', [['Vega', 'Deneb'], ['Deneb', 'Altair'], ['Altair', 'Vega']], '직녀성·견우성·데네브가 만드는 큰 삼각형 (칠월칠석 이야기!)'],
+      ['겨울철 대삼각형', '🔻', [['Betelgeuse', 'Sirius'], ['Sirius', 'Procyon'], ['Procyon', 'Betelgeuse']], '베텔게우스·시리우스·프로키온이 만드는 삼각형. 시리우스는 밤하늘에서 제일 밝은 별'],
+      ['쌍둥이자리', '👯', [['Castor', 'Pollux']], '나란히 빛나는 두 별 카스토르와 폴룩스가 쌍둥이 머리예요'],
+      ['플레이아데스 성단', '✨', [], '작은 국자처럼 모인 별 무리. 맑은 날엔 맨눈으로 6~7개가 보여요']
+    ];
+    // 매년 유성우 (극대 날짜는 해마다 하루쯤 달라져요)
+    const METEOR = [['01-04', '사분의자리 유성우', 110], ['04-22', '거문고자리 유성우', 18], ['05-06', '물병자리 에타 유성우', 50], ['08-12', '페르세우스자리 유성우', 100], ['10-21', '오리온자리 유성우', 20], ['11-17', '사자자리 유성우', 15], ['12-14', '쌍둥이자리 유성우', 150]];
+    // ---------- 시간 ----------
+    function base() { const n = new Date(), b = new Date(n); b.setHours(18, 0, 0, 0); if (n.getHours() < 6) b.setDate(b.getDate() - 1); return b; }   // 오늘 밤 = 18시부터
+    const at = () => new Date(base().getTime() + mins * 60000);
+    function setT(v) { mins = Number(v); drawAll(); }
+    function setNow() { const d = (Date.now() - base().getTime()) / 60000; mins = d >= 0 && d <= 660 ? Math.round(d / 15) * 15 : 180; document.getElementById('slider').value = mins; drawAll(); }
+    function toggleLines() { lines = !lines; drawAll(); }
+    function locate() { navigator.geolocation && navigator.geolocation.getCurrentPosition(p => { st.lat = +p.coords.latitude.toFixed(3); st.lon = +p.coords.longitude.toFixed(3); st.name = '현재 위치'; persist(); cloud = null; loadCloud(); render(); }, () => { st = Object.assign(st, { lat: 37.539, lon: 127.214, name: '하남' }); persist(); render(); }, { timeout: 8000 }); }
+    // ---------- 나침반 (폰 방향대로 돌리기) ----------
+    function onOri(e) { const h = e.webkitCompassHeading != null ? e.webkitCompassHeading : e.absolute && e.alpha != null ? 360 - e.alpha : null; if (h != null) { heading = h; drawChart(); } }
+    async function toggleCompass() {
+      if (heading != null || window._compOn) { removeEventListener('deviceorientationabsolute', onOri); removeEventListener('deviceorientation', onOri); window._compOn = false; heading = null; drawAll(); return; }
+      try { if (window.DeviceOrientationEvent && DeviceOrientationEvent.requestPermission) { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') return; } } catch (e) {}
+      window._compOn = true; addEventListener('deviceorientationabsolute', onOri); addEventListener('deviceorientation', onOri); drawAll();
+    }
+    // ---------- 계산 ----------
+    function hor(t, ra, dec) { const h = A.Horizon(t, obs(), ra, dec, 'normal'); return { alt: h.altitude, az: h.azimuth }; }
+    function bodyPos(b, t) { const eq = A.Equator(b, t, obs(), true, true); return hor(t, eq.ra, eq.dec); }
+    function riseSet(b, from) { const t = A.MakeTime(from); const r = A.SearchRiseSet(b, obs(), +1, t, 1), s = A.SearchRiseSet(b, obs(), -1, t, 1); return { r: r && r.date, s: s && s.date }; }
+    const PH = ['🌑 삭 (그믐)', '🌒 초승달', '🌓 상현달', '🌔 차오르는 달', '🌕 보름달', '🌖 기우는 달', '🌗 하현달', '🌘 그믐달'];
+    const phaseName = ang => PH[Math.round(ang / 45) % 8];
+    async function loadCloud() {
+      try { const j = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${st.lat}&longitude=${st.lon}&hourly=cloud_cover&timezone=Asia%2FSeoul&forecast_days=2`).then(r => r.json()); cloud = j.hourly; } catch (e) { cloud = { err: 1 }; }
+      renderTonight(); drawChart();
+    }
+    const cloudAt = d => { if (!cloud || !cloud.time) return null; const k = `${ymd(d)}T${pad(d.getHours())}:00`, i = cloud.time.indexOf(k); return i >= 0 ? cloud.cloud_cover[i] : null; };
+    // ---------- 그리기 ----------
+    function renderTonight() {
+      const b = base(), noon = new Date(b); noon.setHours(12);
+      const sun = riseSet('Sun', noon), dusk = A.SearchAltitude('Sun', obs(), -1, A.MakeTime(noon), 1, -18), dawn = A.SearchAltitude('Sun', obs(), +1, A.MakeTime(b), 1, -18);
+      const t = A.MakeTime(at()), ang = A.MoonPhase(t), ill = A.Illumination('Moon', t).phase_fraction, moon = riseSet('Moon', noon);
+      const cc = [20, 21, 22, 23].map(h => { const d = new Date(b); d.setHours(h); return cloudAt(d); }).filter(x => x != null), avg = cc.length ? Math.round(cc.reduce((a, c) => a + c, 0) / cc.length) : null;
+      const sky = avg == null ? '' : avg < 25 ? `☀️ 맑음 (구름 ${avg}%) — 별 보기 좋아요` : avg < 60 ? `⛅ 구름 조금 (${avg}%) — 사이사이 보여요` : `☁️ 구름 많음 (${avg}%) — 오늘은 어려울 것 같아요`;
+      document.getElementById('sub').textContent = `${st.name} · ${md(ymd(b))} 밤`;
+      document.getElementById('locBtn').textContent = '📍 ' + st.name;
+      document.getElementById('tonight').innerHTML = `<div class="flex items-center gap-4"><div class="text-6xl leading-none">${phaseName(ang).split(' ')[0]}</div><div class="min-w-0 flex-1"><p class="text-base font-extrabold text-slate-900">${phaseName(ang).split(' ').slice(1).join(' ')} <span class="text-sm text-slate-500">${Math.round(ill * 100)}%</span></p>
+        <p class="text-xs font-bold text-slate-500 mt-0.5">🌙 달 ${moon.r ? '뜨는 시각 ' + hmD(moon.r) : ''}${moon.r && moon.s ? ' · ' : ''}${moon.s ? '지는 시각 ' + hmD(moon.s) : ''}</p>
+        <p class="text-xs font-bold text-slate-500">🌇 해 지는 시각 ${sun.s ? hm(sun.s) : '-'}${dusk ? ` · 완전히 어두워지는 시각 ${hm(dusk.date)}` : ''}${dawn ? ` ~ ${hm(dawn.date)}` : ''}</p>
+        ${sky ? `<p class="text-xs font-extrabold mt-1 ${avg < 25 ? 'text-emerald-600' : avg < 60 ? 'text-amber-600' : 'text-slate-500'}">${sky}</p>` : ''}
+        ${ill > 0.85 ? '<p class="text-[11px] font-bold text-slate-400">달이 밝아서 어두운 별은 잘 안 보여요 — 대신 달 구경하기 좋은 날!</p>' : ill < 0.15 ? '<p class="text-[11px] font-bold text-indigo-500">달빛이 거의 없어서 별 보기 좋은 밤이에요 ✨</p>' : ''}</div></div>`;
+    }
+    let pts = [];
+    function drawChart() {
+      const d = at(), t = A.MakeTime(d), R = 185, C = 200, sunAlt = bodyPos('Sun', t).alt, rot = heading != null ? heading : 0;
+      document.getElementById('chartT').textContent = `${md(ymd(d)).slice(3)} ${hm(d)} 하늘${sunAlt > -6 ? ' (아직 밝아요)' : ''}`;
+      document.getElementById('tLab').textContent = hm(d);
+      document.getElementById('lineBtn').style.background = lines ? 'rgba(129,140,248,.5)' : 'rgba(255,255,255,.12)';
+      document.getElementById('compBtn').style.background = heading != null ? 'rgba(129,140,248,.5)' : 'rgba(255,255,255,.12)';
+      const P = (alt, az) => { const r = R * (90 - alt) / 90, a = (az - rot) * Math.PI / 180; return [C - r * Math.sin(a), C - r * Math.cos(a)]; };
+      pts = []; let s = `<defs><radialGradient id="sk"><stop offset="0" stop-color="#1e1b4b"/><stop offset="1" stop-color="#0b1026"/></radialGradient></defs><circle cx="${C}" cy="${C}" r="${R}" fill="url(#sk)" stroke="rgba(255,255,255,.25)"/>`;
+      [30, 60].forEach(a => s += `<circle cx="${C}" cy="${C}" r="${R * (90 - a) / 90}" fill="none" stroke="rgba(255,255,255,.07)"/>`);
+      [['북', 0], ['동', 90], ['남', 180], ['서', 270]].forEach(([l, az]) => { const [x, y] = P(-7, az); s += `<text x="${x}" y="${y + 4}" text-anchor="middle" font-size="13" font-weight="800" fill="${l === '북' ? '#f87171' : 'rgba(255,255,255,.7)'}">${l}</text>`; });
+      const sp = {}; Object.entries(ST).forEach(([k, [n, ra, dec, mag]]) => { const h = hor(t, ra, dec); sp[k] = h; });
+      if (lines) CONST.forEach(([, , ls]) => ls.forEach(([a, b]) => { if (sp[a].alt > 0 && sp[b].alt > 0) { const [x1, y1] = P(sp[a].alt, sp[a].az), [x2, y2] = P(sp[b].alt, sp[b].az); s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(165,180,252,.45)" stroke-width="1.2"/>`; } }));
+      Object.entries(ST).forEach(([k, [n, , , mag]]) => { const h = sp[k]; if (h.alt <= 0) return; const [x, y] = P(h.alt, h.az), r = Math.max(1, 3.2 - mag * 0.8); s += `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity="${mag < 1.5 ? 1 : 0.75}"/>`; if (mag < 1.2 || k === 'Polaris' || k === 'Alcyone') s += `<text x="${x + r + 2}" y="${y + 3}" font-size="9" fill="rgba(255,255,255,.65)">${n.split(' ')[0]}</text>`; pts.push({ x, y, k: 'star', n, h, mag }); });
+      PL.forEach(([b, n, e, col, fact]) => { const h = bodyPos(b, t); if (h.alt <= 0) return; const [x, y] = P(h.alt, h.az), mag = A.Illumination(b, t).mag; s += `<circle cx="${x}" cy="${y}" r="5" fill="${col}" stroke="#fff" stroke-width="1"/><text x="${x + 7}" y="${y + 4}" font-size="11" font-weight="800" fill="${col}">${n}</text>`; pts.push({ x, y, k: 'pl', n, h, mag, fact, e }); });
+      const mh = bodyPos('Moon', t); if (mh.alt > 0) { const [x, y] = P(mh.alt, mh.az); s += `<text x="${x}" y="${y + 9}" text-anchor="middle" font-size="24">${phaseName(A.MoonPhase(t)).split(' ')[0]}</text>`; pts.push({ x, y, k: 'moon', n: '달', h: mh }); }
+      s += `<circle cx="${C}" cy="${C}" r="2" fill="rgba(255,255,255,.4)"/>`;
+      document.getElementById('chart').innerHTML = s;
+    }
+    document.getElementById('chart').addEventListener('click', e => {
+      const sv = e.currentTarget, r = sv.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * 400, y = (e.clientY - r.top) / r.height * 400;
+      const best = pts.map(p => [p, Math.hypot(p.x - x, p.y - y)]).sort((a, b) => a[1] - b[1])[0], tip = document.getElementById('tip');
+      if (!best || best[1] > 22) { tip.classList.add('hidden'); return; }
+      const p = best[0]; tip.classList.remove('hidden');
+      const cst = CONST.find(c => c[2].some(l => l.some(k => ST[k] && ST[k][0] === p.n)));
+      tip.innerHTML = `<p class="font-extrabold">${p.e || (p.k === 'moon' ? '🌙' : '⭐')} ${esc(p.n)} <span class="text-xs font-bold opacity-70">${dirKo(p.h.az)}쪽 · ${altKo(p.h.alt)} (${Math.round(p.h.alt)}°)${p.mag != null ? ' · ' + magKo(p.mag) : ''}</span></p>${p.fact ? `<p class="text-xs mt-1 opacity-90">👶 ${esc(p.fact)}</p>` : ''}${cst ? `<p class="text-xs mt-1 opacity-90">${cst[1]} ${esc(cst[0])} — ${esc(cst[3])}</p>` : ''}`;
+    });
+    function renderPlanets() {
+      const d = at(), t = A.MakeTime(d), noon = new Date(base()); noon.setHours(12);
+      const xs = PL.map(([b, n, e, col, fact]) => { const h = bodyPos(b, t), mag = A.Illumination(b, t).mag, rs = riseSet(b, noon), sun = A.AngleFromSun(b, t); return { b, n, e, fact, h, mag, rs, sun }; }).sort((a, b) => b.h.alt - a.h.alt);
+      document.getElementById('planets').innerHTML = xs.map(p => { const vis = p.h.alt > 5 && p.sun > 12; return `<div class="flex items-start gap-2.5 py-2 border-b border-slate-100 last:border-0 ${vis ? '' : 'opacity-45'}"><span class="text-2xl leading-none mt-0.5">${p.e}</span><div class="min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800">${p.n} ${vis ? `<span class="text-[11px] font-extrabold text-emerald-600">보여요</span>` : `<span class="text-[11px] font-bold text-slate-400">${p.sun <= 12 ? '태양 가까이라 안 보여요' : '지금은 지평선 아래'}</span>`}</p>
+        <p class="text-xs font-bold text-slate-500">${vis ? `${dirKo(p.h.az)}쪽 ${altKo(p.h.alt)} · ${magKo(p.mag)}` : ''}${p.rs.r ? `${vis ? ' · ' : ''}뜨는 시각 ${hmD(p.rs.r)}` : ''}${p.rs.s ? ` · 지는 시각 ${hmD(p.rs.s)}` : ''}</p>${vis ? `<p class="text-[11px] text-slate-400 mt-0.5">👶 ${esc(p.fact)}</p>` : ''}</div></div>`; }).join('');
+    }
+    function renderConsts() {
+      const t = A.MakeTime(at());
+      const xs = CONST.map(c => { const ks = c[2].length ? [...new Set(c[2].flat())] : ['Alcyone'], hs = ks.map(k => hor(t, ST[k][1], ST[k][2])), alt = hs.reduce((a, h) => a + h.alt, 0) / hs.length, az = hs[0].az; return { c, alt, az, up: hs.every(h => h.alt > 5) }; }).sort((a, b) => b.up - a.up || b.alt - a.alt);
+      document.getElementById('consts').innerHTML = xs.map(({ c, alt, az, up }) => `<div class="flex items-start gap-2.5 py-2 border-b border-slate-100 last:border-0 ${up ? '' : 'opacity-45'}"><span class="text-xl leading-none mt-0.5 w-7 text-center">${c[1]}</span><div class="min-w-0 flex-1"><p class="text-sm font-extrabold text-slate-800">${c[0]} ${up ? `<span class="text-[11px] font-extrabold text-emerald-600">${dirKo(az)}쪽 ${altKo(alt)}</span>` : '<span class="text-[11px] font-bold text-slate-400">이 시간엔 안 보여요</span>'}</p><p class="text-[11px] text-slate-500 mt-0.5">${esc(c[3])}</p></div></div>`).join('');
+    }
+    function renderEvents() {
+      const now = new Date(), until = new Date(now.getTime() + 75 * 864e5), ev = [];
+      let q = A.SearchMoonQuarter(A.MakeTime(now)); for (let i = 0; i < 12 && q.time.date < until; i++) { if (q.quarter === 2 || q.quarter === 0) ev.push([q.time.date, q.quarter === 2 ? '🌕 보름달' : '🌑 그믐 (달 없는 밤 — 별 보기 좋아요)']); q = A.NextMoonQuarter(q); }
+      [now.getFullYear(), now.getFullYear() + 1].forEach(y => METEOR.forEach(([md0, n, zhr]) => { const d = new Date(`${y}-${md0}T22:00:00`); if (d >= new Date(now.toDateString()) && d < until) ev.push([d, `🌠 ${n} 극대 (시간당 최대 ${zhr}개쯤)`]); }));
+      try { const le = A.SearchLunarEclipse(A.MakeTime(now)); if (le.peak.date < new Date(now.getTime() + 400 * 864e5)) { const up = bodyPos('Moon', le.peak).alt > 0; ev.push([le.peak.date, `🌘 ${le.kind === 'total' ? '개기' : le.kind === 'partial' ? '부분' : '반영'}월식${up ? ' — 한국에서 보여요!' : ' (한국에선 달이 져서 안 보여요)'}`]); } } catch (e) {}
+      ev.sort((a, b) => a[0] - b[0]);
+      document.getElementById('events').innerHTML = ev.map(([d, t]) => { const n = Math.round((new Date(d.toDateString()) - new Date(now.toDateString())) / 864e5); return `<div class="flex items-center gap-2 py-1.5 border-b border-slate-100 last:border-0"><span class="w-16 shrink-0 text-xs font-extrabold ${n <= 1 ? 'text-rose-500' : 'text-slate-500'}">${n === 0 ? '오늘 밤' : n === 1 ? '내일 밤' : `D-${n}`}</span><span class="flex-1 min-w-0 text-sm font-bold text-slate-700">${t}</span><span class="text-[11px] font-bold text-slate-400 shrink-0">${md(ymd(d)).slice(3)} ${hm(d)}</span></div>`; }).join('');
+      // 오늘 화면·아침 알림용 (기기에만)
+      try { localStorage.setItem('sky_events_v1', JSON.stringify(ev.filter(([, t]) => !/안 보여요/.test(t)).map(([d, t]) => ({ d: ymd(d), t: t.replace(/\s*\(.*?\)/g, '').replace(/ — .*$/, '') })).filter(x => !/그믐|안 보여요/.test(x.t)))); } catch (e) {}
+    }
+    function drawAll() { drawChart(); renderPlanets(); renderConsts(); }
+    function render() { renderTonight(); drawAll(); renderEvents(); }
+    function openSideNav() { document.getElementById('sideNav').classList.add('open'); document.getElementById('sideNavBackdrop').classList.add('open'); }
+    function closeSideNav() { document.getElementById('sideNav').classList.remove('open'); document.getElementById('sideNavBackdrop').classList.remove('open'); }
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSideNav(); });
+    function toggleDark() {
+      const on = !isDark(); document.documentElement.classList.toggle('dark', on);
+      try { localStorage.setItem('argon_dark_mode', String(on)); } catch (e) {}
+      document.getElementById('darkBtn').textContent = on ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    }
+    document.getElementById('darkBtn').textContent = isDark() ? '☀️ 라이트 모드' : '🌙 다크 모드';
+    if (!A) { document.getElementById('tonight').innerHTML = '<p class="text-sm font-bold text-slate-500">😢 천체 계산 파일을 못 불러왔어요. 인터넷 연결을 확인해 주세요</p>'; }
+    else { setNow(); render(); loadCloud(); setInterval(() => { if (!document.hidden && Math.abs(at() - new Date()) < 9e5) { setNow(); } }, 60000); }
+  </script>
+</body>
+</html>
